@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>세계 기장선교사 파송 지도</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+
+    body { margin: 0; font-family: sans-serif; }
+
+    h1 { text-align: center; padding: 10px; }
+
+    #map { height: 90vh; width: 100vw; }
+
+    .detail-popup {
+
+      position: fixed;
+
+      top: 10%;
+
+      right: 10px;
+
+      width: 300px;
+
+      background: #fff;
+
+      border: 1px solid #ccc;
+
+      padding: 10px;
+
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+
+      z-index: 999;
+
+      display: none;
+
+    }
+
+    .detail-popup h3 { margin-top: 0; }
+
+    .detail-popup img { width: 100%; border-radius: 8px; margin-bottom: 10px; }
+
+    .close-btn {
+
+      float: right;
+
+      cursor: pointer;
+
+      color: red;
+
+      font-weight: bold;
+
+    }
+
+    .flag-icon { width: 20px; height: 15px; vertical-align: middle; margin-right: 5px; }
+
+    .popup-list:hover { cursor: pointer; color: blue; text-decoration: underline; }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1>세계 기장선교사 파송 지도</h1>
+
+  <div id="map"></div>
+
+  <div id="detailPopup" class="detail-popup"></div>
+
+
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+
+    const countryFlags = {
+
+      "일본": "jp", "중국": "cn", "대만": "tw", "몽골": "mn", "필리핀": "ph",
+
+      "미얀마": "mm", "태국": "th", "캄보디아": "kh", "네팔": "np", "라오스": "la",
+
+      "인도": "in", "인도네시아": "id", "파키스탄": "pk", "동티모르": "tl", "말레이시아": "my",
+
+      "뉴질랜드": "nz", "호주": "au", "이스라엘": "il", "독일": "de", "헝가리": "hu",
+
+      "불가리아": "bg", "부르키나파소": "bf", "케냐": "ke", "모리타니": "mr",
+
+      "미국": "us", "쿠바": "cu"
+
+    };
+
+
+
+    const map = L.map('map').setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+
+
+    const missionaryData = {
+
+      "일본": ["가정순", "김종현", "정지영", "신용섭", "김성언", "오은성"],
+
+      "중국": ["양OO"],
+
+      "대만": ["김기태", "이강석", "조하영", "박근영"],
+
+      "몽골": ["김상헌"],
+
+      "필리핀": ["이성수", "김현숙", "금석인", "강경진", "방태화", "김영권"],
+
+      "미얀마": ["김경환"],
+
+      "태국": ["김완주", "김기성", "이재광", "명승인", "박준수"],
+
+      "캄보디아": ["김형기", "김관식", "이민일", "황하얀", "황희명", "김경희", "진재은"],
+
+      "네팔": ["최양임", "윤종수", "허현", "이수열", "김종찬"],
+
+      "라오스": ["차명렬", "정병권"],
+
+      "인도": ["김금애", "이옥희", "정호진", "김경미", "이화랑", "이도형"],
+
+      "인도네시아": ["김광훈", "권동용", "설나라", "박준호"],
+
+      "파키스탄": ["김신미"],
+
+      "동티모르": ["김옥겸"],
+
+      "말레이시아": ["김재선"],
+
+      "뉴질랜드": ["류숙"],
+
+      "호주": ["최범욱", "이병관"],
+
+      "이스라엘": ["김정환", "안상근"],
+
+      "독일": ["김동욱", "정광은", "조성호", "김기천", "강민영"],
+
+      "헝가리": ["김선구", "김다솜", "최종관"],
+
+      "불가리아": ["김영중"],
+
+      "부르키나파소": ["윤영국"],
+
+      "케냐": ["최성욱"],
+
+      "모리타니": ["심재원"],
+
+      "미국": ["장호준"],
+
+      "쿠바": ["임순심"]
+
+    };
+
+
+
+    const latlngs = {
+
+      "일본": [36.2048, 138.2529], "중국": [35.8617, 104.1954], "대만": [23.6978, 120.9605], "몽골": [46.8625, 103.8467],
+
+      "필리핀": [12.8797, 121.7740], "미얀마": [21.9162, 95.9560], "태국": [15.8700, 100.9925], "캄보디아": [12.5657, 104.9910],
+
+      "네팔": [28.3949, 84.1240], "라오스": [19.8563, 102.4955], "인도": [20.5937, 78.9629], "인도네시아": [-0.7893, 113.9213],
+
+      "파키스탄": [30.3753, 69.3451], "동티모르": [-8.8742, 125.7275], "말레이시아": [4.2105, 101.9758],
+
+      "뉴질랜드": [-40.9006, 174.8860], "호주": [-25.2744, 133.7751], "이스라엘": [31.0461, 34.8516],
+
+      "독일": [51.1657, 10.4515], "헝가리": [47.1625, 19.5033], "불가리아": [42.7339, 25.4858],
+
+      "부르키나파소": [12.2383, -1.5616], "케냐": [-0.0236, 37.9062], "모리타니": [21.0079, -10.9408],
+
+      "미국": [37.0902, -95.7129], "쿠바": [21.5218, -77.7812]
+
+    };
+
+
+
+    const detailPopup = document.getElementById('detailPopup');
+
+    function showDetail(name) {
+
+      detailPopup.innerHTML = `
+
+        <div class="close-btn" onclick="closeDetail()">✖</div>
+
+        <img src="https://via.placeholder.com/300x180.png?text=${name}" alt="${name}">
+
+        <h3>${name}</h3>
+
+        <p><strong>파송년도:</strong> 2020년</p>
+
+        <p><strong>주요사역:</strong> 교육, 복음전도</p>
+
+        <p><strong>기도제목:</strong> 현지 정착과 건강</p>
+
+      `;
+
+      detailPopup.style.display = 'block';
+
+    }
+
+    function closeDetail() {
+
+      detailPopup.style.display = 'none';
+
+    }
+
+
+
+    const markers = Object.entries(missionaryData).map(([country, missionaries]) => {
+
+      const [lat, lng] = latlngs[country] || [0, 0];
+
+      const flag = countryFlags[country] ? `<img class='flag-icon' src='https://flagcdn.com/w40/${countryFlags[country]}.png'>` : "";
+
+      const popupContent = `${flag}<b>${country}</b><br>` +
+
+        missionaries.map(name => `<div class='popup-list' onclick='showDetail("${name}")'>${name}</div>`).join("");
+
+      const marker = L.marker([lat, lng]).addTo(map);
+
+      marker.bindPopup(popupContent);
+
+      marker.on("popupopen", () => pause = false);
+
+      marker.on("popupclose", () => pause = false);
+
+      return marker;
+
+    });
+
+
+
+    let currentIndex = 0;
+
+    let pause = false;
+
+
+
+    document.addEventListener("mouseover", e => {
+
+      if (e.target.closest(".leaflet-popup")) pause = true;
+
+    });
+
+    document.addEventListener("mouseout", e => {
+
+      if (!e.relatedTarget || !e.relatedTarget.closest(".leaflet-popup")) pause = false;
+
+    });
+
+
+
+    setInterval(() => {
+
+      if (!pause) {
+
+        markers.forEach(m => m.closePopup());
+
+        markers[currentIndex].openPopup();
+
+        currentIndex = (currentIndex + 1) % markers.length;
+
+      }
+
+    }, 3000);
+
+  </script>
+
+</body>
+
+</html>
