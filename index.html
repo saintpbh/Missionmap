@@ -96,13 +96,108 @@
 
         // `missionary_data.json` 의 데이터를 기본으로 사용
         const missionaryDetails = [
-            { "name": "가정순", "english_name": "Rev. Ka Jung-Soon", "city": "햐꾸닌쬬", "organization": "일본기독교단 소속 햐꾸닌쬬교회", "presbytery": "서울노회", "sent_date": "1996-05-01", "country": "일본" },
-            { "name": "김종현", "english_name": "Rev. Kim Jong-Hyun", "city": "오사카", "organization": "재일대한기독교회 소속 오사카 나니와교회", "presbytery": "경기남노회", "sent_date": "1996-12-01", "country": "일본" },
-            { "name": "신용섭", "english_name": "Rev. Shin Yong-Sub", "city": "오사카", "organization": "재일대한기독교회 오사카교구 나니와교회 및 KCCJ 회관", "presbytery": "서울남노회", "sent_date": "2012-02-01", "country": "일본" },
-            { "name": "정지영", "english_name": "Rev. Jeong Jee-Young", "city": "가나가와", "organization": "일본기독교단 가나가와교구 고토부키지구 센터", "presbytery": "경북노회", "sent_date": "2012-04-01", "country": "일본" },
-            { "name": "김성언", "english_name": "Rev. Kim Sung-Un", "city": "시모노세키", "organization": "재일대한기독교회 시모노세키 교회", "presbytery": "서울남노회", "sent_date": "2018-05-01", "country": "일본" }
-            // 참고: 실제 구현 시에는 모든 선교사 정보를 이 배열에 추가해야 합니다.
-            // 다른 국가 선교사 정보도 이와 같은 형식으로 추가...
+  { "name": "가정순", "english_name": "Rev. Ka Jung-Soon", "city": "햐꾸닌쬬", "organization": "일본기독교단 소속 햐꾸닌쬬교회", "presbytery": "서울노회", "sent_date": "1996-05-01", "country": "일본" },
+    { "name": "김종현", "english_name": "Rev. Kim Jong-Hyun", "city": "오사카", "organization": "재일대한기독교회 소속 오사카 나니와교회", "presbytery": "경기남노회", "sent_date": "1996-12-01", "country": "일본" },
+    { "name": "신용섭", "english_name": "Rev. Shin Yong-Sub", "city": "오사카", "organization": "재일대한기독교회 오사카교구 나니와교회 및 KCCJ 회관", "presbytery": "서울남노회", "sent_date": "2012-02-01", "country": "일본" },
+    { "name": "정지영", "english_name": "Rev. Jeong Jee-Young", "city": "가나가와", "organization": "일본기독교단 가나가와교구 고토부키지구 센터", "presbytery": "경북노회", "sent_date": "2012-04-01", "country": "일본" },
+    { "name": "김성언", "english_name": "Rev. Kim Sung-Un", "city": "시모노세키", "organization": "재일대한기독교회 시모노세키 교회", "presbytery": "서울남노회", "sent_date": "2018-05-01", "country": "일본" },
+
+    // 필리핀 예시
+    { "name": "김현숙", "english_name": "Rev. Kim Hyun-Sook", "city": "민다나오", "organization": "필리핀 민다나오 선교센터", "presbytery": "경기북노회", "sent_date": "2001-06-15", "country": "필리핀" },
+    { "name": "금석인", "english_name": "Rev. Keum Seok-In", "city": "마닐라", "organization": "아카페교회", "presbytery": "서울북노회", "sent_date": "2007-09-20", "country": "필리핀" },
+    { "name": "강경진", "english_name": "Rev. Kang Kyung-Jin", "city": "루손", "organization": "UCCP 그리스도연합교회", "presbytery": "경기남노회", "sent_date": "2010-01-10", "country": "필리핀" },
+    { "name": "방태화", "english_name": "Rev. Bang Tae-Hwa", "city": "세부", "organization": "서부 서비시야 세부 선교센터", "presbytery": "서울노회", "sent_date": "2014-03-15", "country": "필리핀" },
+    { "name": "김영권", "english_name": "Rev. Kim Young-Kwon", "city": "중부루손", "organization": "중부루손 선교센터", "presbytery": "경기북노회", "sent_date": "2018-07-05", "country": "필리핀" },
+    { "name": "정광화", "english_name": "Rev. Jeong Kwang-Hwa", "city": "루손", "organization": "루손섬 선교회", "presbytery": "서울남노회", "sent_date": "2020-12-21", "country": "필리핀" },
+    
+      // 대만 예시
+    { "name": "김기태", "english_name": "Rev. Kim Ki-Tae", "city": "파이완", "organization": "파이완노회", "presbytery": "서울동노회", "sent_date": "2002-04-15", "country": "대만" },
+    { "name": "이강석", "english_name": "Rev. Lee Kang-Seok", "city": "신베이", "organization": "유산신학교", "presbytery": "경기남노회", "sent_date": "2006-10-02", "country": "대만" },
+    { "name": "조하영", "english_name": "Rev. Jo Ha-Young", "city": "칠성", "organization": "칠성중회", "presbytery": "서울서노회", "sent_date": "2011-02-08", "country": "대만" },
+    { "name": "박근영", "english_name": "Rev. Park Geun-Young", "city": "칠성", "organization": "칠성중회", "presbytery": "경기북노회", "sent_date": "2015-09-19", "country": "대만" },
+
+    // 러시아 예시
+    { "name": "이상점", "english_name": "Rev. Lee Sang-Jeom", "city": "블라디보스토크", "organization": "연해주 선교센터", "presbytery": "서울남노회", "sent_date": "2013-06-01", "country": "러시아" },
+
+    // 몽골 예시
+    { "name": "김상헌", "english_name": "Rev. Kim Sang-Heon", "city": "울란바토르", "organization": "국제대학", "presbytery": "서울동노회", "sent_date": "2005-11-11", "country": "몽골" },
+
+    // 파키스탄 예시
+    { "name": "김신미", "english_name": "Rev. Kim Shin-Mi", "city": "이슬라마바드", "organization": "이슬라마바드 선교센터", "presbytery": "서울노회", "sent_date": "2009-08-20", "country": "파키스탄" },
+
+    // 라오스
+    { "name": "차명렬", "english_name": "Rev. Cha Myung-Ryeol", "city": "비엔티안", "organization": "딘디 유치원", "presbytery": "경기남노회", "sent_date": "2010-05-20", "country": "라오스" },
+    { "name": "정병권", "english_name": "Rev. Jeong Byung-Kwon", "city": "비엔티안", "organization": "라오스 선교센터", "presbytery": "서울동노회", "sent_date": "2014-11-02", "country": "라오스" },
+
+    // 인도
+    { "name": "김금애", "english_name": "Rev. Kim Geum-Ae", "city": "델리", "organization": "북인도 선교센터", "presbytery": "경기북노회", "sent_date": "2003-03-03", "country": "인도" },
+    { "name": "이옥희", "english_name": "Rev. Lee Ok-Hee", "city": "첸나이", "organization": "남인도 선교센터", "presbytery": "경기남노회", "sent_date": "2012-09-14", "country": "인도" },
+    { "name": "정호진", "english_name": "Rev. Jung Ho-Jin", "city": "벵갈루루", "organization": "생명누리센터", "presbytery": "서울서노회", "sent_date": "2017-02-28", "country": "인도" },
+    { "name": "김경미", "english_name": "Rev. Kim Kyung-Mi", "city": "냔달", "organization": "남인도 냔달 선교센터", "presbytery": "서울남노회", "sent_date": "2016-10-17", "country": "인도" },
+    { "name": "이화랑", "english_name": "Rev. Lee Hwa-Rang", "city": "마드라스", "organization": "마드라스 선교센터", "presbytery": "경기남노회", "sent_date": "2014-06-23", "country": "인도" },
+    { "name": "이도형", "english_name": "Rev. Lee Do-Hyung", "city": "첸나이", "organization": "첸나이 선교센터", "presbytery": "서울북노회", "sent_date": "2019-12-09", "country": "인도" },
+
+    // 인도네시아
+    { "name": "김광훈", "english_name": "Rev. Kim Kwang-Hoon", "city": "파순단", "organization": "파순단교회", "presbytery": "서울동노회", "sent_date": "2008-05-08", "country": "인도네시아" },
+    { "name": "설나라", "english_name": "Rev. Seol Na-Ra", "city": "파순단", "organization": "파순단교회", "presbytery": "경기북노회", "sent_date": "2011-03-19", "country": "인도네시아" },
+    { "name": "박준호", "english_name": "Rev. Park Joon-Ho", "city": "자카르타", "organization": "동부자와교회", "presbytery": "서울서노회", "sent_date": "2015-08-25", "country": "인도네시아" },
+
+    // 동티모르
+    { "name": "김옥겸", "english_name": "Rev. Kim Ok-Gyeom", "city": "딜리", "organization": "IPTL", "presbytery": "서울노회", "sent_date": "2014-11-14", "country": "동티모르" },
+
+    // 네팔
+    { "name": "윤종수", "english_name": "Rev. Yoon Jong-Soo", "city": "카트만두", "organization": "NCC, Concern Nepal", "presbytery": "경기남노회", "sent_date": "2007-04-16", "country": "네팔" },
+    { "name": "최양임", "english_name": "Rev. Choi Yang-Im", "city": "카트만두", "organization": "네팔 선교센터", "presbytery": "서울북노회", "sent_date": "2010-01-19", "country": "네팔" },
+    { "name": "허 현", "english_name": "Rev. Heo Hyun", "city": "티벳", "organization": "티벳 불교권 선교", "presbytery": "경기북노회", "sent_date": "2012-05-25", "country": "네팔" },
+    { "name": "이수열", "english_name": "Rev. Lee Soo-Yeol", "city": "카트만두", "organization": "카트만두 선교센터", "presbytery": "서울동노회", "sent_date": "2016-07-03", "country": "네팔" },
+    { "name": "김선태", "english_name": "Rev. Kim Sun-Tae", "city": "카트만두", "organization": "카트만두 선교센터", "presbytery": "경기남노회", "sent_date": "2018-09-30", "country": "네팔" },
+    { "name": "김종찬", "english_name": "Rev. Kim Jong-Chan", "city": "카트만두", "organization": "카트만두 선교센터", "presbytery": "서울남노회", "sent_date": "2021-03-16", "country": "네팔" },
+
+    // 말레이시아
+    { "name": "김재선", "english_name": "Rev. Kim Jae-Sun", "city": "보루네오", "organization": "보루네오 선교센터", "presbytery": "경기남노회", "sent_date": "2015-10-10", "country": "말레이시아" },
+
+    // 아프리카 주요국가 예시
+    { "name": "최성욱", "english_name": "Rev. Choi Sung-Wook", "city": "나이로비", "organization": "동아프리카 개혁교회", "presbytery": "서울서노회", "sent_date": "2009-02-12", "country": "케냐" },
+    { "name": "윤영국", "english_name": "Rev. Yoon Young-Kuk", "city": "와가두구", "organization": "부르키나파소 선교센터", "presbytery": "서울남노회", "sent_date": "2013-03-28", "country": "부르키나파소" },
+    { "name": "심재원", "english_name": "Rev. Shim Jae-Won", "city": "누악쇼트", "organization": "북아프리카 YWAM", "presbytery": "서울동노회", "sent_date": "2018-08-04", "country": "모리타니" },
+    { "name": "이기준", "english_name": "Rev. Lee Ki-Jun", "city": "몬로비아", "organization": "라이베리아 선교센터", "presbytery": "경기남노회", "sent_date": "2016-06-11", "country": "라이베리아" },
+    { "name": "김주현", "english_name": "Rev. Kim Joo-Hyun", "city": "릴롱궤", "organization": "릴롱궤 선교센터", "presbytery": "경기북노회", "sent_date": "2017-10-05", "country": "말라위" },
+    { "name": "이윤재", "english_name": "Rev. Lee Yoon-Jae", "city": "쿠미", "organization": "쿠미대학/UCU대학", "presbytery": "서울동노회", "sent_date": "2015-12-18", "country": "우간다" },
+
+    // 미국/유럽
+    { "name": "장호준", "english_name": "Rev. Jang Ho-Joon", "city": "스토어스", "organization": "스토어스 한인교회", "presbytery": "서울남노회", "sent_date": "2003-09-27", "country": "미국" },
+    { "name": "임순심", "english_name": "Rev. Lim Soon-Shim", "city": "아바나", "organization": "신학교 사역", "presbytery": "경기북노회", "sent_date": "2012-05-17", "country": "쿠바" },
+
+    // 유럽 예시
+    { "name": "조성호", "english_name": "Rev. Jo Sung-Ho", "city": "베를린", "organization": "베를린기독교한인교회", "presbytery": "경기남노회", "sent_date": "2007-08-15", "country": "독일" },
+    { "name": "김기천", "english_name": "Rev. Kim Ki-Chun", "city": "베를린", "organization": "베를린주교회", "presbytery": "서울서노회", "sent_date": "2010-12-12", "country": "독일" },
+    { "name": "강민영", "english_name": "Rev. Kang Min-Young", "city": "프랑크푸르트", "organization": "라인마인 한인교회", "presbytery": "경기북노회", "sent_date": "2019-01-23", "country": "독일" },
+    { "name": "김선구", "english_name": "Rev. Kim Sun-Koo", "city": "부다페스트", "organization": "부다페스트한인교회", "presbytery": "서울동노회", "sent_date": "2014-03-12", "country": "헝가리" },
+    { "name": "김다솜", "english_name": "Rev. Kim Da-Som", "city": "부다페스트", "organization": "부다페스트한인교회", "presbytery": "서울북노회", "sent_date": "2018-05-20", "country": "헝가리" },
+    { "name": "최종관", "english_name": "Rev. Choi Jong-Gwan", "city": "부다페스트", "organization": "부다페스트한인교회", "presbytery": "경기남노회", "sent_date": "2020-10-10", "country": "헝가리" },
+
+    // 중동/이스라엘
+    { "name": "김정환", "english_name": "Rev. Kim Jung-Hwan", "city": "나사렛", "organization": "아랍이스라엘교회", "presbytery": "경기북노회", "sent_date": "2011-04-07", "country": "이스라엘" },
+    { "name": "안상근", "english_name": "Rev. Ahn Sang-Keun", "city": "갈릴리", "organization": "갈릴리 선교센터", "presbytery": "서울동노회", "sent_date": "2016-06-25", "country": "이스라엘" },
+
+    // 불가리아
+    { "name": "김영중", "english_name": "Rev. Kim Young-Joong", "city": "소피아", "organization": "불가리아 선교센터", "presbytery": "서울노회", "sent_date": "2015-03-11", "country": "불가리아" },
+
+    // 뉴질랜드
+    { "name": "류 숙", "english_name": "Rev. Ryu Sook", "city": "오클랜드", "organization": "오클랜드 한인교회", "presbytery": "경기남노회", "sent_date": "2012-12-02", "country": "뉴질랜드" },
+
+    // 호주
+    { "name": "최범욱", "english_name": "Rev. Choi Bum-Wook", "city": "시드니", "organization": "시드니 새날교회", "presbytery": "서울북노회", "sent_date": "2017-04-16", "country": "호주" },
+    { "name": "이병관", "english_name": "Rev. Lee Byung-Kwan", "city": "케언즈", "organization": "케언즈 제자들교회", "presbytery": "경기북노회", "sent_date": "2019-08-09", "country": "호주" },
+
+    // 남미·아프리카(예시)
+    { "name": "김주현", "english_name": "Rev. Kim Joo-Hyun", "city": "릴롱궤", "organization": "릴롱궤 선교센터", "presbytery": "경기북노회", "sent_date": "2017-10-05", "country": "말라위" },
+    { "name": "임순심", "english_name": "Rev. Lim Soon-Shim", "city": "아바나", "organization": "쿠바 신학교 사역", "presbytery": "경기북노회", "sent_date": "2012-05-17", "country": "쿠바" },
+
+    // 기타 예시(아래에 필요시 계속 추가 가능)
+    // { "name": "이름", "english_name": "영문이름", "city": "도시", "organization": "기관/교회", "presbytery": "노회", "sent_date": "YYYY-MM-DD", "country": "국가" },
+
+    
         ];
 
         // `missionaries.js` 의 기도제목/업데이트 정보를 추가 데이터로 사용
