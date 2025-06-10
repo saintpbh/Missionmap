@@ -18,6 +18,48 @@
         .popup-list { margin-top: 4px; padding: 2px 0; }
         .popup-list:hover { cursor: pointer; color: blue; text-decoration: underline; }
 
+        /* 타이틀 */
+        .top-title {
+        position: absolute;
+        top: 18px;
+        left: 0; right: 0;
+        text-align: center;
+        color: white;
+        font-size: 2rem;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        z-index: 1050;
+        pointer-events: none;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        }
+        .title-logo {
+        height: 40px;     /* 원하는 타이틀 높이에 맞게 고정! */
+        width: auto;
+        vertical-align: middle;
+        pointer-events: none;
+        background: white;       /* 배경이 투명하면 이렇게, 필요 없으면 삭제 */
+        border-radius: 8px;
+        padding: 4px 8px;
+        box-sizing: content-box;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        /* 필요시 아래처럼 크기 조정:
+        margin-right: 12px;
+        */
+        }
+        @media (max-width: 600px) {
+        .top-title { font-size: 1.1rem; gap:7px;}
+        .title-logo { height: 26px; padding:1px 3px;}
+        }
+
+
+
+
+        
         /* 상세 정보 팝업 */
         .detail-popup {
             position: absolute; /* functions.js에서 동적으로 위치 설정 */
@@ -89,7 +131,7 @@
 
     <div id="map"></div>
     <div id="detailPopup" class="detail-popup"></div>
-    <h1 class="top-title"><img src="  " alt=" " class="title-logo">한국기독교장로회 해외 선교동역자 지도</h1>
+    <h1 class="top-title"><img src="logo.svg" alt=" " class="title-logo">한국기독교장로회 해외 선교동역자 지도</h1>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // --- STEP 1: 데이터 통합 및 설정 ---
