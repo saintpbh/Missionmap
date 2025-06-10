@@ -388,5 +388,42 @@
         setInterval(showFloatingMissionary, FLOAT_INTERVAL);
 
     </script>
+
+
+<!-- 전체화면 토글 버튼 -->
+<div id="fullscreenBtn" class="fullscreen-btn" title="전체화면 보기">
+  🖵
+</div>
+<!-- 전체화면 해제 버튼(처음엔 숨김) -->
+<div id="exitFullscreenBtn" class="fullscreen-btn" style="display:none;" title="전체화면 종료">
+  ✖
+</div>
+
+<style>
+.fullscreen-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 48px; height: 48px;
+  background: rgba(40,40,40,0.6);
+  color: white;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  cursor: pointer;
+  z-index: 1200;
+  user-select: none;
+  transition: background 0.2s;
+}
+.fullscreen-btn:hover {
+  background: rgba(40,40,40,0.8);
+}
+@media (max-width: 600px) {
+  .fullscreen-btn { right: 12px; bottom: 12px; width:40px; height:40px; font-size:1.5rem;}
+}
+</style>
+
+
 </body>
 </html>
