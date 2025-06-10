@@ -423,6 +423,31 @@
   .fullscreen-btn { right: 12px; bottom: 12px; width:40px; height:40px; font-size:1.5rem;}
 }
 </style>
+// 전체화면 진입
+<script>
+document.getElementById('fullscreenBtn').onclick = function() {
+  document.documentElement.requestFullscreen();
+};
+
+// 전체화면 해제
+document.getElementById('exitFullscreenBtn').onclick = function() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+};
+
+// 전체화면 상태 감지 → 버튼 토글 (유튜브 스타일)
+document.addEventListener('fullscreenchange', () => {
+  const isFull = !!document.fullscreenElement;
+  document.getElementById('fullscreenBtn').style.display = isFull ? "none" : "flex";
+  document.getElementById('exitFullscreenBtn').style.display = isFull ? "flex" : "none";
+  // Leaflet 지도라면 사이즈 재조정
+  if (typeof map !== "undefined" && map.invalidateSize) {
+    setTimeout(()=>map.invalidateSize(), 400);
+  }
+});
+</script>               
+
 
 
 </body>
