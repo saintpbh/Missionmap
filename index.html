@@ -86,10 +86,10 @@
     </style>
 </head>
 <body>
-    <h1>한국기독교장로회 해외 선교동역자 지도</h1>
+
     <div id="map"></div>
     <div id="detailPopup" class="detail-popup"></div>
-
+    <h1 class="top-title"><img src="  " alt="기장로고" class="title-logo">한국기독교장로회 해외 선교동역자 지도</h1>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         // --- STEP 1: 데이터 통합 및 설정 ---
@@ -422,6 +422,36 @@
 @media (max-width: 600px) {
   .fullscreen-btn { right: 12px; bottom: 12px; width:40px; height:40px; font-size:1.5rem;}
 }
+
+// 지도타이틀디자인
+#map {
+  height: 100vh;
+  width: 100vw;
+}
+
+.top-title {
+  position: absolute;
+  top: 18px;
+  left: 0; right: 0;
+  text-align: center;
+  color: white;
+  font-size: 2rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  z-index: 1050;
+  pointer-events: none; /* 클릭 방해 안 되게 */
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+
+
+
+
+
+
+
+
 </style>
 // 전체화면 진입
 <script>
@@ -447,8 +477,6 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 </script>               
-
-
 
 </body>
 </html>
