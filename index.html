@@ -50,7 +50,6 @@
         }
         .floating-missionary-wrapper {
             position: absolute; z-index: 999; pointer-events: none;
-            opacity: 0;
         }
         .floating-missionary-content {
             display: flex; align-items: center; gap: 8px; padding: 6px 12px;
@@ -65,15 +64,8 @@
         .floating-missionary-content .name { font-weight: bold; color: #333; }
         .floating-missionary-content.recent .name { color: orange; }
         .floating-missionary-content .prayer { font-size: 13px; color: #555; }
-
-        /* 애니메이션 */
-        .presbytery-floating, .fade-in {
-            animation: fadePopup 0.5s forwards;
-        }
-        .hide {
-            opacity: 0 !important;
-            transition: opacity 0.8s;
-        }
+        .presbytery-floating { opacity: 0; animation: fadePopup 0.5s forwards; }
+        .presbytery-floating.hide { opacity: 0 !important; transition: opacity 0.8s; }
         @keyframes fadePopup {
             from { opacity: 0; transform: scale(0.92);}
             to   { opacity: 1; transform: scale(1);}
@@ -89,68 +81,88 @@
         @media (max-width: 600px) {
             .fullscreen-btn { right: 12px; bottom: 12px; width:40px; height:40px; font-size:1.5rem;}
         }
-        .missionary-table-overlay {
+
+        /* 국가별/노회별 표를 한 줄로 나란히 */
+        .missionary-tables-row {
             position: absolute;
-            top: 24px;
-            z-index: 1100;
-            background: rgba(255,255,255,0.2); /* ★★ 투명도 설정 ★★ */
+            top: 90px; left: 24px; z-index: 1100;
+            display: flex; flex-direction: row; gap: 18px;
+        }
+
+        /* -------- 국가별 파송현황 표 -------- */
+        .country-table-overlay {
+            background: rgba(255,255,255,0.2);  /* 국가별 투명도 */
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             padding: 18px 20px 12px 20px;
-            min-width: 180px;   /* ★★ 최소 너비 */
-            max-width: 340px;   /* ★★ 최대 너비 */
-            max-height: 100vh;   /* ★★ 최대 높이 (화면 60%) */
+            min-width: 180px;
+            max-width: 340px;
+            max-height: 100vh;
             overflow-y: auto;
-            font-size: 11px;
+            font-size: 13px;
             transition: opacity 0.2s;
         }
-        .missionary-table-overlay.left { left: 24px; }
-        .missionary-table-overlay.right { right: 24px; }
-        .missionary-table-overlay table { width: 100%; border-collapse: collapse;}
-        .missionary-table-overlay th, .missionary-table-overlay td { padding: 5px 6px; }
-        .missionary-table-overlay th { font-weight: bold; }
-        .missionary-table-overlay .flag-icon { width: 22px; height: 15px; vertical-align: middle; margin-right: 5px; }
-        .missionary-table-overlay .bold { font-weight: bold; }
+        .country-table-overlay table { width: 100%; border-collapse: collapse;}
+        .country-table-overlay th, .country-table-overlay td { padding: 5px 6px; }
+        .country-table-overlay th { font-weight: bold; color: #0e325c;}
+        .country-table-overlay .flag-icon { width: 22px; height: 15px; vertical-align: middle; margin-right: 5px; }
+        .country-table-overlay .bold { font-weight: bold; color:#003366;}
+
+        /* -------- 노회별 파송현황 표 -------- */
+        .presbytery-table-overlay {
+            background: rgba(245,250,255,0.2); /* 노회별 투명도와 배경색 분리 */
+            border-radius: 12px;
+            
+            box-shadow: 0 2px 8px rgba(0,0,0,0.0.15);
+            padding: 18px 20px 12px 20px;
+            min-width: 180px;
+            max-width: 340px;
+            max-height: 40vh;
+            overflow-y: auto;
+            font-size: 13px;
+            transition: opacity 0.2s;
+        }
+        .presbytery-table-overlay table { width: 100%; border-collapse: collapse;}
+        .presbytery-table-overlay th, .presbytery-table-overlay td { padding: 5px 6px; }
+        .presbytery-table-overlay th { font-weight: bold; color:#00509e;}
+        .presbytery-table-overlay .bold { font-weight: bold; color:#00509e;}
+        .presbytery-table-overlay .presbytery-click { cursor:pointer; text-decoration:underline; }
+
         @media (max-width: 900px) {
-            .missionary-table-overlay { max-width: 200px; font-size: 13px; padding: 12px 7px 8px 10px; }
-            .missionary-table-overlay table { font-size: 13px;}
-            .missionary-table-overlay .flag-icon { width: 15px; height: 11px; }
+          .country-table-overlay, .presbytery-table-overlay {
+            max-width: 200px; font-size: 12px; padding: 12px 7px 8px 10px;
+          }
+          .country-table-overlay .flag-icon, .presbytery-table-overlay .flag-icon { width: 15px; height: 11px; }
         }
         @media (max-width: 650px) {
-            .missionary-table-overlay { min-width: 120px; max-width: 120px; font-size: 11.5px;}
-            .missionary-table-overlay .flag-icon { width: 11px; height: 8px; }
-            .missionary-table-overlay th { display: none;}
+          .country-table-overlay, .presbytery-table-overlay {
+            min-width: 120px; max-width: 120px; font-size: 10.5px;
+          }
+          .country-table-overlay .flag-icon, .presbytery-table-overlay .flag-icon { width: 11px; height: 8px; }
+          .country-table-overlay th, .presbytery-table-overlay th { display: none;}
         }
         @media (max-width: 480px) {
-            .missionary-table-overlay { display: none !important; }
+          .country-table-overlay, .presbytery-table-overlay { display: none !important; }
         }
 
-
+        /* 범례 */
         .leaflet-legend-box {
-            background: rgba(255,255,255,0.92);
-            border-radius: 8px;
-            padding: 7px 14px;
-            font-size: 14px;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.10);
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center;
+            background: rgba(255,255,255,0.95);
+            border-radius: 7px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+            padding: 7px 12px; font-size: 13px;
+            margin-bottom: 5px;
         }
         .legend-orange {
             display: inline-block;
-            width: 18px;
-            height: 18px;
-            border-radius: 6px;
-            background: transparent; 
+            width: 18px; height: 18px;
             border: 2px solid orange;
-            margin-right: 7px;
+            border-radius: 7px;
+            margin-right: 8px;
+            background: transparent;
+            vertical-align: middle;
         }
-        @media (max-width: 650px) {
-            .leaflet-legend-box { font-size: 11.5px; padding: 5px 8px;}
-            .legend-orange { width: 12px; height: 12px;}
-        }
-</style>
     </style>
 </head>
 <body>
@@ -160,19 +172,21 @@
         <img src="logo.svg" alt=" " class="title-logo">
         한국기독교장로회 해외 선교동역자 지도
     </h1>
-    <div id="missionary-table-country" class="missionary-table-overlay left"></div>
-    <div id="missionary-table-presbytery" class="missionary-table-overlay right"></div>
+    <div class="missionary-tables-row">
+      <div id="missionary-table-country" class="country-table-overlay"></div>
+      <div id="missionary-table-presbytery" class="presbytery-table-overlay"></div>
+    </div>
     <div id="fullscreenBtn" class="fullscreen-btn" title="전체화면 보기">🖵</div>
     <div id="exitFullscreenBtn" class="fullscreen-btn" style="display:none;" title="전체화면 종료">✖</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-    const FLOAT_COUNT = 1;
-    const FLOAT_DISPLAY_TIME = 3000;
-    const FLOAT_INTERVAL = 3000;
+    const FLOAT_COUNT = 2;
+    const FLOAT_DISPLAY_TIME = 4000;
+    const FLOAT_INTERVAL = 2000;
     const PRESBYTERY_FLOAT_DURATION = 5000;
-    const PRESBYTERY_PAUSE_EXTRA = 7000; // 노회 종료 후 대기(7초)
+    const PRESBYTERY_PAUSE_EXTRA = 7000;
     const POPUP_ROTATE_INTERVAL = 3000;
     let pause = false, currentIndex = 0, byAutoRotate = false;
     let presbyteryTimer = null;
@@ -196,40 +210,7 @@
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-
-
-
     const detailPopupElement = document.getElementById('detailPopup');
-
-    function updateTableVisibility() {
-        const ww = window.innerWidth;
-        const show = ww > 480;
-        document.getElementById('missionary-table-country').style.display = show ? "" : "none";
-        document.getElementById('missionary-table-presbytery').style.display = show ? "" : "none";
-    }
-    window.addEventListener('resize', updateTableVisibility);
-
-    function createFloatingWrapper(item, px, py, recent) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "floating-missionary-wrapper";
-        wrapper.style.left = `${px - 60}px`;
-        wrapper.style.top = `${py - 20}px`;
-        wrapper.innerHTML = `
-          <div class="floating-missionary-content ${recent ? 'recent' : ''}">
-            <img src="https://cdn-icons-png.flaticon.com/128/149/149071.png" alt="icon">
-            <div>
-              <div class="name">${item.name}</div>
-              <div class="prayer">${item.prayer || '현지 정착과 건강'}</div>
-            </div>
-          </div>
-        `;
-        map.getContainer().appendChild(wrapper);
-        // 페이드인
-        requestAnimationFrame(() => {
-            wrapper.classList.add("fade-in");
-        });
-        return wrapper;
-    }
 
     fetch('https://docs.google.com/spreadsheets/d/1OXDGD7a30n5C--ReXdYRoKqiYNLt9aqY5ffxYN0bZF8/export?format=csv')
     .then(res => res.text())
@@ -253,9 +234,9 @@
             </tr>`;
         });
         countryTable += `</tbody></table>`;
-        document.getElementById('missionary-table-country').innerHTML = `<div style="font-weight:bold;font-size:1.15em;margin-bottom:6px;text-align:center;">국가별 파송현황</div>${countryTable}`;
+        document.getElementById('missionary-table-country').innerHTML =
+          `<div style="font-weight:bold;font-size:1.15em;margin-bottom:6px;text-align:center;">국가별 파송현황</div>${countryTable}`;
 
-        // -------- 노회별 클릭 이벤트용 소속 선교사 매핑 --------
         const presbyteryCounts = {};
         const presbyteryMembers = {};
         data.forEach(item => {
@@ -275,8 +256,6 @@
         presbyteryTable += `</tbody></table>`;
         document.getElementById('missionary-table-presbytery').innerHTML =
           `<div style="font-weight:bold;font-size:1.15em;margin-bottom:6px;text-align:center;">노회별 파송현황</div>${presbyteryTable}`;
-
-        updateTableVisibility();
 
         // ---------------- 지도/플로팅 -------------------
         const missionaryNamesByCountry = {};
@@ -380,10 +359,26 @@
                     lat + (Math.random() - 0.5) * 3,
                     lng + (Math.random() - 0.5) * 3
                 ]);
-                const wrapper = createFloatingWrapper(item, point.x, point.y, recent);
+                const wrapper = document.createElement("div");
+                wrapper.className = "floating-missionary-wrapper";
+                wrapper.style.left = `${point.x - 50}px`;
+                wrapper.style.top = `${point.y - 20}px`;
+                wrapper.innerHTML = `
+                  <div class="floating-missionary-content ${recent ? 'recent' : ''}">
+                    <img src="https://cdn-icons-png.flaticon.com/128/149/149071.png" alt="icon">
+                    <div>
+                      <div class="name">${item.name}</div>
+                      <div class="prayer">${item.prayer || '현지 정착과 건강'}</div>
+                    </div>
+                  </div>
+                `;
+                // Fade in/out
+                wrapper.style.opacity = "0";
+                map.getContainer().appendChild(wrapper);
+                setTimeout(()=>{wrapper.style.opacity="1";}, 40);
                 setTimeout(() => {
-                    wrapper.classList.add('hide');
-                    setTimeout(()=>{ wrapper.remove(); }, 850);
+                  wrapper.style.opacity="0";
+                  setTimeout(()=>wrapper.remove(),800);
                 }, FLOAT_DISPLAY_TIME);
             }
             floatingIndex = (floatingIndex + FLOAT_COUNT) % flatMissionaries.length;
@@ -398,36 +393,46 @@
                 const presbytery = e.target.getAttribute('data-presbytery');
                 const missionaries = presbyteryMembers[presbytery] || [];
 
-                document.querySelectorAll('.floating-missionary-wrapper').forEach(div => div.remove());
-
-                const countryMemberMap = {};
+                // 같은 나라 그룹핑 → 겹치지 않게 분산
+                const countryGroups = {};
                 missionaries.forEach(item => {
-                    if (!item.country) return;
-                    if (!countryMemberMap[item.country]) countryMemberMap[item.country] = [];
-                    countryMemberMap[item.country].push(item);
+                    if (!countryGroups[item.country]) countryGroups[item.country] = [];
+                    countryGroups[item.country].push(item);
                 });
 
-                Object.entries(countryMemberMap).forEach(([country, countryMissionaries]) => {
+                document.querySelectorAll('.floating-missionary-wrapper').forEach(div => div.remove());
+
+                Object.entries(countryGroups).forEach(([country, group]) => {
                     const latlng = latlngs[country];
                     if (!latlng) return;
                     const [lat, lng] = latlng;
-                    const n = countryMissionaries.length;
-                    const RADIUS = 60;
-
-                    const basePoint = map.latLngToContainerPoint([lat, lng]);
-
-                    countryMissionaries.forEach((item, idx) => {
-                        const angle = (2 * Math.PI * idx) / n;
-                        const px = basePoint.x + RADIUS * Math.cos(angle);
-                        const py = basePoint.y + RADIUS * Math.sin(angle);
-
+                    // N명일 경우 위에서 아래로 일정 간격 분산
+                    const baseY = -60;
+                    const gapY = 45;
+                    group.forEach((item, i) => {
                         const recent = isRecent(item.lastUpdate);
-                        const wrapper = createFloatingWrapper(item, px, py, recent);
-                        // presbytery-floating(페이드인)
-                        wrapper.classList.add("presbytery-floating");
-
+                        const point = map.latLngToContainerPoint([
+                            lat + (Math.random() - 0.5) * 2.4,
+                            lng + (Math.random() - 0.5) * 2.4
+                        ]);
+                        const wrapper = document.createElement("div");
+                        wrapper.className = "floating-missionary-wrapper presbytery-floating";
+                        wrapper.style.left = `${point.x - 60}px`;
+                        wrapper.style.top = `${point.y + baseY + i * gapY}px`;
+                        wrapper.innerHTML = `
+                          <div class="floating-missionary-content ${recent ? 'recent' : ''}">
+                            <img src="https://cdn-icons-png.flaticon.com/128/149/149071.png" alt="icon">
+                            <div>
+                              <div class="name">${item.name}</div>
+                              <div class="prayer">${item.prayer || '현지 정착과 건강'}</div>
+                            </div>
+                          </div>
+                        `;
+                        wrapper.style.opacity="0";
+                        map.getContainer().appendChild(wrapper);
+                        setTimeout(()=>{wrapper.style.opacity="1";},40);
                         setTimeout(()=>{
-                            wrapper.classList.add('hide');
+                            wrapper.style.opacity="0";
                             setTimeout(()=>{ wrapper.remove(); }, 850);
                         }, PRESBYTERY_FLOAT_DURATION);
                     });
@@ -438,6 +443,16 @@
                 }, PRESBYTERY_FLOAT_DURATION + PRESBYTERY_PAUSE_EXTRA);
             });
         });
+
+        // ------ 범례 ------
+        // leaflet control 영역에 legend 추가
+        const legend = L.control({position: 'bottomleft'});
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'leaflet-legend-box');
+            div.innerHTML = `<span class="legend-orange"></span> <span>최근 1개월 소식</span>`;
+            return div;
+        };
+        legend.addTo(map);
 
     }); // fetch end
 
@@ -455,27 +470,6 @@
             setTimeout(()=>map.invalidateSize(), 400);
         }
     });
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // 지도 생성 후 실행되도록 보장
-        if(typeof L === "undefined" || typeof map === "undefined") return;
-
-        const legend = L.control({position: 'bottomright'});
-
-        legend.onAdd = function (map) {
-            const div = L.DomUtil.create('div', 'leaflet-legend-box');
-            div.innerHTML = `
-                <span class="legend-orange"></span>
-                <span>최근 1개월 소식</span>
-            `;
-            return div;
-        };
-
-        legend.addTo(map);
-    });
-
-
     </script>
 </body>
 </html>
