@@ -64,7 +64,11 @@
         .floating-missionary-content .name { font-weight: bold; color: #333; }
         .floating-missionary-content.recent .name { color: orange; }
         .floating-missionary-content .prayer { font-size: 13px; color: #555; }
-        .presbytery-floating { opacity: 0; animation: fadePopup 0.5s forwards; }
+
+        .presbytery-floating {
+            opacity: 0;
+            animation: fadePopup 0.5s forwards;
+        }
         .presbytery-floating.hide { opacity: 0 !important; transition: opacity 0.8s; }
         @keyframes fadePopup {
             from { opacity: 0; transform: scale(0.92);}
@@ -352,7 +356,7 @@
                 // 2. 기존 플로팅 모두 제거(즉시)
                 document.querySelectorAll('.floating-missionary-wrapper').forEach(div => div.remove());
 
-                // 노회 소속 선교사 플로팅 표시 (겹치지 않게, 원형 분산 배치)
+                // 3. 노회 소속 선교사 플로팅 표시 (같은 나라면 겹치지 않게 원형 분산)
                 const countryMemberMap = {};
                 missionaries.forEach(item => {
                     if (!item.country) return;
@@ -365,32 +369,35 @@
                     if (!latlng) return;
                     const [lat, lng] = latlng;
                     const n = countryMissionaries.length;
-                    const RADIUS = 60; // px, 원의 반지름 (원하면 조정)
+                    const RADIUS = 60; // px, 원의 반지름 (필요시 조정)
 
-                    // 지도 위 기준 좌표
                     const basePoint = map.latLngToContainerPoint([lat, lng]);
 
                     countryMissionaries.forEach((item, idx) => {
-                        // n명이면 원 둘레를 n등분해서 각도 분산
                         const angle = (2 * Math.PI * idx) / n;
                         const px = basePoint.x + RADIUS * Math.cos(angle);
                         const py = basePoint.y + RADIUS * Math.sin(angle);
 
                         const recent = isRecent(item.lastUpdate);
                         const wrapper = document.createElement("div");
-                        wrapper.className = "floating-missionary-wrapper presbytery-floating";
+                        wrapper.className = "floating-missionary-wrapper";
                         wrapper.style.left = `${px - 60}px`;
                         wrapper.style.top = `${py - 20}px`;
                         wrapper.innerHTML = `
-                        <div class="floating-missionary-content ${recent ? 'recent' : ''}">
+                          <div class="floating-missionary-content ${recent ? 'recent' : ''}">
                             <img src="https://cdn-icons-png.flaticon.com/128/149/149071.png" alt="icon">
                             <div>
-                            <div class="name">${item.name}</div>
-                            <div class="prayer">${item.prayer || '현지 정착과 건강'}</div>
+                              <div class="name">${item.name}</div>
+                              <div class="prayer">${item.prayer || '현지 정착과 건강'}</div>
                             </div>
-                        </div>
+                          </div>
                         `;
                         map.getContainer().appendChild(wrapper);
+
+                        // ★★★ 애니메이션 클래스 부여(다음 프레임에서) ★★★
+                        requestAnimationFrame(() => {
+                            wrapper.classList.add("presbytery-floating");
+                        });
 
                         // 5초 후 페이드아웃 + 제거
                         setTimeout(()=>{
@@ -399,7 +406,6 @@
                         }, PRESBYTERY_FLOAT_DURATION);
                     });
                 });
-
 
                 // 4. 5초 후 + 추가 7초 후 pause 해제 (총 12초)
                 presbyteryTimer = setTimeout(()=>{
