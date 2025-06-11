@@ -446,7 +446,7 @@
 
         // ------ 범례 ------
         // leaflet control 영역에 legend 추가
-        const legend = L.control({position: 'bottomleft'});
+        const legend = L.control({position: 'bottomright'});
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'leaflet-legend-box');
             div.innerHTML = `<span class="legend-orange"></span> <span>최근 1개월 소식</span>`;
