@@ -124,6 +124,33 @@
         @media (max-width: 480px) {
             .missionary-table-overlay { display: none !important; }
         }
+
+
+        .leaflet-legend-box {
+            background: rgba(255,255,255,0.92);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 14px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-orange {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            background: transparent; 
+            border: 2px solid orange;
+            margin-right: 7px;
+        }
+        @media (max-width: 650px) {
+            .leaflet-legend-box { font-size: 11.5px; padding: 5px 8px;}
+            .legend-orange { width: 12px; height: 12px;}
+        }
+</style>
     </style>
 </head>
 <body>
@@ -142,8 +169,8 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
     const FLOAT_COUNT = 1;
-    const FLOAT_DISPLAY_TIME = 2000;
-    const FLOAT_INTERVAL = 2000;
+    const FLOAT_DISPLAY_TIME = 3000;
+    const FLOAT_INTERVAL = 3000;
     const PRESBYTERY_FLOAT_DURATION = 5000;
     const PRESBYTERY_PAUSE_EXTRA = 7000; // 노회 종료 후 대기(7초)
     const POPUP_ROTATE_INTERVAL = 3000;
@@ -168,6 +195,9 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
+
+
+
 
     const detailPopupElement = document.getElementById('detailPopup');
 
@@ -425,6 +455,27 @@
             setTimeout(()=>map.invalidateSize(), 400);
         }
     });
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 지도 생성 후 실행되도록 보장
+        if(typeof L === "undefined" || typeof map === "undefined") return;
+
+        const legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'leaflet-legend-box');
+            div.innerHTML = `
+                <span class="legend-orange"></span>
+                <span>최근 1개월 소식</span>
+            `;
+            return div;
+        };
+
+        legend.addTo(map);
+    });
+
+
     </script>
 </body>
 </html>
