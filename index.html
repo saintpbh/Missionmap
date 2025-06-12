@@ -550,7 +550,7 @@
                     const latlng = this.constants.LATLNGS[country] || [20,0];
                     this.state.lastCountryLatLng = latlng;
 
-                    this.map.setView(latlng, 10, {animate: true});
+                    this.map.setView(latlng, 5, {animate: true});
 
                     const countryMissionaries = this.state.missionaries.filter(item => item.country === country);
 
