@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" class="sl-theme-light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국기독교장로회 선교사 파송지도</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.0/cdn/themes/light.css" />
+    <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.0/cdn/shoelace.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="map"></div>
+    <div id="titleLogo"><img src="logo.svg" alt="로고" style="height: 1.5em; vertical-align: middle; margin-right: 8px;">한국기독교장로회 선교사 파송지도</div>
+    <div id="mapGuide">
+      이 지도는 전세계에 흩어져 선교사역을 감당하고 있는 총회파송 해외선교동역자님들의 현황을 시각적으로 보여줍니다.<br>
+      귀한 선교사역을 위해 기도로 함께 하여 주시기를 부탁드립니다.
+    </div>
+    <div id="missionary-table-country" class="country-table-overlay"></div>
+    <div id="missionary-table-presbytery" class="presbytery-table-overlay"></div>
+    <div class="ui-controls">
+        <sl-icon-button id="settingsBtn" name="gear-fill" label="설정" style="font-size: 1.5rem;"></sl-icon-button>
+        <sl-icon-button id="fullscreenBtn" name="fullscreen" label="전체화면" style="font-size: 1.5rem;"></sl-icon-button>
+        <sl-icon-button id="exitFullscreenBtn" name="fullscreen-exit" label="전체화면 종료" class="hidden" style="font-size: 1.5rem;"></sl-icon-button>
+    </div>
+    <div id="detailPopupContainer"></div>
+    <sl-button id="country-exit-btn" variant="danger" size="large" pill>
+        <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+        국가별 보기 종료
+    </sl-button>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/newsletterPopup.js"></script>
+    <script src="js/dataManager.js"></script>
+    <script src="js/uiManager.js"></script>
+    <script src="js/missionaryMap.js"></script>
+    <script src="js/setup.js"></script>
+    <script src="js/news.js"></script>
+</body>
+</html> 

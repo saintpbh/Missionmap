@@ -1,0 +1,1538 @@
+/* =========================
+   뉴스바 배경색을 바꾸려면 아래 변수만 수정하세요!
+   예시: #1976d2, #2196f3, rgba(33,150,243,0.92) 등
+   ========================= */
+:root {
+  --sl-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sl-color-primary-50: #eef8ff;
+  --sl-color-primary-100: #d1eaff;
+  --sl-color-primary-200: #b1d9ff;
+  --sl-color-primary-300: #88c5ff;
+  --sl-color-primary-400: #5aa9ff;
+  --sl-color-primary-500: #2b87ff;
+  --sl-color-primary-600: #1a73ff;
+  --sl-color-primary-700: #0f62ff;
+  --sl-color-primary-800: #0a4ecc;
+  --sl-color-primary-900: #104199;
+  --sl-color-primary-950: #0d2859;
+  --news-bar-bg: rgba(33, 149, 243, 0.196); /* ← 여기서 색상 지정 */
+  --news-bar-text: #fff; /* ← 자막(글자)색 기본값 */
+  --modal-bg: rgba(255,255,255,0.98);
+  --modal-shadow: 0 8px 40px rgba(33, 150, 243, 0.18);
+  --modal-radius: 18px;
+  --modal-title: #1976d2;
+  --modal-divider: #e3eaf3;
+  --modal-label: #1976d2;
+  --modal-btn-bg: #2196f3;
+  --modal-btn-bg-hover: #1976d2;
+  --modal-btn-color: #fff;
+  --modal-input-bg: #f7fafd;
+  --modal-input-border: #b6c6e3;
+  --color-primary: #2563eb;
+  --color-primary-light: #3b82f6;
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #111827;
+  --color-muted: #6b7280;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.05);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.10);
+  --font-heading: "Inter", "Pretendard", var(--sl-font-sans);
+  --font-body: "Pretendard", var(--sl-font-sans);
+}
+
+/* 기본 스타일 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--color-text);
+}
+
+#map {
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    position: relative; /* 팝업이 지도 위에 정확히 뜨도록 기준 설정 */
+}
+
+/* 제목 로고 - 현대적 디자인 */
+#titleLogo {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    padding: 16px 24px;
+    border-radius: var(--radius-md);
+    font-size: 1.8em;
+    font-weight: 700;
+    z-index: 200; /* 설정 모달보다 낮게 */
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255,255,255,0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    letter-spacing: -0.5px;
+}
+
+#titleLogo:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 24px 72px rgba(0, 0, 0, 0.2);
+}
+
+#titleLogo.anim-off {
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* 테이블 스타일 - 원래 위치와 크기로 복원 */
+#missionary-table-country,
+#missionary-table-presbytery {
+    position: fixed;
+    padding: 12px 10px 8px 10px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    z-index: 100; /* 제목 로고보다 낮게 */
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    font-family: var(--font-body);
+    margin-bottom: 18px;
+    background: var(--color-surface);
+    backdrop-filter: blur(10px);
+    opacity: 0.95;
+}
+
+#missionary-table-country {
+    top: 110px;
+    left: 10px;
+    right: auto;
+    min-width: 140px;
+    max-width: 160px;
+    width: 160px;
+}
+
+#missionary-table-presbytery {
+    top: 110px;
+    left: 200px;
+    right: auto;
+    min-width: 140px;
+    max-width: 160px;
+    width: 160px;
+}
+
+/* 테이블 제목 - 원래 스타일로 복원 */
+#missionary-table-country > div:first-child,
+#missionary-table-presbytery > div:first-child {
+    font-size: 0.75em;
+    margin-bottom: 6px;
+}
+
+/* 테이블 스크롤바 스타일링 */
+#missionary-table-country::-webkit-scrollbar,
+#missionary-table-presbytery::-webkit-scrollbar {
+    width: 6px;
+}
+
+#missionary-table-country::-webkit-scrollbar-track,
+#missionary-table-presbytery::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+#missionary-table-country::-webkit-scrollbar-thumb,
+#missionary-table-presbytery::-webkit-scrollbar-thumb {
+    background: #b6c6e3;
+    border-radius: 3px;
+}
+
+#missionary-table-country::-webkit-scrollbar-thumb:hover,
+#missionary-table-presbytery::-webkit-scrollbar-thumb:hover {
+    background: #a0b3d6;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0;
+    font-size: 0.6em;
+    background: none;
+    table-layout: fixed;
+}
+
+th, td {
+    padding: 4px 0;
+    text-align: left;
+    border-bottom: 1.5px solid #e0e0e0;
+    transition: all 0.2s ease;
+    font-size: 0.55em;
+}
+
+th {
+    background: rgba(247, 247, 247, 0.5);
+    font-weight: bold;
+    font-size: 0.6em;
+    color: #495057;
+    text-transform: none;
+    letter-spacing: normal;
+    position: static;
+    z-index: auto;
+}
+
+th:first-child {
+    border-top-left-radius: 0;
+}
+
+th:last-child {
+    border-top-right-radius: 0;
+}
+
+td {
+    font-size: 0.6em;
+    color: #212529;
+    font-weight: normal;
+    padding: 3px 0;
+    background: none;
+}
+
+tr:hover td {
+    background: rgba(102, 126, 234, 0.05);
+    transform: none;
+}
+
+.country-click,
+.presbytery-click {
+    cursor: pointer;
+    color: #00509e;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.country-click:hover,
+.presbytery-click:hover {
+    color: #003d82;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+
+.flag-icon {
+    width: 16px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+tr {
+    transition: all 0.2s ease;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
+/* 국가별 모드 종료 버튼 - Shoelace 스타일로 재구성 */
+#country-exit-btn {
+    position: fixed;
+    top: 100px; /* 타이틀 바로 아래 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+#country-exit-btn.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#country-exit-btn:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+}
+
+/* 플로팅 선교사 팝업 */
+.floating-missionary-wrapper {
+    position: absolute;
+    z-index: 120; /* 테이블보다 높게 */
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.floating-missionary-wrapper.fade-in {
+    opacity: 1;
+}
+
+.floating-missionary-wrapper.fade-out {
+    opacity: 0;
+}
+
+.floating-missionary-content {
+    position: relative; /* 말풍선 꼬리를 위한 position 설정 */
+    background: #fff;
+    color: #333;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto; /* 내용에 맞춰 자동 */
+    max-width: 300px; /* 너무 넓어지지 않도록 */
+    font-size: 14px;
+}
+
+/* 말풍선 꼬리 (아래를 향하는 삼각형) */
+.floating-missionary-content::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* 팝업 하단에 위치 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #fff; /* 팝업과 같은 흰색 */
+}
+
+.floating-missionary-content.recent {
+    border: 2px solid orange;
+}
+
+.floating-missionary-content img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.floating-missionary-content .name {
+    font-weight: bold;
+    font-size: 1.05em;
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 4px;
+}
+
+.floating-missionary-content .prayer {
+    font-size: 0.9em;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* 상세 팝업 - Shoelace 카드 기반 */
+#detailPopupContainer {
+    /* 화면 중앙에 고정 배치 */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001; /* 다른 요소들보다 위에 오도록 설정 */
+    display: none; /* 평소에는 숨겨 둠 */
+    pointer-events: none; /* 팝업 영역 외에는 클릭이 통과되도록 */
+}
+
+#detailPopupContainer > * {
+    pointer-events: auto; /* 팝업 자체는 클릭 가능하도록 */
+    max-width: 92vw; /* 작은 화면에서 넘치지 않도록 */
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+    #detailPopupContainer > * {
+        width: 90vw; /* 모바일에서 가로폭 거의 전체 사용 */
+    }
+}
+
+/* 뉴스바 */
+#news-bar {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    background: var(--sl-color-primary-600);
+    color: #fff;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 2px 16px 0 #0003;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    min-width: 180px;
+    min-height: 36px;
+    max-width: 90vw;
+    transition: all 0.7s cubic-bezier(0.4,0,0.2,1);
+    opacity: 0.85;
+    padding: 12px 48px 12px 20px;
+    font-size: 1em;
+}
+
+/* UI 컨트롤 버튼들 */
+.ui-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 250; /* 뉴스바보다 높게 */
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-small);
+}
+
+.ui-controls .hidden {
+    display: none !important;
+}
+
+/* Shoelace 설정 모달 커스텀 스타일 */
+.settings-dialog::part(body) {
+    overflow-y: auto;
+}
+
+.settings-dialog::part(overlay) {
+    z-index: 500; /* 모든 요소보다 높게 */
+}
+
+.settings-dialog::part(panel) {
+    z-index: 501; /* 오버레이보다 높게 */
+}
+
+.settings-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-large);
+}
+
+.setting-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-medium);
+}
+
+.setting-section .section-title {
+    font-size: var(--sl-font-size-medium);
+    font-weight: var(--sl-font-weight-semibold);
+    color: var(--sl-color-neutral-600);
+    margin-bottom: var(--sl-spacing-x-small);
+}
+
+.color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-spacing-small);
+}
+.color-picker-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-spacing-x-small);
+    font-size: var(--sl-font-size-medium);
+}
+
+#news-bar .close-news-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--sl-color-neutral-0);
+}
+
+.detail-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-popup-card::part(base) {
+    border: 2px solid var(--sl-color-primary-200);
+}
+
+.detail-popup-card [slot="header"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-popup-card h3 {
+    margin: 0;
+    font-size: var(--sl-font-size-large);
+}
+
+.detail-popup-card .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sl-spacing-medium);
+}
+
+.detail-popup-card .info-item {
+    font-size: var(--sl-font-size-small);
+}
+
+.detail-popup-card .info-item strong {
+    color: var(--sl-color-neutral-500);
+}
+
+/* 스크롤바 전역 스타일 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* 포커스 스타일 */
+*:focus {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
+}
+
+/* 선택 텍스트 스타일 */
+::selection {
+    background: rgba(102, 126, 234, 0.2);
+    color: #1a1a1a;
+}
+
+::-moz-selection {
+    background: rgba(102, 126, 234, 0.2);
+    color: #1a1a1a;
+}
+
+/* 전체화면 버튼 - 현대적 디자인 */
+.fullscreen-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    color: #667eea;
+}
+
+.fullscreen-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    color: #764ba2;
+}
+
+.fullscreen-btn.hidden {
+    display: none;
+}
+
+.fullscreen-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: all 0.2s ease;
+}
+
+.fullscreen-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* 뉴스레터 오버레이 - 현대적 디자인 */
+#newsletter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+#newsletter-content {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    max-width: 90vw;
+    max-height: 90vh;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+#newsletter-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    z-index: 10;
+}
+
+#newsletter-close-btn:hover {
+    background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%);
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+}
+
+/* 범례 - 현대적 디자인 */
+.leaflet-legend-box {
+    background: transparent;
+    backdrop-filter: none;
+    padding: 12px 16px;
+    border-radius: 16px;
+    box-shadow: none;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-orange {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+/* 선교사 팝업(국가별 상세 모드)이 항상 가장 위에 보이도록 z-index 강화 */
+.floating-missionary-wrapper.fixed-country-popup {
+    z-index: 9999 !important; /* 최상위 레이어 */
+    position: absolute;
+}
+
+.legend-orange {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: #fffde4;
+    border: 2px solid #ff9800;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* 설정 버튼 스타일 */
+.settings-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 18.67px; /* 28px의 2/3 */
+    height: 18.67px; /* 28px의 2/3 */
+    background-color: #808080; /* 회색 */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.settings-btn:hover {
+    background-color: #666666; /* 호버 시 더 진한 회색 */
+}
+
+.settings-btn svg {
+    width: 12px; /* 18px의 2/3 */
+    height: 12px; /* 18px의 2/3 */
+    color: white;
+}
+
+/* 설정/뉴스레터 업로드 모달 */
+#setup-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 3000;
+}
+.setup-modal-backdrop {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.25);
+}
+.setup-modal-content {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    padding: 32px 28px 24px 28px;
+    min-width: 320px;
+    max-width: 90vw;
+}
+.setup-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.setup-modal-title {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+.setup-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.6em;
+    color: #888;
+    cursor: pointer;
+    padding: 0 4px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+.setup-modal-close:hover {
+    background: #eee;
+    color: #d32f2f;
+}
+#newsletter-upload-form label {
+    font-weight: bold;
+}
+#newsletter-upload-form input[type="file"] {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+#newsletter-upload-form button[type="submit"] {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+#newsletter-upload-form button[type="submit"]:hover {
+    background: #0d47a1;
+}
+
+/* 설정 모달 - 현대적 디자인 */
+.modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 10001;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: transparent;
+    backdrop-filter: none;
+}
+.modal-content {
+    background: var(--modal-bg);
+    border-radius: var(--modal-radius);
+    box-shadow: var(--modal-shadow);
+    padding: 36px 32px 28px 32px;
+    min-width: 340px;
+    max-width: 98vw;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.modal-content h2 {
+    color: var(--modal-title);
+    font-size: 1.32em;
+    font-weight: 700;
+    margin: 0 0 18px 0;
+    letter-spacing: -0.5px;
+    text-align: center;
+}
+.modal-content label {
+    color: var(--modal-label);
+    font-weight: 600;
+    font-size: 1.05em;
+    margin-bottom: 4px;
+    display: inline-block;
+}
+.modal-content input[type="number"],
+.modal-content input[type="file"] {
+    background: var(--modal-input-bg);
+    border: 1.5px solid var(--modal-input-border);
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 1em;
+    margin-top: 4px;
+    margin-bottom: 0;
+    outline: none;
+    transition: border 0.2s;
+}
+.modal-content input[type="number"]:focus,
+.modal-content input[type="file"]:focus {
+    border: 1.5px solid var(--modal-title);
+}
+.modal-content button,
+.modal-content input[type="submit"] {
+    background: var(--modal-btn-bg);
+    color: var(--modal-btn-color);
+    border: none;
+    border-radius: 7px;
+    padding: 7px 18px;
+    font-size: 1em;
+    font-weight: 600;
+    margin-top: 0;
+    margin-right: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+}
+.modal-content button:hover,
+.modal-content input[type="submit"]:hover {
+    background: var(--modal-btn-bg-hover);
+}
+.modal-content .close {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    font-size: 1.5em;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 1;
+}
+.modal-content .close:hover {
+    color: var(--modal-title);
+}
+.modal-content .upload-section {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1.5px solid var(--modal-divider);
+}
+.modal-content h3 {
+    color: var(--modal-title);
+    font-size: 1.08em;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+#newsletter-upload-form label {
+    color: #1976d2;
+    font-weight: 500;
+    font-size: 1em;
+}
+#newsletter-upload-form input[type="file"] {
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+#newsletter-upload-form button {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+#news-speed-apply-btn {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: 7px 14px;
+    font-size: 0.98em;
+}
+@media (max-width: 600px) {
+    .modal-content {
+        min-width: 90vw;
+        max-width: 98vw;
+        padding: 18px 6vw 18px 6vw;
+        margin: 6vw auto;
+    }
+}
+
+#mapGuide {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    color: #111;
+    font-size: 0.98em;
+    font-weight: 500;
+    padding: 14px 32px;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    z-index: 900;
+    text-align: center;
+    max-width: 90vw;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 0 2px 8px rgba(255,255,255,0.3), 0 1px 1px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 768px) {
+    #mapGuide {
+        font-size: 0.92em;
+        padding: 10px 10vw;
+        border-radius: 12px;
+        bottom: 16px;
+        max-width: 98vw;
+    }
+}
+
+.recent-badge {
+    font-size: 0.7em;
+    vertical-align: super;
+    background-color: #ff4500;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 8px;
+    margin-left: 4px;
+}
+
+.recent-bold {
+    font-weight: bold;
+}
+
+/* Floating Missionary Popup Styles */
+.floating-missionary {
+    position: absolute;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+}
+
+.floating-missionary-content {
+    position: relative; /* 말풍선 꼬리를 위한 position 설정 */
+    background: #fff;
+    color: #333;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: auto; /* 내용에 맞춰 자동 */
+    max-width: 300px; /* 너무 넓어지지 않도록 */
+    font-size: 14px;
+}
+
+/* 말풍선 꼬리 (아래를 향하는 삼각형) */
+.floating-missionary-content::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* 팝업 하단에 위치 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #fff; /* 팝업과 같은 흰색 */
+}
+
+.floating-missionary-content.recent {
+    border: 2px solid orange;
+}
+
+.floating-missionary-content img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.floating-missionary-content .name {
+    font-weight: bold;
+    font-size: 1.05em;
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 4px;
+}
+
+.floating-missionary-content .prayer {
+    font-size: 0.9em;
+    color: #555;
+    line-height: 1.4;
+}
+
+.legend-news {
+    font-size: 1.2em;
+    margin-right: 5px;
+}
+
+.popup-list .recent-badge {
+  font-weight: bold;
+}
+
+.popup-list.recent-bold, .popup-list .recent-bold {
+  font-weight: bold;
+}
+
+#news-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  background: var(--sl-color-primary-600);
+  color: #fff;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 2px 16px 0 #0003;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  min-width: 180px;
+  min-height: 36px;
+  max-width: 90vw;
+  transition: all 0.7s cubic-bezier(0.4,0,0.2,1);
+  opacity: 0.85;
+}
+#news-bar.news-loading {
+  animation: glow-breath 2.2s ease-in-out infinite;
+  background: var(--sl-color-primary-500);
+}
+@keyframes glow-breath {
+  0%, 100% { 
+    box-shadow: 0 0 0px 0px rgba(255,255,255,0.3), 0 0 0px 0px rgba(255,255,255,0.2); 
+  }
+  50% { 
+    box-shadow: 0 0 24px 8px rgba(255,255,255,0.4), 0 0 48px 16px rgba(255,255,255,0.3); 
+  }
+}
+#news-bar .news-text {
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px #fff8, 0 0px 2px #0006;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: inherit;
+  transition: color 0.3s;
+}
+#news-bar .news-close {
+  background: rgba(255,255,255,0.18);
+  border: none;
+  color: #fff;
+  font-size: 1.5em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px #0002;
+  transition: background 0.2s;
+}
+#news-bar .news-close:hover {
+  background: rgba(255,255,255,0.32);
+}
+@media (max-width: 600px) {
+  #news-bar {
+    min-width: 90vw;
+    max-width: 98vw;
+    font-size: 0.9em;
+    padding: 4px 8px 4px 8px;
+  }
+  #news-bar .news-close {
+    width: 28px;
+    height: 28px;
+    font-size: 1.2em;
+  }
+}
+
+#news-bar .news-marquee {
+  display: block;
+  will-change: transform;
+  min-width: 300%;
+  animation: marquee-left 100s linear infinite;
+}
+
+#news-bar .marquee-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#news-bar .marquee-text {
+  white-space: nowrap;
+  animation: marquee-left 100s linear infinite;
+  will-change: transform;
+}
+
+@keyframes marquee-left {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+#news-bar .news-text.news-fadein {
+  opacity: 0;
+  animation: news-fadein 1s cubic-bezier(0.4,0,0.2,1) forwards;
+  transform: none !important;
+}
+
+@keyframes news-fadein {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+#news-bar .news-text.centered {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  white-space: nowrap;
+  text-align: left;
+  opacity: 0;
+  animation: news-fadein 1s cubic-bezier(0.4,0,0.2,1) forwards;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px #fff8, 0 0px 2px #0006;
+}
+
+/* iOS 스타일 토글 스위치 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  vertical-align: middle;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .3s;
+  border-radius: 28px;
+}
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.toggle-switch input:checked + .slider {
+  background-color: #2196f3;
+}
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
+}
+.toggle-switch .slider {
+  box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  border-bottom: 2px solid var(--modal-divider, #e3eaf3);
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 1.05em;
+  font-weight: 600;
+  color: #888;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.tab-button:hover {
+  color: var(--modal-title, #1976d2);
+}
+
+.tab-button.active {
+  color: var(--modal-title, #1976d2);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--modal-title, #1976d2);
+}
+
+/* Tab Content */
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+hr {
+  border: none;
+  border-top: 1px solid var(--modal-divider, #e3eaf3);
+}
+textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--modal-input-border, #ccc);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 1em;
+  resize: vertical;
+}
+
+#news-bar {
+  background: var(--sl-color-primary-600);
+  opacity: 0.85;
+}
+
+#missionary-table-country,
+#missionary-table-presbytery {
+    background: var(--sl-color-neutral-0);
+    border: 1px solid var(--sl-color-neutral-200);
+    box-shadow: var(--sl-shadow-large);
+    backdrop-filter: blur(10px);
+    opacity: 0.9;
+}
+
+#detailPopup {
+    position: fixed;
+    z-index: 2000;
+    min-width: 340px;
+}
+
+.detail-popup-card::part(base) {
+    border: 2px solid var(--sl-color-primary-200);
+}
+
+.detail-popup-card [slot="header"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-popup-card h3 {
+    margin: 0;
+    font-size: var(--sl-font-size-large);
+}
+
+.detail-popup-card .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sl-spacing-medium);
+}
+
+.detail-popup-card .info-item {
+    font-size: var(--sl-font-size-small);
+}
+
+.detail-popup-card .info-item strong {
+    color: var(--sl-color-neutral-500);
+}
+
+/* Shoelace 설정 모달 커스텀 스타일 */
+.settings-dialog::part(body) {
+    overflow-y: auto;
+}
+
+.settings-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-large);
+}
+
+.setting-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-spacing-medium);
+}
+
+.setting-section .section-title {
+    font-size: var(--sl-font-size-medium);
+    font-weight: var(--sl-font-weight-semibold);
+    color: var(--sl-color-neutral-600);
+    margin-bottom: var(--sl-spacing-x-small);
+}
+
+.color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-spacing-small);
+}
+.color-picker-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-spacing-x-small);
+    font-size: var(--sl-font-size-medium);
+}
+
+#news-bar .close-news-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--sl-color-neutral-0);
+}
+
+.country-exit-btn {
+    position: fixed;
+    top: 100px; /* 타이틀 바로 아래 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+.detail-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Shoelace 버튼 호버 효과 개선 */
+sl-icon-button:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+sl-button:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+}
+
+/* 마커 툴팁 스타일 */
+.missionary-tooltip {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.missionary-tooltip::before {
+    border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+.leaflet-popup-content .popup-list:last-child {
+  border-bottom: none;
+}
+
+/* Styles for missionary list with prayer topics */
+.leaflet-popup-content .missionary-entry {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+.leaflet-popup-content .missionary-entry:last-child {
+    border-bottom: none;
+}
+.leaflet-popup-content .missionary-entry .missionary-name {
+    font-weight: bold;
+}
+.leaflet-popup-content .missionary-entry .missionary-prayer-topic {
+    display: none; /* Hide by default */
+    padding: 8px 0 4px 10px;
+    margin-top: 4px;
+    font-size: 0.9em;
+    color: #333;
+    border-left: 2px solid #00509e;
+    background-color: #f8f9fa;
+}
+.leaflet-popup-content .missionary-entry.active .missionary-prayer-topic {
+    display: block; /* Show when active */
+}
+
+.country-table-overlay, .presbytery-table-overlay {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes floatUpAndFade {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.97); }
+    15%  { opacity: 1; transform: translateY(0) scale(1); }
+    85%  { opacity: 1; transform: translateY(-10px) scale(1.02); }
+    100% { opacity: 0; transform: translateY(-18px) scale(1.03); }
+}
+
+.detail-popup-card.fancy::part(base) {
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+.detail-cover {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+}
+.detail-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.detail-cover .cover-overlay {
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 100%;
+    background: linear-gradient(transparent 0%, rgba(0,0,0,0.7) 100%);
+    padding: 32px 20px 12px;
+    color: #fff;
+}
+.detail-cover .cover-overlay h2 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+}
+.detail-cover sl-icon-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.55);
+    border-radius: 50%;
+}
+.detail-popup-body {
+    padding: 18px 22px 10px;
+    font-size: 0.95rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+}
+.detail-popup-footer {
+    padding: 12px 22px 18px;
+    background: var(--color-surface);
+    text-align: right;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    font-size: 0.9rem;
+}
+.info-grid sl-icon {
+    margin-right: 4px;
+    color: var(--color-primary);
+}
+.missionary-entry .missionary-name { font-weight: 600; }
+
+/* 선교사 이름 툴팁 스타일 (국가별 보기) */
+.missionary-name-tooltip {
+    background: rgba(25, 118, 210, 0.9) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    z-index: 1000 !important;
+}
+
+.missionary-name-tooltip::before {
+    border-top-color: rgba(25, 118, 210, 0.9) !important;
+}
+
+/* 마커 클러스터 커스텀 스타일 */
+.marker-cluster-small {
+    background-color: rgba(181, 226, 140, 0.8);
+}
+.marker-cluster-small div {
+    background-color: rgba(110, 204, 57, 0.8);
+}
+
+.marker-cluster-medium {
+    background-color: rgba(241, 211, 87, 0.8);
+}
+.marker-cluster-medium div {
+    background-color: rgba(240, 194, 12, 0.8);
+}
+
+.marker-cluster-large {
+    background-color: rgba(253, 156, 115, 0.8);
+}
+.marker-cluster-large div {
+    background-color: rgba(241, 128, 23, 0.8);
+} 
