@@ -81,17 +81,94 @@ document.addEventListener('DOMContentLoaded', function() {
         window.fetchNewsFromSheet?.();
     });
 
-    // 테이블 토글
-    ['country-table-toggle', 'presbytery-table-toggle'].forEach(id => {
-        const toggle = document.getElementById(id);
-        const tableId = id.replace('-toggle', '');
-        toggle.checked = localStorage.getItem(id) !== 'off';
-        toggle.addEventListener('sl-change', () => {
-            localStorage.setItem(id, toggle.checked ? 'on' : 'off');
-            document.getElementById(tableId).style.display = toggle.checked ? '' : 'none';
+    // 테이블 토글 (완전히 안전한 방식)
+    const initTableToggles = () => {
+        console.log('setup.js: 테이블 토글 초기화 시작');
+        
+        // 테이블 ID 매핑
+        const tableMapping = [
+            { toggleId: 'country-table-toggle', tableId: 'missionary-table-country' },
+            { toggleId: 'presbytery-table-toggle', tableId: 'missionary-table-presbytery' }
+        ];
+        
+        // 완전히 안전한 테이블 표시/숨김 함수
+        const setTableVisibility = (tableId, visible) => {
+            try {
+                const element = document.getElementById(tableId);
+                if (!element) {
+                    console.warn(`setup.js: 테이블 요소 없음: ${tableId}`);
+                    return false;
+                }
+                
+                // style 객체가 존재하는지 확인
+                if (!element.style) {
+                    console.warn(`setup.js: 테이블 요소에 style 속성 없음: ${tableId}`);
+                    return false;
+                }
+                
+                // display 속성을 안전하게 설정
+                element.style.setProperty('display', visible ? '' : 'none');
+                console.log(`setup.js: 테이블 ${tableId} -> ${visible ? '표시' : '숨김'}`);
+                return true;
+                
+            } catch (error) {
+                console.error(`setup.js: 테이블 ${tableId} 표시 설정 실패:`, error);
+                return false;
+            }
+        };
+        
+        // 각 토글 설정
+        tableMapping.forEach(({ toggleId, tableId }) => {
+            try {
+                const toggle = document.getElementById(toggleId);
+                if (!toggle) {
+                    console.warn(`setup.js: 토글 요소 없음: ${toggleId}`);
+                    return;
+                }
+                
+                // 초기 상태 설정
+                const savedState = localStorage.getItem(toggleId);
+                const isVisible = savedState !== 'off';
+                toggle.checked = isVisible;
+                
+                // 이벤트 리스너
+                toggle.addEventListener('sl-change', (event) => {
+                    const newState = event.target.checked;
+                    localStorage.setItem(toggleId, newState ? 'on' : 'off');
+                    setTableVisibility(tableId, newState);
+                });
+                
+                // 초기 표시 설정
+                setTimeout(() => {
+                    setTableVisibility(tableId, isVisible);
+                }, 100);
+                
+            } catch (error) {
+                console.error(`setup.js: 토글 ${toggleId} 설정 실패:`, error);
+            }
         });
-        document.getElementById(tableId).style.display = toggle.checked ? '' : 'none';
-    });
+        
+        console.log('setup.js: 테이블 토글 초기화 완료');
+    };
+    
+    // DOM 준비 확인 및 초기화
+    const waitForTablesAndInit = () => {
+        const requiredTables = ['missionary-table-country', 'missionary-table-presbytery'];
+        const allExist = requiredTables.every(id => {
+            const element = document.getElementById(id);
+            return element && element.style;
+        });
+        
+        if (allExist) {
+            initTableToggles();
+        } else {
+            console.log('setup.js: 테이블 요소 대기 중...');
+            setTimeout(waitForTablesAndInit, 500);
+        }
+    };
+    
+    // 1초 후 초기화 시작
+    setTimeout(waitForTablesAndInit, 1000);
     
     // 자동재생 모드 설정
     const autoplayGroup = document.getElementById('autoplay-mode-group');
@@ -125,16 +202,34 @@ document.addEventListener('DOMContentLoaded', function() {
     setupInput('news-width-input', 'news-width');
     setupInput('news-height-input', 'news-height');
 
-    // 색상 적용
+    // 색상 적용 (안전하게)
     const applyColors = () => {
-        const textColor = document.getElementById('news-text-color').value;
-        const bgColor = document.getElementById('news-bg-color').value;
-        localStorage.setItem('news-text-color', textColor);
-        localStorage.setItem('news-bg-color', bgColor);
-        document.documentElement.style.setProperty('--news-bar-text', textColor);
-        document.documentElement.style.setProperty('--news-bar-bg', bgColor);
+        try {
+            const textColorEl = document.getElementById('news-text-color');
+            const bgColorEl = document.getElementById('news-bg-color');
+            
+            if (textColorEl && bgColorEl) {
+                const textColor = textColorEl.value;
+                const bgColor = bgColorEl.value;
+                localStorage.setItem('news-text-color', textColor);
+                localStorage.setItem('news-bg-color', bgColor);
+                document.documentElement.style.setProperty('--news-bar-text', textColor);
+                document.documentElement.style.setProperty('--news-bar-bg', bgColor);
+            }
+        } catch (error) {
+            console.error('setup.js: 색상 적용 중 오류:', error);
+        }
     };
-    document.getElementById('news-text-color').addEventListener('sl-change', applyColors);
-    document.getElementById('news-bg-color').addEventListener('sl-change', applyColors);
+    
+    // 색상 이벤트 리스너 추가 (안전하게)
+    const textColorEl = document.getElementById('news-text-color');
+    const bgColorEl = document.getElementById('news-bg-color');
+    
+    if (textColorEl) {
+        textColorEl.addEventListener('sl-change', applyColors);
+    }
+    if (bgColorEl) {
+        bgColorEl.addEventListener('sl-change', applyColors);
+    }
     
 }); 

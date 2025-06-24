@@ -1,0 +1,137 @@
+body.mobile-mode {
+    overflow: hidden;
+    background: #f5f6fa;
+}
+
+#mobile-missionary-swiper {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000000;
+    background: #f5f6fa;
+    display: block;
+}
+
+.swiper {
+    width: 100vw;
+    height: 100vh;
+}
+
+.swiper-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 0 0.5rem;
+    background: #fff;
+}
+
+.missionary-card {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 2rem 1.2rem 1.5rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.missionary-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.missionary-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.missionary-name {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: #222;
+    text-align: center;
+}
+
+.missionary-location {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.missionary-info-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0.7rem 0 1.2rem 0;
+    font-size: 0.98rem;
+    color: #555;
+}
+
+.prayer-btn {
+    background: linear-gradient(145deg, #4caf50, #43a047);
+    border: none;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1.2rem 0 0.7rem 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.13);
+}
+
+.prayer-section {
+    width: 100%;
+    background: #f7f7fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1.2rem;
+    font-size: 1.05rem;
+    color: #333;
+    text-align: left;
+}
+
+.close-mobile-swiper {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: rgba(0,0,0,0.08);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.3rem;
+    color: #333;
+    z-index: 10;
+}
+
+body.mobile-mode #map,
+body.mobile-mode #titleLogo,
+body.mobile-mode #mapGuide,
+body.mobile-mode #missionary-table-country,
+body.mobile-mode #missionary-table-presbytery,
+body.mobile-mode .ui-controls,
+body.mobile-mode #detailPopupContainer,
+body.mobile-mode #detailPopup,
+body.mobile-mode #country-exit-btn,
+body.mobile-mode #presbytery-exit-btn,
+body.mobile-mode #sidebar-panel,
+body.mobile-mode #sidebar-overlay {
+    display: none !important;
+} 

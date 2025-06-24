@@ -6,9 +6,11 @@ const MissionaryMap = {
         isAnimOn: true,
         isByAutoRotate: false,
         fixedCountry: null,
+        activePresbytery: null,
         globalMarkerIndex: 0,
         currentDetailPopup: null, // UIManager가 관리하지만, 상태는 여기서 추적
         autoplayMode: 'fixed', // 'pan' or 'fixed'
+        markerCluster: null,
     },
     map: null,
     globalMarkers: [],
@@ -42,17 +44,36 @@ const MissionaryMap = {
 
     // === 초기화 ===
     init() {
-        this.state.autoplayMode = localStorage.getItem('autoplay-mode') || 'fixed';
-        UIManager.initialize(this, DataManager);
-        this.initMap();
-        this.initEventListeners();
+        console.log('MissionaryMap: init() 시작');
         
-        DataManager.fetchData((err) => {
-            if (!err) {
-                this.renderAll();
-                this.startIntervals();
-            }
-        });
+        try {
+            this.state.autoplayMode = localStorage.getItem('autoplay-mode') || 'fixed';
+            console.log('MissionaryMap: autoplayMode 설정:', this.state.autoplayMode);
+            
+            console.log('MissionaryMap: UIManager 초기화 중...');
+            UIManager.initialize(this, DataManager);
+            
+            console.log('MissionaryMap: 지도 초기화 중...');
+        this.initMap();
+            
+            console.log('MissionaryMap: 이벤트 리스너 초기화 중...');
+        this.initEventListeners();
+            
+            console.log('MissionaryMap: 데이터 로딩 시작...');
+            // 단순한 데이터 로딩
+            DataManager.fetchData((err) => {
+                if (!err) {
+                    console.log('MissionaryMap: 데이터 로딩 완료, 렌더링 시작');
+                    this.renderAll();
+                    this.startIntervals();
+                    console.log('MissionaryMap: 초기화 완전히 완료');
+                } else {
+                    console.error('MissionaryMap: 데이터 로딩 실패:', err);
+                }
+            });
+        } catch (error) {
+            console.error('MissionaryMap: 초기화 중 오류 발생:', error);
+        }
     },
 
     initMap() {
@@ -88,6 +109,10 @@ const MissionaryMap = {
             const countryCell = e.target.closest('.country-click');
             if (countryCell) {
                 e.stopPropagation();
+                // 노회별 모드가 활성화되어 있으면 먼저 종료
+                if (this.state.activePresbytery) {
+                    this.exitPresbyteryMode(true); // 지도 리셋 건너뛰기
+                }
                 this.enterFixedCountryMode(countryCell.dataset.country);
             }
         });
@@ -95,6 +120,10 @@ const MissionaryMap = {
             const presbyteryCell = e.target.closest('.presbytery-click');
             if (presbyteryCell) {
                 e.stopPropagation();
+                // 국가별 모드가 활성화되어 있으면 먼저 종료
+                if (this.state.fixedCountry) {
+                    this.restoreGlobalMode(true); // 지도 리셋 건너뛰기
+                }
                 this.showPresbyteryPopups(presbyteryCell.dataset.presbytery);
             }
         });
@@ -107,6 +136,7 @@ const MissionaryMap = {
         });
         this.map.on('zoomend moveend', () => { if (this.state.fixedCountry) this.repositionFixedPopups(); });
         UIManager.elements.countryExitBtn.addEventListener('click', () => this.restoreGlobalMode());
+        UIManager.elements.presbyteryExitBtn.addEventListener('click', () => this.exitPresbyteryMode());
         UIManager.elements.fullscreenBtn.addEventListener('click', () => document.documentElement.requestFullscreen());
         UIManager.elements.exitFullscreenBtn.addEventListener('click', () => document.exitFullscreen());
         document.addEventListener('fullscreenchange', () => UIManager.toggleFullscreenButtons());
@@ -135,18 +165,11 @@ const MissionaryMap = {
     createMarker(latlng, popupContent) {
         const marker = L.marker(latlng).bindPopup(popupContent);
         marker.addTo(this.map);
-        return marker;
+            return marker;
     },
 
     clearMarkers(type) {
         const markers = type === 'global' ? this.globalMarkers : this.fixedCountryMarkers;
-        
-        // 마커 클러스터 레이어 제거
-        this.map.eachLayer((layer) => {
-            if (layer instanceof L.MarkerClusterGroup) {
-                this.map.removeLayer(layer);
-            }
-        });
         
         // 개별 마커 제거
         markers.forEach(m => {
@@ -199,19 +222,40 @@ const MissionaryMap = {
     },
 
     showPresbyteryPopups(presbytery) {
-        if (this.state.isPaused || !this.state.isAnimOn) this.toggleAnimation();
+        // 전체모드 애니메이션 중지
+        this.stopPrayerTopicRotation();
+        if (this.timers.floating) {
+            clearInterval(this.timers.floating);
+            this.timers.floating = null;
+        }
+        if (this.timers.rotation) {
+            clearInterval(this.timers.rotation);
+            this.timers.rotation = null;
+        }
+        
         this.state.isPaused = true;
+        this.state.activePresbytery = presbytery;
+        
+        // 노회별 보기 종료 버튼 표시
+        UIManager.elements.presbyteryExitBtn.classList.add('visible');
         
         const members = DataManager.getPresbyteryMembers(presbytery);
         if (!members || members.length === 0) {
             this.state.isPaused = false;
+            this.state.activePresbytery = null;
+            UIManager.elements.presbyteryExitBtn.classList.remove('visible');
             return;
         }
 
+        // 사이드바 열기
+        UIManager.openSidebar(`${presbytery} 선교사 목록 (${members.length}명)`, members);
+
         let memberIndex = 0;
         const showNext = () => {
-            if (memberIndex >= members.length || !this.state.isPaused) {
-                this.state.isPaused = false;
+            if (memberIndex >= members.length || !this.state.isPaused || !this.state.activePresbytery) {
+                if (this.state.activePresbytery) {
+                    this.state.isPaused = false;
+                }
                 return;
             }
             const member = members[memberIndex];
@@ -231,7 +275,9 @@ const MissionaryMap = {
         showNext();
 
         setTimeout(() => { 
-            if (this.state.isPaused) this.state.isPaused = false; 
+            if (this.state.isPaused && this.state.activePresbytery) {
+                this.state.isPaused = false;
+            }
         }, members.length * this.constants.PRESBYTERY_FLOAT_DURATION + this.constants.PRESBYTERY_PAUSE_EXTRA);
     },
 
@@ -301,11 +347,16 @@ const MissionaryMap = {
         const countryData = DataManager.getCountryStats()[country];
         if (!countryData) return;
 
+        // 사이드바 열기
+        const missionaries = countryData.names.map(name => DataManager.getMissionaryInfo(name)).filter(Boolean);
+        UIManager.openSidebar(`${country} 선교사 목록 (${missionaries.length}명)`, missionaries);
+
         // 마커 클러스터 그룹 생성 (겹침 방지)
         const markerCluster = L.markerClusterGroup({
             disableClusteringAtZoom: 10, // 줌 레벨 10 이상에서는 클러스터링 해제
             maxClusterRadius: 50, // 클러스터 반경 축소
             spiderfyOnMaxZoom: true,
+            spiderfyDistanceMultiplier: 3, // 벌어질 때 간격을 3배로 늘림
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true
         });
@@ -329,6 +380,7 @@ const MissionaryMap = {
         });
         
         this.map.addLayer(markerCluster);
+        this.state.markerCluster = markerCluster; // 클러스터 그룹을 state에 저장
         this.setMarkers('fixed', fixedMarkers);
 
         // 해당 국가 중심으로 줌 레벨 6으로 확대
@@ -341,7 +393,7 @@ const MissionaryMap = {
             this.map.setZoom(Math.min(this.map.getZoom(), 6));
         }
     },
-    
+
     repositionFixedPopups() {
         if (this.state.currentDetailPopup) {
             const nameEl = this.state.currentDetailPopup.querySelector('.cover-overlay h2');
@@ -356,43 +408,80 @@ const MissionaryMap = {
     },
 
     createFixedMarker(missionary, latlng) {
-        const marker = L.marker(latlng, { title: missionary.name });
+        const icon = L.divIcon({
+            html: `<span>${missionary.name[0]}</span>`,
+            className: 'fixed-country-marker-icon',
+            iconSize: [30, 30]
+        });
+
+        const marker = L.marker(latlng, { icon });
+
+        // 팝업 컨텐츠에 명확한 클래스 추가
+        const popupContent = `
+            <div class="country-popup-content">
+                <strong class="country-popup-name">${missionary.name}</strong>
+                <div class="country-popup-prayer">${missionary.prayer || '기도제목 없음'}</div>
+            </div>`;
+
+        marker.bindPopup(popupContent);
+
         marker.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            this.showDetailPopup(missionary.name, latlng);
+            UIManager.showDetailPopup(missionary.name, e.latlng);
         });
-        
-        // 툴팁 클릭 이벤트 추가 (이름 클릭 시 상세정보 표시)
-        marker.on('tooltipopen', (e) => {
-            const tooltipEl = e.tooltip.getElement();
-            if (tooltipEl) {
-                tooltipEl.addEventListener('click', (clickEvent) => {
-                    clickEvent.stopPropagation();
-                    this.showDetailPopup(missionary.name, latlng);
-                });
-                tooltipEl.style.cursor = 'pointer';
-            }
-        });
-        
-        marker.addTo(this.map);
         return marker;
     },
 
-    restoreGlobalMode() {
+    restoreGlobalMode(skipMapReset = false) {
         this.stopPrayerTopicRotation();
         this.state.fixedCountry = null;
         this.state.isPaused = false;
         this.state.isByAutoRotate = false;
 
         UIManager.closeDetailPopup();
+        UIManager.closeSidebar();
         UIManager.elements.countryExitBtn.classList.remove('visible');
 
+        // 클러스터 마커 그룹 완전히 제거
+        if (this.state.markerCluster) {
+            this.map.removeLayer(this.state.markerCluster);
+            this.state.markerCluster = null;
+        }
+        
         this.clearMarkers('fixed');
         UIManager.renderGlobalMarkers();
 
-        // 부르키나파소 중심으로 줌아웃
-        const bfLatLng = this.constants.LATLNGS['부르키나파소'] || [12.2383, -1.5616];
-        this.map.setView(bfLatLng, 3, { animate: true, duration: 1 });
+        // skipMapReset이 true가 아닐 때만 지도 위치 리셋
+        if (!skipMapReset) {
+            // 부르키나파소 중심으로 줌아웃
+            const bfLatLng = this.constants.LATLNGS['부르키나파소'] || [12.2383, -1.5616];
+            this.map.setView(bfLatLng, 3, { animate: true, duration: 1 });
+        }
+    },
+
+    exitPresbyteryMode(skipMapReset = false) {
+        this.state.activePresbytery = null;
+        this.state.isPaused = false;
+        
+        // 노회별 보기 종료 버튼 숨기기
+        UIManager.elements.presbyteryExitBtn.classList.remove('visible');
+        
+        // 기존 플로팅 요소들 제거
+        document.querySelectorAll('.floating-missionary').forEach(el => el.remove());
+        
+        UIManager.closeDetailPopup();
+        UIManager.closeSidebar();
+        
+        // 전체모드 애니메이션 다시 시작
+        if (!this.state.fixedCountry) {
+            this.startIntervals();
+        }
+        
+        // skipMapReset이 true가 아닐 때만 지도 위치 리셋
+        if (!skipMapReset) {
+            // 부르키나파소 중심으로 줌아웃
+            const bfLatLng = this.constants.LATLNGS['부르키나파소'] || [12.2383, -1.5616];
+            this.map.setView(bfLatLng, 3, { animate: true, duration: 1 });
+        }
     },
 
     toggleAnimation() {
@@ -422,7 +511,11 @@ const MissionaryMap = {
     startPrayerTopicRotation(popup) {
         this.stopPrayerTopicRotation();
 
-        const entryElements = popup.getContent().querySelectorAll('.missionary-entry');
+        // popup의 DOM 요소를 가져오기
+        const popupElement = popup.getElement();
+        if (!popupElement) return;
+        
+        const entryElements = popupElement.querySelectorAll('.missionary-entry');
         if (entryElements.length === 0) return;
 
         let currentIndex = 0;
@@ -443,11 +536,71 @@ const MissionaryMap = {
             clearInterval(this.timers.prayerTopicRotation);
             this.timers.prayerTopicRotation = null;
         }
+    },
+
+    // 선교사에게 포커스하는 메서드
+    focusOnMissionary(missionary, latlng) {
+        // 지도를 해당 위치로 이동 (부드러운 애니메이션)
+        this.map.flyTo(latlng, Math.max(this.map.getZoom(), 8), { 
+            animate: true, 
+            duration: 1.2 
+        });
+
+        // 해당 마커 찾아서 포커스 애니메이션 적용
+        setTimeout(() => {
+            const markers = this.state.fixedCountry ? this.fixedCountryMarkers : this.globalMarkers;
+            
+            // 마커 클러스터 내에서 마커 찾기
+            this.map.eachLayer((layer) => {
+                if (layer instanceof L.MarkerClusterGroup) {
+                    layer.eachLayer((marker) => {
+                        if (marker.options.title === missionary.name || 
+                            (marker.getTooltip() && marker.getTooltip().getContent() === missionary.name)) {
+                            // 마커에 포커스 애니메이션 클래스 추가
+                            const markerElement = marker.getElement();
+                            if (markerElement) {
+                                markerElement.classList.add('marker-focused');
+            setTimeout(() => {
+                                    markerElement.classList.remove('marker-focused');
+                                }, 600);
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 일반 마커에서도 찾기
+            markers.forEach(marker => {
+                if (marker.options.title === missionary.name || 
+                    (marker.getTooltip() && marker.getTooltip().getContent() === missionary.name)) {
+                    const markerElement = marker.getElement();
+                    if (markerElement) {
+                        markerElement.classList.add('marker-focused');
+                        setTimeout(() => {
+                            markerElement.classList.remove('marker-focused');
+                        }, 600);
+                    }
+                }
+            });
+        }, 1000);
     }
 };
 
 window.MissionaryMap = MissionaryMap;
 
-document.addEventListener('DOMContentLoaded', () => {
+// DOM 로딩 상태에 관계없이 안전하게 초기화
+function initializeMissionaryMap() {
+    try {
+        console.log('MissionaryMap 초기화 시작...');
     MissionaryMap.init();
-});
+    } catch (error) {
+        console.error('MissionaryMap 초기화 실패:', error);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMissionaryMap);
+} else {
+    // DOM이 이미 로드된 경우 약간의 지연 후 초기화
+    setTimeout(initializeMissionaryMap, 100);
+}

@@ -5,39 +5,471 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>선교사 기도카드 - 모바일</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=1.0.0">
+  <link rel="stylesheet" href="missionary-map-app/public/css/mobile.css?v=1.0.0">
+  <link rel="stylesheet" href="missionary-map-app/public/css/mobile-detail.css?v=1.0.0">
   <style>
-    body { background: #f5f6fa; margin: 0; font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    body { 
+      background: 
+        linear-gradient(135deg, rgba(125, 80, 149, 0.15), rgba(52, 152, 212, 0.15)),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" fill="%23ffffff" opacity="0.25"><path d="M50,50 L950,50 L950,450 L50,450 Z M100,100 L900,100 L900,400 L100,400 Z M150,150 L850,150 L850,350 L150,350 Z M200,200 L800,200 L800,300 L200,300 Z M250,250 L750,250 L750,250 L250,250 Z M300,300 L700,300 L700,300 L300,300 Z M350,350 L650,350 L650,350 L350,350 Z M400,400 L600,400 L600,400 L400,400 Z M450,450 L550,450 L550,450 L450,450 Z M500,500 L500,500 L500,500 L500,500 Z M550,550 L450,550 L450,550 L550,550 Z M600,600 L400,600 L400,600 L600,600 Z M650,650 L350,650 L350,650 L650,650 Z M700,700 L300,700 L300,700 L700,700 Z M750,750 L250,750 L250,750 L750,750 Z M800,800 L200,800 L200,800 L800,800 Z M850,850 L150,850 L150,850 L850,850 Z M900,900 L100,900 L100,900 L900,900 Z M950,950 L50,950 L50,950 L950,950 Z"/><path d="M50,50 L950,50 M50,100 L950,100 M50,150 L950,150 M50,200 L950,200 M50,250 L950,250 M50,300 L950,300 M50,350 L950,350 M50,400 L950,400 M50,450 L950,450"/><path d="M50,50 L50,450 M100,50 L100,450 M150,50 L150,450 M200,50 L200,450 M250,50 L250,450 M300,50 L300,450 M350,50 L350,450 M400,50 L400,450 M450,50 L450,450 M500,50 L500,450 M550,50 L550,450 M600,50 L600,450 M650,50 L650,450 M700,50 L700,450 M750,50 L750,450 M800,50 L800,450 M850,50 L850,450 M900,50 L900,450 M950,50 L950,450"/><circle cx="120" cy="120" r="8"/><circle cx="280" cy="140" r="6"/><circle cx="450" cy="130" r="10"/><circle cx="620" cy="150" r="7"/><circle cx="780" cy="125" r="9"/><circle cx="920" cy="135" r="5"/><circle cx="150" cy="180" r="7"/><circle cx="320" cy="200" r="8"/><circle cx="480" cy="190" r="6"/><circle cx="650" cy="210" r="9"/><circle cx="820" cy="185" r="7"/><circle cx="950" cy="195" r="8"/><circle cx="180" cy="240" r="6"/><circle cx="350" cy="260" r="9"/><circle cx="520" cy="250" r="7"/><circle cx="680" cy="270" r="8"/><circle cx="850" cy="245" r="6"/><circle cx="980" cy="255" r="7"/><circle cx="200" cy="300" r="8"/><circle cx="370" cy="320" r="7"/><circle cx="540" cy="310" r="9"/><circle cx="710" cy="330" r="6"/><circle cx="880" cy="305" r="8"/><circle cx="100" cy="340" r="7"/><circle cx="270" cy="360" r="6"/><circle cx="440" cy="350" r="8"/><circle cx="610" cy="370" r="9"/><circle cx="780" cy="345" r="7"/><circle cx="950" cy="355" r="6"/><circle cx="120" cy="390" r="8"/><circle cx="290" cy="410" r="7"/><circle cx="460" cy="400" r="6"/><circle cx="630" cy="420" r="8"/><circle cx="800" cy="395" r="9"/><circle cx="970" cy="405" r="7"/></svg>');
+      background-size: cover, 100% 100%;
+      margin: 0; 
+      font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* 상단 고정 헤더 */
+    .mobile-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #7d5095, #3498d4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(125, 80, 149, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      overflow: hidden;
+    }
+
+    .mobile-logo svg {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+
+    .mobile-title {
+      flex: 1;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 1rem;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .mobile-subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 메인 컨테이너 */
+    .mobile-main {
+      padding-top: 80px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 1rem 2rem 1rem;
+    }
+
+    /* 환영 메시지 카드 */
+    .welcome-card {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 24px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 8px 16px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      margin-bottom: 2rem;
+    }
+
+    .welcome-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .welcome-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .welcome-description {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 시작 버튼 */
+    .start-button {
+      background: linear-gradient(135deg, #7d5095, #3498d4);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 8px 24px rgba(125, 80, 149, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .start-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(125, 80, 149, 0.5),
+        0 6px 12px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .start-button:active {
+      transform: translateY(0);
+    }
+
+    /* 통계 카드 */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .stat-card {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #7d5095, #3498d4);
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 스와이퍼 컨테이너 */
     .swiper { width: 100vw; height: 100vh; }
-    .swiper-slide { display: flex; align-items: center; justify-content: center; background: #fff; }
-    .missionary-card { width: 100vw; max-width: 420px; margin: 0 auto; background: #fff; border-radius: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.13); padding: 2.2rem 1.2rem 1.7rem 1.2rem; display: flex; flex-direction: column; align-items: center; }
-    .missionary-avatar { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; margin-bottom: 1.1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.09); }
+    .swiper-slide { display: flex; align-items: center; justify-content: center; background: transparent; }
+    .missionary-card { 
+      width: 100vw; 
+      max-width: 420px; 
+      margin: 0 auto; 
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 22px; 
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      padding: 2.2rem 1.2rem 1.7rem 1.2rem; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .missionary-card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.15),
+        0 12px 24px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .missionary-avatar { 
+      width: 96px; 
+      height: 96px; 
+      border-radius: 50%; 
+      overflow: hidden; 
+      margin-bottom: 1.1rem; 
+      box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
     .missionary-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .missionary-name { font-size: 1.45rem; font-weight: 700; margin-bottom: 0.3rem; color: #222; text-align: center; }
-    .missionary-location { font-size: 1.05rem; color: #888; margin-bottom: 1.2rem; text-align: center; }
-    .missionary-info-row { display: flex; justify-content: space-between; width: 100%; margin: 0.7rem 0 1.2rem 0; font-size: 1.01rem; color: #555; }
-    .prayer-btn { background: linear-gradient(145deg, #4caf50, #43a047); border: none; width: 56px; height: 56px; border-radius: 50%; color: white; font-size: 2.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 1.2rem 0 0.7rem 0; box-shadow: 0 4px 10px rgba(0,0,0,0.13); transition: box-shadow 0.2s; }
-    .prayer-btn:active { box-shadow: 0 2px 6px rgba(76,175,80,0.18); }
-    .prayer-section { width: 100%; background: #f7f7fa; border-radius: 13px; padding: 1.1rem; margin-top: 1.2rem; font-size: 1.09rem; color: #333; text-align: left; }
-    .close-mobile-swiper { position: absolute; top: 18px; right: 18px; background: rgba(0,0,0,0.08); border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 1.3rem; color: #333; z-index: 10; }
+    .missionary-name { 
+      font-size: 1.45rem; 
+      font-weight: 700; 
+      margin-bottom: 0.3rem; 
+      color: rgba(255, 255, 255, 0.95); 
+      text-align: center; 
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .missionary-location { 
+      font-size: 1.05rem; 
+      color: rgba(255, 255, 255, 0.8); 
+      margin-bottom: 1.2rem; 
+      text-align: center; 
+    }
+    .missionary-info-row { 
+      display: flex; 
+      justify-content: space-between; 
+      width: 100%; 
+      margin: 0.7rem 0 1.2rem 0; 
+      font-size: 1.01rem; 
+      color: rgba(255, 255, 255, 0.75); 
+    }
+    .prayer-btn { 
+      background: linear-gradient(145deg, rgba(76, 175, 80, 0.9), rgba(67, 160, 71, 0.9)); 
+      border: none; 
+      width: 56px; 
+      height: 56px; 
+      border-radius: 50%; 
+      color: white; 
+      font-size: 2.1rem; 
+      cursor: pointer; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      margin: 1.2rem 0 0.7rem 0; 
+      box-shadow: 
+        0 8px 24px rgba(76, 175, 80, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease; 
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .prayer-btn:active { 
+      box-shadow: 0 2px 6px rgba(76,175,80,0.18); 
+      transform: scale(0.95);
+    }
+    .prayer-btn.prayed { animation: prayerPulse 0.6s ease-out; }
+    @keyframes prayerPulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .prayer-section { 
+      width: 100%; 
+      background: rgba(76, 175, 80, 0.15);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      border-radius: 13px; 
+      padding: 1.1rem; 
+      margin-top: 1.2rem; 
+      font-size: 1.09rem; 
+      color: rgba(255, 255, 255, 0.85); 
+      text-align: left; 
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .close-mobile-swiper { 
+      position: absolute; 
+      top: 18px; 
+      right: 18px; 
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%; 
+      width: 36px; 
+      height: 36px; 
+      font-size: 1.3rem; 
+      color: rgba(255, 255, 255, 0.9); 
+      z-index: 10; 
+      transition: all 0.3s ease;
+    }
+    .close-mobile-swiper:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
     .swiper-pagination-bullets { bottom: 24px !important; }
+
+    /* 반응형 조정 */
+    @media (max-width: 480px) {
+      .mobile-header {
+        padding: 0.8rem 1rem;
+      }
+      
+      .mobile-title {
+        font-size: 1.1rem;
+      }
+      
+      .mobile-subtitle {
+        font-size: 0.8rem;
+      }
+      
+      .welcome-card {
+        padding: 1.5rem;
+        margin: 0 0.5rem 1.5rem 0.5rem;
+      }
+      
+      .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+        margin: 0 0.5rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="mobile-missionary-swiper"></div>
+  <!-- 상단 고정 헤더 -->
+  <header class="mobile-header">
+    <div class="mobile-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="900.07715" height="900" viewBox="0 0 900.07715 899.99998">
+        <path d="M106.574 1352.267c-186.314 0-337.529-151.2-337.529-337.5 0-186.299 151.215-337.5 337.53-337.5 186.313 0 337.528 151.201 337.528 337.5 0 186.3-151.215 337.5-337.529 337.5z" style="color:#000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-variant-east-asian:normal;font-feature-settings:normal;text-indent:0;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;color-interpolation:sRGB;vector-effect:none;fill:#fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:16.4634;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate;stop-color:#000" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
+        <path d="M-222.626 1022.469c-.059-2.57-.097-5.145-.097-7.73 0-92.023 37.763-175.215 98.617-234.967l196.669 242.697h-295.189ZM-98.946 757.46c55.21-44.16 124.936-70.912 200.883-71.961v307.595l32.465 41.603v21.783z" style="fill:#7d5095;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
+        <path d="M106.574 1344.036c-167.727 0-306.162-125.398-326.675-287.556h354.503V686.622c168.838 14.132 301.47 155.627 301.47 328.118 0 181.865-147.433 329.296-329.298 329.296z" style="fill:#3498d4;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
+      </svg>
+    </div>
+    <div>
+      <div class="mobile-title">한국기독교장로회 선교사</div>
+      <div class="mobile-subtitle">전 세계 선교사들을 위한 기도</div>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="mobile-main" id="mobile-main">
+    <!-- 환영 메시지 -->
+    <div class="welcome-card">
+      <span class="welcome-icon">🙏</span>
+      <h1 class="welcome-title">선교사 기도카드</h1>
+      <p class="welcome-description">
+        전 세계에서 사역하는 선교사들을 만나보고<br>
+        그들을 위해 기도해보세요
+      </p>
+      <button class="start-button" id="start-button">
+        시작하기
+      </button>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="stats-container" id="stats-container">
+      <div class="stat-card">
+        <div class="stat-number" id="total-missionaries">-</div>
+        <div class="stat-label">총 선교사</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="total-countries">-</div>
+        <div class="stat-label">파송 국가</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="total-organizations">-</div>
+        <div class="stat-label">소속 기관</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 스와이퍼 컨테이너 (숨김) -->
+  <div id="mobile-missionary-swiper" style="display: none;"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="js/ui/MobileMissionarySwiper.js?v=1.0.0"></script>
-  <script src="js/dataManager.js?v=1.0.1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="missionary-map-app/public/js/countryBackgrounds.js?v=1.0.0"></script>
+  <script src="missionary-map-app/public/js/ui/MobileMissionarySwiper.js?v=1.0.0"></script>
+  <script src="missionary-map-app/public/js/ui/mobileDetailPopup.js?v=1.0.0"></script>
+  <script src="missionary-map-app/public/js/dataManager.js?v=1.0.1"></script>
   <script>
-    // Swiper 자동 진입 (데이터 준비 후)
-    DataManager.onDataReady(function() {
+    // 페이지 로드 시 데이터 로딩 시작
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('모바일 페이지 로드됨');
+      
+      // 국가별 배경 사진 미리 로드
+      if (window.CountryBackgrounds) {
+        window.CountryBackgrounds.preloadBackgrounds();
+      }
+      
+      // 시작 버튼 이벤트
+      document.getElementById('start-button').addEventListener('click', function() {
+        startMissionarySwiper();
+      });
+      
+      // DataManager 초기화 및 데이터 로딩
+      DataManager.fetchData(function() {
+        console.log('데이터 로딩 완료');
+        
+        // 데이터 준비 완료 후 통계 업데이트
+        DataManager.onDataReady(function() {
+          updateStatistics();
+        });
+      });
+    });
+
+    // 통계 업데이트
+    function updateStatistics() {
+      const missionaries = DataManager.state.missionaries || [];
+      const countries = new Set(missionaries.map(m => m.country).filter(Boolean));
+      const organizations = new Set(missionaries.map(m => m.organization).filter(Boolean));
+      
+      document.getElementById('total-missionaries').textContent = missionaries.length;
+      document.getElementById('total-countries').textContent = countries.size;
+      document.getElementById('total-organizations').textContent = organizations.size;
+    }
+
+    // 선교사 스와이퍼 시작
+    function startMissionarySwiper() {
+      const mainContainer = document.getElementById('mobile-main');
+      const swiperContainer = document.getElementById('mobile-missionary-swiper');
+      
+      // 메인 화면 숨기기
+      mainContainer.style.display = 'none';
+      
+      // 스와이퍼 표시
+      swiperContainer.style.display = 'block';
+      
+      // 선교사 데이터로 스와이퍼 시작
       const missionaries = DataManager.state.missionaries.slice().sort((a, b) => {
         const dateA = new Date(a.lastUpdate || 0);
         const dateB = new Date(b.lastUpdate || 0);
         return dateB - dateA;
       });
+      
+      console.log('선교사 스와이퍼 시작, 선교사 수:', missionaries.length);
       window.showMobileMissionarySwiper(missionaries);
-    });
+    }
   </script>
 </body>
 </html> 
