@@ -439,11 +439,8 @@ const CountryBackgrounds = {
             const background = this.getMissionaryBackground(missionary);
             
             if (background && background.url) {
-                // 배경 이미지 설정
-                cardElement.style.backgroundImage = `
-                    linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4)),
-                    url('${background.url}')
-                `;
+                // 배경 이미지만 설정 (오버레이 제거)
+                cardElement.style.backgroundImage = `url('${background.url}')`;
                 cardElement.style.backgroundSize = 'cover';
                 cardElement.style.backgroundPosition = 'center';
                 cardElement.style.backgroundRepeat = 'no-repeat';

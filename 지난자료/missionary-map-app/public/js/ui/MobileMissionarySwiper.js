@@ -77,6 +77,20 @@
         }
     }
 
+    // 파송년도 추출 함수
+    function getSentYear(m) {
+        if (m.sent_date) {
+            const date = new Date(m.sent_date);
+            if (!isNaN(date.getTime())) {
+                return date.getFullYear();
+            }
+        }
+        if (m.dispatchDate) {
+            return m.dispatchDate;
+        }
+        return '-';
+    }
+
     // 모바일 모드 진입 시 기존 팝업 숨기기 및 모바일 UI 활성화
     function activateMobileSwiper(missionaries) {
         console.log('activateMobileSwiper 호출됨, 선교사 수:', missionaries.length);
@@ -90,14 +104,25 @@
         }
         container.classList.add('active');
 
+        // 모바일 모드 진입 시 기존 타이틀바 숨김
+        const titleLogo = document.getElementById('titleLogo');
+        if (titleLogo) titleLogo.style.display = 'none';
+
         // Swiper 구조 생성
         container.innerHTML = `
-            <button class="close-mobile-swiper">✕</button>
+            <div class="mobile-titlebar">
+                <div class="mobile-titlebar-inner">
+                    <img src="/logo.svg" alt="로고" class="mobile-titlebar-logo" />
+                    <span class="mobile-titlebar-title">한국기독교장로회 국제협력 선교사</span>
+                    <button class="close-mobile-swiper">✕</button>
+                </div>
+            </div>
             <div class="swiper">
                 <div class="swiper-wrapper">
                     ${missionaries.map((m, index) => `
                         <div class="swiper-slide">
                             <div class="missionary-card" data-missionary-index="${index}" data-country="${m.country || ''}">
+                                <div class="glass-overlay"></div>
                                 <div class="missionary-info-header">
                                     <div class="missionary-update-info">
                                         <span class="update-label">최신 소식</span>
@@ -106,10 +131,10 @@
                                 </div>
                                 <div class="missionary-avatar"><img src="${m.image || 'https://via.placeholder.com/90'}" alt="${m.name}"></div>
                                 <div class="missionary-name">${m.name}</div>
-                                <div class="missionary-location">${m.country}${m.city ? ', ' + m.city : ''}</div>
-                                <div class="missionary-info-row">
-                                    <span>파송년도: ${m.dispatchDate || '-'}</span>
-                                    <span>노회: ${m.organization || '-'}</span>
+                                <div class="missionary-location"><span class="emoji">📍</span> ${m.country}${m.city ? ', ' + m.city : ''}</div>
+                                <div class="missionary-info-row vertical">
+                                    <span class="sent-year"><span class="emoji">📅</span> 파송년도: ${getSentYear(m)}</span>
+                                    <span class="organization"><span class="emoji">⛪️</span> 사역지: ${m.organization || '-'}</span>
                                 </div>
                                 <button class="prayer-btn" data-missionary-index="${index}">🙏</button>
                                 <div class="prayer-section">${m.prayer || '기도제목이 없습니다.'}</div>
@@ -118,6 +143,7 @@
                     `).join('')}
                 </div>
             </div>
+            <div class="next-card-indicator">↓</div>
         `;
 
         console.log('Swiper HTML 생성 완료, 초기화 시작');
@@ -127,9 +153,12 @@
             direction: 'vertical',
             slidesPerView: 1,
             spaceBetween: 0,
+            centeredSlides: false,
             mousewheel: true,
             pagination: false,
             allowTouchMove: true,
+            autoHeight: false,
+            height: window.innerHeight
         });
 
         console.log('Swiper 초기화 완료');
@@ -144,6 +173,8 @@
         container.querySelector('.close-mobile-swiper').onclick = function() {
             container.classList.remove('active');
             document.body.classList.remove('mobile-mode');
+            if (titleLogo) titleLogo.style.display = '';
+            location.reload();
         };
     }
 

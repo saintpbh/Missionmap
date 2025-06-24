@@ -9,13 +9,9 @@
   <link rel="stylesheet" href="missionary-map-app/public/css/mobile-detail.css?v=1.0.0">
   <style>
     body { 
-      background: 
-        linear-gradient(135deg, rgba(125, 80, 149, 0.15), rgba(52, 152, 212, 0.15)),
-        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" fill="%23ffffff" opacity="0.25"><path d="M50,50 L950,50 L950,450 L50,450 Z M100,100 L900,100 L900,400 L100,400 Z M150,150 L850,150 L850,350 L150,350 Z M200,200 L800,200 L800,300 L200,300 Z M250,250 L750,250 L750,250 L250,250 Z M300,300 L700,300 L700,300 L300,300 Z M350,350 L650,350 L650,350 L350,350 Z M400,400 L600,400 L600,400 L400,400 Z M450,450 L550,450 L550,450 L450,450 Z M500,500 L500,500 L500,500 L500,500 Z M550,550 L450,550 L450,550 L550,550 Z M600,600 L400,600 L400,600 L600,600 Z M650,650 L350,650 L350,650 L650,650 Z M700,700 L300,700 L300,700 L700,700 Z M750,750 L250,750 L250,750 L750,750 Z M800,800 L200,800 L200,800 L800,800 Z M850,850 L150,850 L150,850 L850,850 Z M900,900 L100,900 L100,900 L900,900 Z M950,950 L50,950 L50,950 L950,950 Z"/><path d="M50,50 L950,50 M50,100 L950,100 M50,150 L950,150 M50,200 L950,200 M50,250 L950,250 M50,300 L950,300 M50,350 L950,350 M50,400 L950,400 M50,450 L950,450"/><path d="M50,50 L50,450 M100,50 L100,450 M150,50 L150,450 M200,50 L200,450 M250,50 L250,450 M300,50 L300,450 M350,50 L350,450 M400,50 L400,450 M450,50 L450,450 M500,50 L500,450 M550,50 L550,450 M600,50 L600,450 M650,50 L650,450 M700,50 L700,450 M750,50 L750,450 M800,50 L800,450 M850,50 L850,450 M900,50 L900,450 M950,50 L950,450"/><circle cx="120" cy="120" r="8"/><circle cx="280" cy="140" r="6"/><circle cx="450" cy="130" r="10"/><circle cx="620" cy="150" r="7"/><circle cx="780" cy="125" r="9"/><circle cx="920" cy="135" r="5"/><circle cx="150" cy="180" r="7"/><circle cx="320" cy="200" r="8"/><circle cx="480" cy="190" r="6"/><circle cx="650" cy="210" r="9"/><circle cx="820" cy="185" r="7"/><circle cx="950" cy="195" r="8"/><circle cx="180" cy="240" r="6"/><circle cx="350" cy="260" r="9"/><circle cx="520" cy="250" r="7"/><circle cx="680" cy="270" r="8"/><circle cx="850" cy="245" r="6"/><circle cx="980" cy="255" r="7"/><circle cx="200" cy="300" r="8"/><circle cx="370" cy="320" r="7"/><circle cx="540" cy="310" r="9"/><circle cx="710" cy="330" r="6"/><circle cx="880" cy="305" r="8"/><circle cx="100" cy="340" r="7"/><circle cx="270" cy="360" r="6"/><circle cx="440" cy="350" r="8"/><circle cx="610" cy="370" r="9"/><circle cx="780" cy="345" r="7"/><circle cx="950" cy="355" r="6"/><circle cx="120" cy="390" r="8"/><circle cx="290" cy="410" r="7"/><circle cx="460" cy="400" r="6"/><circle cx="630" cy="420" r="8"/><circle cx="800" cy="395" r="9"/><circle cx="970" cy="405" r="7"/></svg>');
-      background-size: cover, 100% 100%;
-      margin: 0; 
-      font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      background: url('https://www.svgbackgrounds.com/wp-content/uploads/2021/05/world-map.svg') center center/cover no-repeat;
       min-height: 100vh;
+      font-family: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
       position: relative;
     }
 
@@ -36,24 +32,6 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
 
-    .mobile-logo {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #7d5095, #3498d4);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(125, 80, 149, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      overflow: hidden;
-    }
-
-    .mobile-logo svg {
-      width: 24px;
-      height: 24px;
-      filter: brightness(0) invert(1);
-    }
 
     .mobile-title {
       flex: 1;
@@ -72,13 +50,13 @@
 
     /* 메인 컨테이너 */
     .mobile-main {
-      padding-top: 80px;
-      min-height: 100vh;
+      padding-top: 10px;
+      min-height: 50vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 80px 1rem 2rem 1rem;
+      padding: 120px 1rem 2rem 1rem;
     }
 
     /* 환영 메시지 카드 */
@@ -358,23 +336,22 @@
 <body>
   <!-- 상단 고정 헤더 -->
   <header class="mobile-header">
-    <div class="mobile-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="900.07715" height="900" viewBox="0 0 900.07715 899.99998">
-        <path d="M106.574 1352.267c-186.314 0-337.529-151.2-337.529-337.5 0-186.299 151.215-337.5 337.53-337.5 186.313 0 337.528 151.201 337.528 337.5 0 186.3-151.215 337.5-337.529 337.5z" style="color:#000;font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:medium;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-variant-east-asian:normal;font-feature-settings:normal;text-indent:0;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;color-interpolation:sRGB;vector-effect:none;fill:#fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:16.4634;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate;stop-color:#000" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
-        <path d="M-222.626 1022.469c-.059-2.57-.097-5.145-.097-7.73 0-92.023 37.763-175.215 98.617-234.967l196.669 242.697h-295.189ZM-98.946 757.46c55.21-44.16 124.936-70.912 200.883-71.961v307.595l32.465 41.603v21.783z" style="fill:#7d5095;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
-        <path d="M106.574 1344.036c-167.727 0-306.162-125.398-326.675-287.556h354.503V686.622c168.838 14.132 301.47 155.627 301.47 328.118 0 181.865-147.433 329.296-329.298 329.296z" style="fill:#3498d4;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899" transform="matrix(1.33333 0 0 -1.33333 307.94 1803.023)"/>
-      </svg>
-    </div>
-    <div>
-      <div class="mobile-title">한국기독교장로회 선교사</div>
-      <div class="mobile-subtitle">전 세계 선교사들을 위한 기도</div>
+    <div class="mobile-title" style="display: flex; align-items: center; gap: 5em; font-size: 1.3rem; font-weight: 700;">
+      <span style="display: inline-flex; align-items: center; height: 1.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900.07715 899.99998" style="height: 1.5rem; width: 1.5rem; min-width: 1.5rem; min-height: 1.5rem; vertical-align: middle; margin-right: 0.4em;">
+          <path d="M106.574 1352.267c-186.314 0-337.529-151.2-337.529-337.5 0-186.299 151.215-337.5 337.53-337.5 186.313 0 337.528 151.201 337.528 337.5 0 186.3-151.215 337.5-337.529 337.5z" style="fill:#fff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:16.4634"/>
+          <path d="M-222.626 1022.469c-.059-2.57-.097-5.145-.097-7.73 0-92.023 37.763-175.215 98.617-234.967l196.669 242.697h-295.189ZM-98.946 757.46c55.21-44.16 124.936-70.912 200.883-71.961v307.595l32.465 41.603v21.783z" style="fill:#7d5095;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899"/>
+          <path d="M106.574 1344.036c-167.727 0-306.162-125.398-326.675-287.556h354.503V686.622c168.838 14.132 301.47 155.627 301.47 328.118 0 181.865-147.433 329.296-329.298 329.296z" style="fill:#3498d4;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.31899"/>
+        </svg>
+      </span>
+      한국기독교장로회 국제협력 선교사
     </div>
   </header>
 
   <!-- 메인 컨테이너 -->
   <main class="mobile-main" id="mobile-main">
     <!-- 환영 메시지 -->
-    <div class="welcome-card">
+    <div class="welcome-card" style="margin-top: 1px;">
       <span class="welcome-icon">🙏</span>
       <h1 class="welcome-title">선교사 기도카드</h1>
       <p class="welcome-description">
