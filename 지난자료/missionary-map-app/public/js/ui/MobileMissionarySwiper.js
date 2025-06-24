@@ -5,6 +5,78 @@
         return window.innerWidth <= 600;
     }
 
+    // 최신 소식 날짜 계산
+    function getLatestNewsDate(missionaries) {
+        if (!missionaries || missionaries.length === 0) {
+            return '정보 없음';
+        }
+
+        // lastUpdate 필드가 있는 선교사들 중 가장 최근 날짜 찾기
+        const validDates = missionaries
+            .map(m => m.lastUpdate)
+            .filter(date => date && date !== '')
+            .map(date => new Date(date))
+            .filter(date => !isNaN(date.getTime()));
+
+        if (validDates.length === 0) {
+            return '정보 없음';
+        }
+
+        const latestDate = new Date(Math.max(...validDates));
+        
+        // 한국 시간으로 변환
+        const koreanDate = new Date(latestDate.getTime() + (9 * 60 * 60 * 1000));
+        
+        // 날짜 포맷팅 (예: 2024.01.15)
+        const year = koreanDate.getFullYear();
+        const month = String(koreanDate.getMonth() + 1).padStart(2, '0');
+        const day = String(koreanDate.getDate()).padStart(2, '0');
+        
+        return `${year}.${month}.${day}`;
+    }
+
+    // 개별 선교사 날짜 포맷팅
+    function formatMissionaryDate(lastUpdate) {
+        if (!lastUpdate || lastUpdate === '') {
+            return '정보 없음';
+        }
+
+        try {
+            const date = new Date(lastUpdate);
+            if (isNaN(date.getTime())) {
+                return '정보 없음';
+            }
+
+            // 한국 시간으로 변환
+            const koreanDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+            
+            // 현재 날짜와 비교
+            const now = new Date();
+            const diffTime = now.getTime() - koreanDate.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            // 날짜 포맷팅
+            const year = koreanDate.getFullYear();
+            const month = String(koreanDate.getMonth() + 1).padStart(2, '0');
+            const day = String(koreanDate.getDate()).padStart(2, '0');
+
+            if (diffDays === 0) {
+                return '오늘';
+            } else if (diffDays === 1) {
+                return '어제';
+            } else if (diffDays < 7) {
+                return `${diffDays}일 전`;
+            } else if (diffDays < 30) {
+                const weeks = Math.floor(diffDays / 7);
+                return `${weeks}주 전`;
+            } else {
+                return `${year}.${month}.${day}`;
+            }
+        } catch (error) {
+            return '정보 없음';
+        }
+    }
+
     // 모바일 모드 진입 시 기존 팝업 숨기기 및 모바일 UI 활성화
     function activateMobileSwiper(missionaries) {
         console.log('activateMobileSwiper 호출됨, 선교사 수:', missionaries.length);
@@ -26,6 +98,12 @@
                     ${missionaries.map((m, index) => `
                         <div class="swiper-slide">
                             <div class="missionary-card" data-missionary-index="${index}" data-country="${m.country || ''}">
+                                <div class="missionary-info-header">
+                                    <div class="missionary-update-info">
+                                        <span class="update-label">최신 소식</span>
+                                        <span class="update-date">${formatMissionaryDate(m.lastUpdate)}</span>
+                                    </div>
+                                </div>
                                 <div class="missionary-avatar"><img src="${m.image || 'https://via.placeholder.com/90'}" alt="${m.name}"></div>
                                 <div class="missionary-name">${m.name}</div>
                                 <div class="missionary-location">${m.country}${m.city ? ', ' + m.city : ''}</div>

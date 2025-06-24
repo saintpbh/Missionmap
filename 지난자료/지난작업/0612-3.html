@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국기독교장로회 해외 선교동역자 지도 (최적화+이름카드)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <style>
+        body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+        #map { height: 100vh; width: 100vw; background: #aad3df; }
+        .hidden { display: none !important; }
+        h1.top-title { position: absolute; top: 18px; left: 0; right: 0; text-align: center; color: white; font-size: 2rem; text-shadow: 0 2px 8px rgba(0,0,0,0.6); z-index: 1050; pointer-events: none; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; gap: 14px; }
+        .title-logo { height: 40px; width: auto; vertical-align: middle; cursor: pointer; pointer-events: all; border-radius: 8px; padding: 4px 8px; box-sizing: content-box; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: filter 0.3s; }
+        .title-logo.anim-off { filter: grayscale(1); }
+        .missionary-tables-row { position: absolute; top: 90px; left: 24px; z-index: 1100; display: flex; flex-direction: row; gap: 18px; }
+        .table-overlay { background: rgba(255,255,255,0.88); backdrop-filter: blur(8px); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 18px 20px 12px 20px; min-width: 180px; max-width: 340px; max-height: 70vh; overflow-y: auto; font-size: 14px; border: 1px solid rgba(0,0,0,0.05); }
+        .table-overlay table { width: 100%; border-collapse: collapse; }
+        .table-overlay th, .table-overlay td { padding: 6px 8px; text-align: left; }
+        .table-overlay th { font-weight: 600; color: #0e325c; }
+        .table-row-clickable { cursor: pointer; transition: background-color 0.2s; }
+        .table-row-clickable:hover { background-color: #e9f5ff; }
+        .flag-icon { width: 22px; height: 15px; vertical-align: middle; margin-right: 8px; border-radius: 2px; }
+        .bold { font-weight: 600; }
+        .detail-popup { position: absolute; left: 50%; top: 20%; transform: translate(-50%, 0); background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 3000; width: 320px; }
+        .detail-popup.hidden { display: none; }
+        .detail-popup .close-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #333; font-weight: bold; font-size: 16px; }
+        .detail-popup .popup-img-area { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f6f6f6; border-radius: 8px; margin-bottom: 10px; }
+        .detail-popup .popup-img-area img { width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 8px; background: #eee; display: block; }
+        .fullscreen-btn { position: fixed; bottom: 32px; right: 32px; width: 48px; height: 48px; background: rgba(40,40,40,0.6); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.18); cursor: pointer; z-index: 1200; user-select: none; transition: background 0.2s; }
+        .fullscreen-btn:hover { background: rgba(40,40,40,0.8); }
+        #country-view-controls { position: absolute; top: 90px; right: 24px; z-index: 1100; display: flex; gap: 10px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        #country-view-controls.visible { opacity: 1; pointer-events: all; }
+        .control-btn { width: 44px; height: 44px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: background-color 0.2s, transform 0.2s; }
+        .control-btn:hover { transform: scale(1.1); }
+        #country-return-btn { background-color: #007bff; }
+        #country-global-view-btn { background-color: #6c757d; }
+        .footer-banner { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.6); color: white; padding: 10px; text-align: center; font-size: 13px; z-index: 1200; pointer-events: none; }
+        #loading-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3000; background: rgba(0, 0, 0, 0.7); color: white; padding: 20px 30px; border-radius: 10px; font-size: 1.2rem; }
+        /* 이름카드 스타일 */
+        .floating-missionary-wrapper {
+            position: absolute; z-index: 2000;
+            pointer-events: auto;
+            background: #fffde4;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            padding: 8px 20px;
+            font-weight: bold;
+            color: #00509e;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+            min-width: 90px;
+            text-align: center;
+        }
+        .floating-missionary-wrapper:hover { box-shadow: 0 6px 18px rgba(20,64,168,0.20); color: #d14b00; }
+        @media (max-width: 600px) {
+            .fullscreen-btn { right: 12px; bottom: 50px; width:40px; height:40px; font-size:1.5rem;}
+            .footer-banner { font-size: 10px; padding: 5px; }
+            h1.top-title { font-size: 1.2rem; }
+        }
+        @media (max-width: 480px) {
+            .missionary-tables-row { display: none !important; }
+            #country-view-controls { top: 75px; right: 12px; }
+            .control-btn { width: 40px; height: 40px; font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="loading-indicator">데이터를 불러오는 중...</div>
+    <div id="detailPopup" class="detail-popup hidden"></div>
+    <h1 class="top-title">
+        <img src="logo.svg" alt="로고" class="title-logo" id="titleLogo" title="기장 총회">
+        한국기독교장로회 해외 선교동역자 지도
+    </h1>
+    <div class="missionary-tables-row">
+      <div id="missionary-table-country" class="table-overlay"></div>
+      <div id="missionary-table-presbytery" class="table-overlay"></div>
+    </div>
+    <div id="fullscreenBtn" class="fullscreen-btn" title="전체화면 보기">🖵</div>
+    <div id="exitFullscreenBtn" class="fullscreen-btn hidden" title="전체화면 종료">✖</div>
+    <div id="country-view-controls">
+        <div id="country-return-btn" class="control-btn" title="이전 보기로 돌아가기">↩️</div>
+        <div id="country-global-view-btn" class="control-btn" title="전체 지도에서 보기">🌐</div>
+    </div>
+    <div class="footer-banner">
+      이 지도는 전세계에 흩어져 선교사역을 감당하고 있는 총회파송 해외선교동역자님들의 현황을 시각적으로 보여줍니다.
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const MissionaryMap = {
+            state: {
+                currentMode: 'global',
+                fixedFilter: null,
+                lastView: null,
+                missionaries: [],
+                missionaryInfo: {},
+                countryStats: {},
+                presbyteryMembers: {},
+            },
+            elements: {
+                mapContainer: document.getElementById('map'),
+                loadingIndicator: document.getElementById('loading-indicator'),
+                detailPopup: document.getElementById('detailPopup'),
+                countryTable: document.getElementById('missionary-table-country'),
+                presbyteryTable: document.getElementById('missionary-table-presbytery'),
+                fullscreenBtn: document.getElementById('fullscreenBtn'),
+                exitFullscreenBtn: document.getElementById('exitFullscreenBtn'),
+                countryViewControls: document.getElementById('country-view-controls'),
+                countryReturnBtn: document.getElementById('country-return-btn'),
+                countryGlobalViewBtn: document.getElementById('country-global-view-btn'),
+            },
+            map: null,
+            markerClusterGroup: null,
+            floatingNameCards: [],
+            constants: {
+                DATA_URL: 'https://docs.google.com/spreadsheets/d/1OXDGD7a30n5C--ReXdYRoKqiYNLt9aqY5ffxYN0bZF8/export?format=csv',
+                INITIAL_VIEW: { latlng: [20, 30], zoom: 2 },
+                RETURN_ZOOM: 4,
+                GLOBAL_ZOOM: 2,
+                DETAIL_ZOOM: 6,
+            },
+
+            async init() {
+                this.initMap();
+                this.initEventListeners();
+                try {
+                    const data = await this.fetchData();
+                    this.processData(data);
+                    this.renderTables();
+                    this.renderAllMarkers();
+                } catch (error) {
+                    this.elements.loadingIndicator.textContent = '데이터 로딩에 실패했습니다.';
+                    console.error(error);
+                } finally {
+                    this.elements.loadingIndicator.classList.add('hidden');
+                }
+            },
+            initMap() {
+                this.map = L.map(this.elements.mapContainer, { zoomControl: false }).setView(this.constants.INITIAL_VIEW.latlng, this.constants.INITIAL_VIEW.zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap Contributors' }).addTo(this.map);
+                L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+                this.markerClusterGroup = L.markerClusterGroup({ maxClusterRadius: 60, spiderfyOnMaxZoom: true });
+                this.map.addLayer(this.markerClusterGroup);
+            },
+            initEventListeners() {
+                this.elements.countryTable.addEventListener('click', (e) => {
+                    const target = e.target.closest('.table-row-clickable');
+                    if (target) this.enterFixedViewMode('country', target.dataset.filter);
+                });
+                this.elements.presbyteryTable.addEventListener('click', (e) => {
+                    const target = e.target.closest('.table-row-clickable');
+                    if (target) this.enterFixedViewMode('presbytery', target.dataset.filter);
+                });
+                this.elements.detailPopup.addEventListener('click', (e) => e.target.classList.contains('close-btn') && this.closeDetailPopup());
+                this.elements.countryReturnBtn.addEventListener('click', () => this.restoreGlobalMode(false));
+                this.elements.countryGlobalViewBtn.addEventListener('click', () => this.restoreGlobalMode(true));
+                this.elements.fullscreenBtn.addEventListener('click', () => document.documentElement.requestFullscreen());
+                this.elements.exitFullscreenBtn.addEventListener('click', () => document.exitFullscreen());
+                document.addEventListener('fullscreenchange', () => this.toggleFullscreenButtons());
+
+                // 지도 이동/줌 변경 시 이름카드 재배치
+                this.map?.on('moveend zoomend', () => {
+                    if (this.state.currentMode !== 'global') this.updateFloatingNameCards();
+                });
+            },
+            fetchData() {
+                return new Promise((resolve, reject) => {
+                    Papa.parse(this.constants.DATA_URL, {
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: results => resolve(results.data),
+                        error: err => reject(err)
+                    });
+                });
+            },
+            processData(data) {
+                this.state.missionaries = data
+                    .filter(item => item.name && item.country && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng)))
+                    .map(item => ({...item, lat: parseFloat(item.lat), lng: parseFloat(item.lng) }));
+
+                const countryStats = {};
+                const presbyteryMembers = {};
+
+                this.state.missionaries.forEach(item => {
+                    this.state.missionaryInfo[item.name] = item;
+                    if (!countryStats[item.country]) countryStats[item.country] = { count: 0, latlng: [item.lat, item.lng] };
+                    countryStats[item.country].count++;
+                    if (item.presbytery) {
+                        if (!presbyteryMembers[item.presbytery]) presbyteryMembers[item.presbytery] = [];
+                        presbyteryMembers[item.presbytery].push(item);
+                    }
+                });
+                this.state.countryStats = countryStats;
+                this.state.presbyteryMembers = presbyteryMembers;
+            },
+            renderTables() {
+                this.renderCountryTable();
+                this.renderPresbyteryTable();
+            },
+            renderCountryTable() {
+                const countries = Object.entries(this.state.countryStats).sort((a, b) => a[0].localeCompare(b[0], 'ko'));
+                const tableRows = countries.map(([country, stats]) => `
+                    <tr class="table-row-clickable" data-filter="${country}">
+                        <td><img class="flag-icon" src="https://flagcdn.com/w40/${this.getFlagCode(country)}.png" alt="${country}" loading="lazy"></td>
+                        <td class="bold">${country}</td>
+                        <td style="text-align:right;">${stats.count}</td>
+                    </tr>`).join('');
+                this.elements.countryTable.innerHTML = `<div style="padding-bottom: 8px; font-weight: 600; text-align: center; font-size: 1.1em;">국가별 파송현황</div><table><thead><tr><th colspan="2">국가</th><th style="text-align:right;">인원</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+            },
+            renderPresbyteryTable() {
+                const presbyteries = Object.entries(this.state.presbyteryMembers).sort((a,b) => a[0].localeCompare(b[0], 'ko'));
+                const tableRows = presbyteries.map(([name, members]) => `
+                    <tr class="table-row-clickable" data-filter="${name}">
+                        <td class="bold">${name}</td>
+                        <td style="text-align:right;">${members.length}</td>
+                    </tr>`).join('');
+                this.elements.presbyteryTable.innerHTML = `<div style="padding-bottom: 8px; font-weight: 600; text-align: center; font-size: 1.1em;">노회별 파송현황</div><table><thead><tr><th>노회</th><th style="text-align:right;">인원</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+            },
+            renderAllMarkers() {
+                this.markerClusterGroup.clearLayers();
+                const markers = this.state.missionaries.map(item => this.createMarker(item));
+                this.markerClusterGroup.addLayers(markers);
+            },
+            createMarker(item) {
+                const marker = L.marker([item.lat, item.lng]);
+                marker.on('click', () => this.showDetailPopup(item.name, [item.lat, item.lng]));
+                return marker;
+            },
+
+            // ---------- 이름카드 국가/노회 상세 뷰 ----------
+            enterFixedViewMode(mode, filter) {
+                this.state.lastView = { latlng: this.map.getCenter(), zoom: this.map.getZoom() };
+                this.state.currentMode = mode;
+                this.state.fixedFilter = filter;
+
+                let filteredMissionaries, targetLatLng;
+
+                if (mode === 'country') {
+                    filteredMissionaries = this.state.missionaries.filter(m => m.country === filter);
+                    targetLatLng = this.state.countryStats[filter]?.latlng;
+                } else { // presbytery
+                    filteredMissionaries = this.state.presbyteryMembers[filter] || [];
+                    if (filteredMissionaries.length > 0) {
+                        targetLatLng = [filteredMissionaries[0].lat, filteredMissionaries[0].lng];
+                    }
+                }
+
+                if (!filteredMissionaries || filteredMissionaries.length === 0) return;
+
+                // 클러스터 마커 숨김, 기존 floating카드 제거
+                this.markerClusterGroup.clearLayers();
+                this.clearFloatingNameCards();
+
+                // 지도 뷰 적절히 이동
+                const bounds = L.latLngBounds(filteredMissionaries.map(m => [m.lat, m.lng]));
+                this.map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+
+                // 이름만 카드 floating
+                this.showFloatingNameCards(filteredMissionaries);
+
+                this.elements.countryViewControls.classList.add('visible');
+            },
+            // 카드 floating (화면 위치 동적계산)
+            showFloatingNameCards(missionaries) {
+                this.clearFloatingNameCards();
+                missionaries.forEach((item, idx) => {
+                    // 여러 명이 같은 좌표일 경우 살짝 y-offset
+                    const sameCoordGroup = missionaries.filter(m => m.lat === item.lat && m.lng === item.lng);
+                    const myIdx = sameCoordGroup.findIndex(m => m.name === item.name);
+                    let yOffset = 0;
+                    if (sameCoordGroup.length > 1) {
+                        yOffset = (myIdx - (sameCoordGroup.length - 1) / 2) * 60;
+                    }
+
+                    const latlng = [item.lat, item.lng];
+                    const point = this.map.latLngToContainerPoint(latlng);
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "floating-missionary-wrapper";
+                    wrapper.style.left = `${point.x - 60}px`;
+                    wrapper.style.top = `${point.y - 28 + yOffset}px`;
+                    wrapper.textContent = item.name;
+                    wrapper.onclick = (e) => {
+                        e.stopPropagation();
+                        this.showDetailPopup(item.name, latlng);
+                    };
+                    this.elements.mapContainer.appendChild(wrapper);
+                    this.floatingNameCards.push(wrapper);
+                });
+            },
+            updateFloatingNameCards() {
+                // 지도 이동/줌에 따라 모든 floating카드 위치 재조정
+                if (!this.floatingNameCards.length) return;
+                const missionaries = (this.state.currentMode === 'country')
+                    ? this.state.missionaries.filter(m => m.country === this.state.fixedFilter)
+                    : this.state.presbyteryMembers[this.state.fixedFilter] || [];
+                this.floatingNameCards.forEach((wrapper, idx) => {
+                    const item = missionaries[idx];
+                    if (!item) return;
+                    const sameCoordGroup = missionaries.filter(m => m.lat === item.lat && m.lng === item.lng);
+                    const myIdx = sameCoordGroup.findIndex(m => m.name === item.name);
+                    let yOffset = 0;
+                    if (sameCoordGroup.length > 1) {
+                        yOffset = (myIdx - (sameCoordGroup.length - 1) / 2) * 60;
+                    }
+                    const latlng = [item.lat, item.lng];
+                    const point = this.map.latLngToContainerPoint(latlng);
+                    wrapper.style.left = `${point.x - 60}px`;
+                    wrapper.style.top = `${point.y - 28 + yOffset}px`;
+                });
+            },
+            clearFloatingNameCards() {
+                this.floatingNameCards.forEach(el => el.remove());
+                this.floatingNameCards = [];
+            },
+
+            // ---------- 글로벌/이전 복귀 ----------
+            restoreGlobalMode(isGlobalZoomOut) {
+                if (this.state.currentMode === 'global') return;
+                const targetView = isGlobalZoomOut
+                    ? { latlng: this.map.getCenter(), zoom: this.constants.GLOBAL_ZOOM }
+                    : this.state.lastView || this.constants.INITIAL_VIEW;
+
+                this.state.currentMode = 'global';
+                this.state.fixedFilter = null;
+                this.renderAllMarkers();
+                this.clearFloatingNameCards();
+                this.map.flyTo(targetView.latlng, targetView.zoom);
+                this.elements.countryViewControls.classList.remove('visible');
+                this.closeDetailPopup();
+            },
+
+            showDetailPopup(name, latlng) {
+                const info = this.state.missionaryInfo[name] || {};
+                const sentYear = info.sent_date ? new Date(info.sent_date).getFullYear() : '정보 없음';
+                const imgSrc = info.image && info.image.trim() ? info.image.trim() : "https://via.placeholder.com/320x180.png?text=No+Photo";
+                this.elements.detailPopup.innerHTML = `
+                    <div class="close-btn">×</div>
+                    <div class="popup-img-area"><img src="${imgSrc}" alt="${name}" loading="lazy" onerror="this.src='https://via.placeholder.com/320x180.png?text=No+Photo';"></div>
+                    <h3 style="margin-top: 10px;">${name}</h3>
+                    <p><strong>파송년도:</strong> ${sentYear}년</p>
+                    <p><strong>소속:</strong> ${info.organization || '정보 없음'}</p>
+                    <p><strong>기도제목:</strong> ${info.prayer || '현지 정착과 건강'}</p>`;
+                this.elements.detailPopup.classList.remove('hidden');
+            },
+            closeDetailPopup() {
+                this.elements.detailPopup.classList.add('hidden');
+            },
+            getFlagCode(country) {
+                const flagMap = { "일본": "jp", "중국": "cn", "대만": "tw", "몽골": "mn", "러시아": "ru", "필리핀": "ph", "태국": "th", "캄보디아": "kh", "라오스": "la", "인도": "in", "인도네시아": "id", "파키스탄": "pk", "동티모르": "tl", "네팔": "np", "말레이시아": "my", "뉴질랜드": "nz", "호주": "au", "이스라엘": "il", "독일": "de", "헝가리": "hu", "불가리아": "bg", "부르키나파소": "bf", "케냐": "ke", "모리타니": "mr", "라이베리아": "lr", "말라위": "mw", "우간다": "ug", "미국": "us", "쿠바": "cu" };
+                return flagMap[country] || 'xx';
+            },
+            toggleFullscreenButtons() {
+                const isFull = !!document.fullscreenElement;
+                this.elements.fullscreenBtn.classList.toggle('hidden', isFull);
+                this.elements.exitFullscreenBtn.classList.toggle('hidden', !isFull);
+                setTimeout(() => this.map.invalidateSize(), 400);
+            }
+        };
+
+        MissionaryMap.init();
+        window.MissionaryMap = MissionaryMap;
+    });
+    </script>
+</body>
+</html>

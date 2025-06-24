@@ -1,0 +1,522 @@
+body { 
+    margin: 0; 
+    font-family: sans-serif; 
+}
+
+#map { 
+    height: 100vh; 
+    width: 100vw; 
+}
+
+.hidden { 
+    display: none !important; 
+}
+
+h1.top-title {
+    position: absolute; 
+    top: 18px; 
+    left: 0; 
+    right: 0;
+    text-align: center; 
+    color: white; 
+    font-size: 2rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    z-index: 1050; 
+    pointer-events: none;
+    margin: 0; 
+    padding: 0; 
+    font-family: inherit;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 14px;
+}
+
+.title-logo {
+    height: 40px; 
+    width: auto; 
+    vertical-align: middle; 
+    pointer-events: auto; 
+    border-radius: 8px;
+    padding: 4px 8px; 
+    box-sizing: content-box; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    border: 3px solid #3896e1; 
+    transition: border 0.3s, background 0.3s;
+    background: #fff;
+    cursor: pointer;
+}
+
+.title-logo.anim-off {
+    border: 3px solid #e54242;
+    background: #fbeaea;
+}
+
+.flag-icon { 
+    width: 20px; 
+    height: 15px; 
+    vertical-align: middle; 
+    margin-right: 5px; 
+}
+
+.popup-list { 
+    margin-top: 4px; 
+    padding: 2px 0; 
+}
+
+.popup-list:hover { 
+    cursor: pointer; 
+    color: blue; 
+    text-decoration: underline; 
+}
+
+.detail-popup {
+    position: absolute; 
+    background: #fff; 
+    border: 1px solid #ccc; 
+    border-radius: 8px;
+    padding: 15px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3); 
+    z-index: 1000;
+    display: none; 
+    width: 320px;
+}
+
+.detail-popup.visible { 
+    display: block; 
+}
+
+.detail-popup h3 { 
+    margin-top: 0; 
+}
+
+.detail-popup .popup-img-area {
+    width: 100%; 
+    height: 180px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    overflow: hidden; 
+    background: #f6f6f6; 
+    border-radius: 8px; 
+    margin-bottom: 10px;
+}
+
+.detail-popup .popup-img-area img {
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    object-position: center; 
+    border-radius: 8px;
+    background: #eee; 
+    display: block;
+}
+
+.detail-popup .close-btn {
+    position: absolute; 
+    top: 10px; 
+    right: 10px; 
+    cursor: pointer;
+    color: #333; 
+    font-weight: bold; 
+    font-size: 16px;
+}
+
+.floating-missionary-wrapper {
+    position: absolute; 
+    z-index: 999; 
+    pointer-events: none;
+}
+
+.floating-missionary-content {
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.95); 
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2); 
+    border: 2px solid #ccc;
+    opacity: 1; 
+    transition: opacity 0.8s;
+}
+
+.floating-missionary-content.anim {
+    opacity: 0;
+    animation: floatFadeInOut 4s both;
+}
+
+@keyframes floatFadeInOut {
+    0%   { opacity: 0; transform: translateY(10px) scale(0.95);}
+    10%  { opacity: 1; transform: translateY(-2px) scale(1);}
+    15%  { opacity: 1; transform: translateY(-5px) scale(1.01);}
+    100% { opacity: 0; transform: translateY(-18px) scale(1.03);}
+}
+
+.floating-missionary-content.recent { 
+    border-color: orange; 
+}
+
+.floating-missionary-content img {
+    width: 24px; 
+    height: 24px; 
+    border-radius: 50%;
+}
+
+.floating-missionary-content .name { 
+    font-weight: bold; 
+    color: #333; 
+}
+
+.floating-missionary-content.recent .name { 
+    color: orange; 
+}
+
+.floating-missionary-content .prayer { 
+    font-size: 13px; 
+    color: #555; 
+}
+
+.presbytery-floating { 
+    opacity: 0; 
+    animation: fadePopup 0.5s forwards; 
+}
+
+.presbytery-floating.hide { 
+    opacity: 0 !important; 
+    transition: opacity 0.8s; 
+}
+
+@keyframes fadePopup {
+    from { opacity: 0; transform: scale(0.92);}
+    to   { opacity: 1; transform: scale(1);}
+}
+
+.fullscreen-btn {
+    position: fixed; 
+    bottom: 32px; 
+    right: 32px; 
+    width: 48px; 
+    height: 48px;
+    background: rgba(40,40,40,0.6); 
+    color: white; 
+    border-radius: 12px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18); 
+    cursor: pointer; 
+    z-index: 1200;
+    user-select: none; 
+    transition: background 0.2s;
+}
+
+.fullscreen-btn:hover { 
+    background: rgba(40,40,40,0.8);
+}
+
+.missionary-tables-row {
+    position: fixed;
+    top: 70px;
+    left: 14px;
+    z-index: 1100;
+    display: flex; 
+    flex-direction: row; 
+    gap: 18px;
+}
+
+.country-table-overlay {
+    background: rgba(255,255,255,0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 18px 20px 12px 20px;
+    min-width: 180px; 
+    max-width: 340px; 
+    max-height: 100vh;
+    overflow-y: auto; 
+    font-size: 10px; 
+    transition: opacity 0.2s;
+    backdrop-filter: blur(5px);
+}
+
+.country-table-overlay table { 
+    width: 100%; 
+    border-collapse: collapse;
+}
+
+.country-table-overlay th, 
+.country-table-overlay td { 
+    padding: 5px 6px; 
+}
+
+.country-table-overlay th { 
+    font-weight: bold; 
+    color: #0e325c;
+}
+
+.country-table-overlay .flag-icon { 
+    width: 22px; 
+    height: 15px; 
+    vertical-align: middle; 
+    margin-right: 5px; 
+}
+
+.country-table-overlay .bold { 
+    font-weight: bold; 
+    color:#003366;
+}
+
+.country-table-overlay .country-click { 
+    cursor:pointer; 
+    text-decoration:underline;
+}
+
+.presbytery-table-overlay {
+    background: rgba(245,250,255,0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 18px 20px 12px 20px;
+    min-width: 180px; 
+    max-width: 340px; 
+    max-height: 100vh;
+    overflow-y: auto; 
+    font-size: 10px; 
+    transition: opacity 0.2s;
+    backdrop-filter: blur(5px);
+}
+
+.presbytery-table-overlay table { 
+    width: 100%; 
+    border-collapse: collapse;
+}
+
+.presbytery-table-overlay th, 
+.presbytery-table-overlay td { 
+    padding: 5px 6px; 
+}
+
+.presbytery-table-overlay th { 
+    font-weight: bold; 
+    color:#00509e;
+}
+
+.presbytery-table-overlay .bold { 
+    font-weight: bold; 
+    color:#00509e;
+}
+
+.presbytery-table-overlay .presbytery-click { 
+    cursor:pointer; 
+    text-decoration:underline; 
+}
+
+.leaflet-legend-box {
+    display: flex; 
+    align-items: center;
+    background: rgba(255,255,255,0.95);
+    border-radius: 7px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    padding: 7px 12px; 
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.legend-orange {
+    display: inline-block; 
+    width: 18px; 
+    height: 18px;
+    border: 2px solid orange; 
+    border-radius: 7px;
+    margin-right: 8px; 
+    background: transparent; 
+    vertical-align: middle;
+}
+
+.footer-banner {
+    position: fixed;
+    left: 0; 
+    right: 0; 
+    bottom: 0;
+    width: 100vw;
+    background: rgba(44, 44, 44, 0.65);
+    color: #fff;
+    font-weight: 400;
+    font-size: 0.7rem;
+    text-align: center;
+    padding: 12px 32px 12px 16px;
+    z-index: 4000;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    letter-spacing: 0.01em;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+
+#country-exit-btn {
+    position: fixed; 
+    top: 16px; 
+    left: 100px; 
+    font-size: 2.2em; 
+    z-index:4000;
+    color: #e54242; 
+    background:rgba(255,255,255,0.7); 
+    border-radius:40px; 
+    width:44px; 
+    height:44px;
+    display:none; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer; 
+    box-shadow:0 2px 8px #bbb;
+    border:2px solid #fbb; 
+    transition: background .15s;
+}
+
+#country-exit-btn.visible { 
+    display: flex; 
+}
+
+#newsletter-overlay {
+    position: fixed; 
+    left: 0; 
+    top: 0; 
+    right: 0; 
+    bottom: 0;
+    background: rgba(0,0,0,0.86);
+    z-index: 9999;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+#newsletter-content {
+    background: #fff; 
+    border-radius: 14px; 
+    max-width: 96vw; 
+    max-height: 92vh;
+    box-shadow: 0 4px 32px #0008;
+    position: relative; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    padding: 2vw;
+}
+
+#newsletter-close-btn {
+    position: absolute; 
+    top: 12px; 
+    right: 18px;
+    background: #fff; 
+    color: #222;
+    border: none; 
+    border-radius: 50%; 
+    width: 38px; 
+    height: 38px;
+    font-size: 1.9em; 
+    cursor: pointer; 
+    z-index: 2;
+    box-shadow: 0 2px 7px #9992;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+#newsletter-close-btn:hover { 
+    background: #ffe4e4;
+}
+
+#newsletter-content iframe, 
+#newsletter-content img, 
+#newsletter-content video {
+    max-width: 90vw; 
+    max-height: 78vh; 
+    border-radius: 12px; 
+    background: #222;
+    display: block;
+}
+
+.prayer-link {
+    color: #156de4; 
+    text-decoration: underline; 
+    cursor: pointer; 
+    font-weight: bold;
+}
+
+/* 미디어 쿼리 */
+@media (max-width: 600px) {
+    h1.top-title { 
+        font-size: 1.1rem; 
+        gap:7px;
+    }
+    .title-logo { 
+        height: 26px; 
+        padding:1px 3px;
+    }
+    .fullscreen-btn { 
+        right: 12px; 
+        bottom: 12px; 
+        width:40px; 
+        height:40px; 
+        font-size:1.5rem;
+    }
+    .footer-banner {
+        font-size: 0.95rem;
+        padding: 10px 10px 10px 10px;
+    }
+}
+
+@media (max-width: 650px) {
+    .missionary-tables-row {
+        flex-direction: column;
+        left: 0; 
+        right: 0;
+        top: unset; 
+        bottom: 65px;
+        width: 100vw;
+        justify-content: center; 
+        align-items: center;
+        gap: 2vw;
+        pointer-events: none;
+    }
+    .country-table-overlay, 
+    .presbytery-table-overlay {
+        pointer-events: all;
+        min-width: 120px; 
+        max-width: 120px; 
+        font-size: 10.5px;
+    }
+    .country-table-overlay .flag-icon, 
+    .presbytery-table-overlay .flag-icon { 
+        width: 11px; 
+        height: 8px; 
+    }
+    .country-table-overlay th, 
+    .presbytery-table-overlay th { 
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .country-table-overlay, 
+    .presbytery-table-overlay {
+        max-width: 200px; 
+        font-size: 12px; 
+        padding: 12px 7px 8px 10px;
+    }
+    .country-table-overlay .flag-icon, 
+    .presbytery-table-overlay .flag-icon { 
+        width: 15px; 
+        height: 11px; 
+    }
+}
+
+@media (max-width: 480px) {
+    .country-table-overlay, 
+    .presbytery-table-overlay { 
+        display: none !important; 
+    }
+} 

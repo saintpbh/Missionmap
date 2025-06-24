@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구글시트 연동 테스트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <h1>구글시트 연동 테스트</h1>
+    <div id="result"></div>
+    
+    <script>
+        const DATA_URL = 'https://docs.google.com/spreadsheets/d/1OXDGD7a30n5C--ReXdYRoKqiYNLt9aqY5ffxYN0bZF8/export?format=csv';
+        
+        Papa.parse(DATA_URL, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                console.log('구글시트 데이터 로드 성공:', results.data);
+                
+                // 일본 선교사 필터링
+                const japanMissionaries = results.data.filter(item => item.country === '일본');
+                console.log('일본 선교사:', japanMissionaries);
+                
+                // 결과 표시
+                document.getElementById('result').innerHTML = `
+                    <h2>전체 데이터: ${results.data.length}개</h2>
+                    <h2>일본 선교사: ${japanMissionaries.length}개</h2>
+                    <pre>${JSON.stringify(japanMissionaries, null, 2)}</pre>
+                `;
+            },
+            error: (err) => {
+                console.error('구글시트 로드 실패:', err);
+                document.getElementById('result').innerHTML = `<p style="color: red;">에러: ${err.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html> 
