@@ -260,13 +260,25 @@ body.mobile-mode #sidebar-overlay {
     z-index: 10001;
     font-size: 2.2rem;
     color: #b3c6ff;
-    opacity: 0.7;
+    opacity: 0.85;
     pointer-events: none;
-    animation: bounceDown 1.6s infinite;
+    animation: globe-glow 1.8s ease-in-out infinite alternate;
+    text-shadow: 0 0 12px #b3c6ff, 0 0 24px #7d5095;
 }
-@keyframes bounceDown {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(12px); }
+
+@keyframes globe-glow {
+    0% {
+        opacity: 0.5;
+        text-shadow: 0 0 4px #b3c6ff, 0 0 8px #7d5095;
+    }
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 16px #b3c6ff, 0 0 32px #7d5095;
+    }
+    100% {
+        opacity: 0.5;
+        text-shadow: 0 0 4px #b3c6ff, 0 0 8px #7d5095;
+    }
 }
 
 .bottom-hint-image {
@@ -290,7 +302,7 @@ body.mobile-mode #sidebar-overlay {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 56px;
+    height: 70px;
     background: rgba(30, 34, 60, 0.32);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -317,8 +329,8 @@ body.mobile-mode #sidebar-overlay {
     margin-right: 0.5rem;
 }
 .mobile-titlebar-title {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.3rem;
+    font-weight: 700;
     color: #fff;
     text-shadow: 0 2px 8px rgba(0,0,0,0.35);
     flex: none;
