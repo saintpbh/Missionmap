@@ -22,18 +22,19 @@
     };
     // 데이터 렌더링
     const tbody = screen.querySelector('#presbytery-stats-tbody');
-    if (window.DataManager) {
-      const stats = window.DataManager.getPresbyteryStats();
-      const members = window.DataManager.state.missionaries;
-      const presbyteries = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'ko'));
-      tbody.innerHTML = presbyteries.map(presbytery => {
-        const missionaryList = members.filter(m => m.presbytery === presbytery);
-        const countrySet = new Set(missionaryList.map(m => m.country).filter(Boolean));
-        return `<tr><td style='width:30%;'>${presbytery}</td><td style='text-align:left;width:20%;'><b>${stats[presbytery]}</b></td><td class='country-cell' style='width:50%;'>${[...countrySet].join(', ')}</td></tr>`;
-      }).join('');
-    } else {
-      tbody.innerHTML = '<tr><td colspan="3">데이터를 불러올 수 없습니다.</td></tr>';
-    }
+    // DataManager가 없거나 데이터가 없으면 캐시 사용
+    const stats = (window.DataManager && window.DataManager.getPresbyteryStats && Object.keys(window.DataManager.getPresbyteryStats()).length > 0)
+      ? window.DataManager.getPresbyteryStats()
+      : (window.cachedPresbyteryStats || {});
+    const members = (window.DataManager && window.DataManager.state && window.DataManager.state.missionaries && window.DataManager.state.missionaries.length > 0)
+      ? window.DataManager.state.missionaries
+      : (window.cachedMissionaries || []);
+    const presbyteries = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'ko'));
+    tbody.innerHTML = presbyteries.map(presbytery => {
+      const missionaryList = members.filter(m => m.presbytery === presbytery);
+      const countrySet = new Set(missionaryList.map(m => m.country).filter(Boolean));
+      return `<tr><td style='width:30%;'>${presbytery}</td><td style='text-align:left;width:20%;'><b>${stats[presbytery]}</b></td><td class='country-cell' style='width:50%;'>${[...countrySet].join(', ')}</td></tr>`;
+    }).join('');
   }
   window.showPresbyteryStatsDetail = showPresbyteryStatsScreen;
 })(); 

@@ -1,10 +1,17 @@
-import { fetchData } from './dataFetcher.js';
-import { isRecent, getLatLng } from './utils.js';
-import { showDetailPopup, closeDetailPopup } from './ui/detailPopup.js';
-import { showNewsletter } from './ui/newsletterPopup.js';
-import { createFloatingElement, animateFloatingElement } from './ui/floatingMissionary.js';
+// missionaryMap.js
+// 주요 함수/객체를 window에 등록하는 방식으로 변환
 
-class MissionaryMap {
+// 의존성 함수는 window.함수명으로 접근
+// 예: window.isRecent(...), window.getLatLng(...)
+
+// 기존 import 구문 제거
+// import { fetchData } from './dataFetcher.js';
+// import { isRecent, getLatLng } from './utils.js';
+// import { showDetailPopup, closeDetailPopup } from './ui/detailPopup.js';
+// import { showNewsletter } from './ui/newsletterPopup.js';
+// import { createFloatingElement, animateFloatingElement } from './ui/floatingMissionary.js';
+
+window.MissionaryMap = class MissionaryMap {
     constructor() {
         this.state = {
             isPaused: false,
@@ -83,34 +90,55 @@ class MissionaryMap {
     }
 
     initEventListeners() {
-        this.elements.titleLogo.addEventListener('click', () => this.toggleAnimation());
-        this.elements.countryTable.addEventListener('click', (e) => {
-            const countryCell = e.target.closest('.country-click');
-            if (countryCell) this.enterFixedCountryMode(countryCell.dataset.country);
-        });
-        this.elements.presbyteryTable.addEventListener('click', (e) => {
-            const presbyteryCell = e.target.closest('.presbytery-click');
-            if (presbyteryCell) this.showPresbyteryPopups(presbyteryCell.dataset.presbytery);
-        });
-        this.elements.detailPopup.addEventListener('click', (e) => {
-            if (e.target.classList.contains('close-btn')) this.closeDetailPopup();
-        });
-        this.map.on('click', () => { if (this.state.fixedCountry) this.restoreGlobalMode(); });
-        this.map.on('zoomend moveend', () => { if (this.state.fixedCountry) this.repositionFixedPopups(); });
-        this.elements.countryExitBtn.addEventListener('click', () => this.restoreGlobalMode());
-        this.elements.fullscreenBtn.addEventListener('click', () => document.documentElement.requestFullscreen());
-        this.elements.exitFullscreenBtn.addEventListener('click', () => document.exitFullscreen());
+        if (this.elements.titleLogo) {
+            this.elements.titleLogo.addEventListener('click', () => this.toggleAnimation());
+        }
+        if (this.elements.countryTable) {
+            this.elements.countryTable.addEventListener('click', (e) => {
+                const countryCell = e.target.closest('.country-click');
+                if (countryCell) this.enterFixedCountryMode(countryCell.dataset.country);
+            });
+        }
+        if (this.elements.presbyteryTable) {
+            this.elements.presbyteryTable.addEventListener('click', (e) => {
+                const presbyteryCell = e.target.closest('.presbytery-click');
+                if (presbyteryCell) this.showPresbyteryPopups(presbyteryCell.dataset.presbytery);
+            });
+        }
+        if (this.elements.detailPopup) {
+            this.elements.detailPopup.addEventListener('click', (e) => {
+                if (e.target.classList.contains('close-btn')) this.closeDetailPopup();
+            });
+        }
+        if (this.map) {
+            this.map.on('click', () => { if (this.state.fixedCountry) this.restoreGlobalMode(); });
+            this.map.on('zoomend moveend', () => { if (this.state.fixedCountry) this.repositionFixedPopups(); });
+        }
+        if (this.elements.countryExitBtn) {
+            this.elements.countryExitBtn.addEventListener('click', () => this.restoreGlobalMode());
+        }
+        if (this.elements.fullscreenBtn) {
+            this.elements.fullscreenBtn.addEventListener('click', () => document.documentElement.requestFullscreen());
+        }
+        if (this.elements.exitFullscreenBtn) {
+            this.elements.exitFullscreenBtn.addEventListener('click', () => document.exitFullscreen());
+        }
         document.addEventListener('fullscreenchange', () => this.toggleFullscreenButtons());
     }
 
     fetchData() {
-        fetchData(this.constants.DATA_URL)
-            .then(data => {
-                this.processData(data);
-                this.renderAll();
-                this.startIntervals();
-            })
-            .catch(err => console.error('데이터 로딩 실패:', err));
+        window.fetchData((err, data) => {
+            if (err) {
+                console.error('데이터 로딩 실패:', err);
+                return;
+            }
+            const missionaries = data.missionaries || [];
+            const news = data.news || [];
+            this.processData(missionaries);
+            this.renderAll();
+            this.startIntervals();
+            // 필요시 news 데이터도 활용 가능
+        });
     }
 
     processData(data) {
@@ -401,5 +429,4 @@ class MissionaryMap {
 }
 
 // 인스턴스 생성 및 전역 객체에 할당
-const missionaryMap = new MissionaryMap();
-window.MissionaryMap = missionaryMap; 
+const missionaryMap = new MissionaryMap(); 

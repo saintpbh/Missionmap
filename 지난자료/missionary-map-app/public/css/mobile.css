@@ -939,4 +939,69 @@ body.mobile-mode #sidebar-overlay {
   color: #f0f0f0;
   line-height: 1.4;
   text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.mobile-prayer-count-info {
+  margin: 12px 0 18px 0;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.35);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  font-size: 1.13em;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: prayerBarBreath 2.8s ease-in-out infinite;
+}
+.mobile-prayer-count-info .prayer-count-number {
+  font-weight: bold;
+  color: #4f46e5;
+  font-size: 1.18em;
+  margin: 0 2px;
+  text-shadow: 0 0 8px #b3bcf5, 0 0 16px #a5b4fc;
+  animation: prayerNumberGlow 1.2s;
+}
+.mobile-prayer-count-info .prayer-icon {
+  font-size: 1.3em;
+  margin-right: 6px;
+  text-shadow: 0 0 6px #fbbf24, 0 0 12px #fde68a;
+}
+
+@keyframes prayerBarBreath {
+  0% {
+    box-shadow: 0 0 12px 4px rgba(255,255,255,0.45), 0 0 0px 0 rgba(255,255,255,0.0);
+  }
+  50% {
+    box-shadow: 0 0 32px 12px rgba(255,255,255,0.85), 0 0 0px 0 rgba(255,255,255,0.0);
+  }
+  100% {
+    box-shadow: 0 0 12px 4px rgba(255,255,255,0.45), 0 0 0px 0 rgba(255,255,255,0.0);
+  }
+}
+@keyframes prayerNumberGlow {
+  0% {
+    text-shadow: 0 0 0px #fff, 0 0 0px #4f46e5;
+  }
+  30% {
+    text-shadow: 0 0 16px #fff, 0 0 32px #4f46e5, 0 0 48px #a5b4fc;
+  }
+  100% {
+    text-shadow: 0 0 8px #b3bcf5, 0 0 16px #a5b4fc;
+  }
+}
+
+@keyframes prayerNumberStun {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.35) rotate(-8deg); text-shadow: 0 0 32px #fff, 0 0 48px #4f46e5; }
+  40% { transform: scale(1.18) rotate(6deg); }
+  60% { transform: scale(1.25) rotate(-4deg); }
+  100% { transform: scale(1); }
+}
+.mobile-prayer-count-info .prayer-count-number.stun {
+  animation: prayerNumberStun 0.7s cubic-bezier(.23,1.12,.62,1.01);
 } 

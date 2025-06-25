@@ -18,25 +18,18 @@ const DataManager = {
 
     fetchData(callback) {
         console.log('DataManager: 데이터 로딩 시작...');
-        Papa.parse(this.DATA_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                console.log('DataManager: 원본 데이터 파싱 완료');
-                this.processData(results.data);
-                this.state.isDataReady = true;
-                
-                console.log('DataManager: 데이터 준비 완료');
-                if (callback) callback();
-                
-                // 데이터 준비 완료 리스너들 실행
-                this.notifyDataReady();
-            },
-            error: (err) => {
+        window.fetchData((err, data) => {
+            if (err) {
                 console.error('데이터 로딩 실패:', err);
                 if (callback) callback(err);
+                return;
             }
+            console.log('DataManager: Firebase 데이터 fetch 완료');
+            this.processData(data.missionaries || []);
+            this.state.isDataReady = true;
+            console.log('DataManager: 데이터 준비 완료');
+            if (callback) callback();
+            this.notifyDataReady();
         });
     },
 
@@ -58,8 +51,11 @@ const DataManager = {
                    item.country.trim() !== '';
         }).map((item, index) => ({
             ...item,
-            _id: `missionary_${index}`, // 고유 ID 추가
-            _searchText: this.buildSearchText(item) // 검색용 텍스트
+            newsletter: item.newsletter || item.NewsLetter, // 별칭 추가
+            sentDate: item.sentDate || item.sent_date,      // 별칭 추가
+            englishName: item.englishName || item.english_name, // 별칭 추가
+            _id: `missionary_${index}`,
+            _searchText: this.buildSearchText(item)
         }));
             
         this.state.missionaries.forEach(item => {

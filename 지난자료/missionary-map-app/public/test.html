@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase 선교사 데이터 테스트</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="js/utils.js"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f0f4fa; margin: 0; padding: 2rem; }
+    h2 { margin-top: 2rem; }
+    table { border-collapse: collapse; margin-bottom: 2rem; width: 100%; max-width: 600px; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+    th { background: #e0e7ef; }
+    .prayer-count { font-size: 1.2em; margin: 1.5rem 0; color: #1565c0; font-weight: bold; }
+    .japan-list { background: #fff; border: 1px solid #ccc; padding: 1rem; max-width: 600px; }
+    .japan-list h3 { margin-top: 0; }
+    .japan-list ul { padding-left: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>Firebase 선교사 데이터 테스트</h1>
+  <div class="prayer-count" id="prayerCount">중보기도자 수: ...</div>
+
+  <h2>국가별 파송현황</h2>
+  <table id="countryTable">
+    <thead><tr><th>국가</th><th>인원</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>노회별 파송현황</h2>
+  <table id="presbyteryTable">
+    <thead><tr><th>노회</th><th>인원</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="japan-list">
+    <h3>일본 선교사 리스트</h3>
+    <ul id="japanList"></ul>
+  </div>
+
+  <script>
+    // Firebase 설정 (실제 프로젝트의 config로 교체)
+    var firebaseConfig = {
+      apiKey: "AIzaSyA2w1QwQwQwQwQwQwQwQwQwQwQwQwQwQw",
+      authDomain: "prokworldmap-default-rtdb.asia-southeast1.firebaseapp.com",
+      databaseURL: "https://prokworldmap-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "prokworldmap-default-rtdb",
+      storageBucket: "prokworldmap-default-rtdb.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcdef123456"
+    };
+    if (!window.firebase.apps?.length) {
+      window.firebase.initializeApp(firebaseConfig);
+    }
+
+    // 중보기도자 수 표시
+    function loadPrayerCount() {
+      const db = window.firebase.database();
+      db.ref('prayerCount').on('value', snap => {
+        const count = snap.val();
+        document.getElementById('prayerCount').textContent = `현재 ${count || 0}명의 중보기도자가 기도하고 있습니다.`;
+      });
+    }
+
+    // 선교사 데이터 표시
+    window.fetchData((err, data) => {
+      if (err) {
+        alert('데이터 로딩 실패: ' + err.message);
+        return;
+      }
+      const missionaries = data.missionaries || [];
+      // 국가별
+      const countryStats = {};
+      missionaries.forEach(m => {
+        if (m.country) {
+          countryStats[m.country] = (countryStats[m.country] || 0) + 1;
+        }
+      });
+      const countryTbody = document.querySelector('#countryTable tbody');
+      countryTbody.innerHTML = Object.entries(countryStats).map(([country, count]) =>
+        `<tr><td>${country}</td><td>${count}</td></tr>`
+      ).join('');
+
+      // 노회별
+      const presbyteryStats = {};
+      missionaries.forEach(m => {
+        if (m.presbytery) {
+          presbyteryStats[m.presbytery] = (presbyteryStats[m.presbytery] || 0) + 1;
+        }
+      });
+      const presbyteryTbody = document.querySelector('#presbyteryTable tbody');
+      presbyteryTbody.innerHTML = Object.entries(presbyteryStats).map(([pres, count]) =>
+        `<tr><td>${pres}</td><td>${count}</td></tr>`
+      ).join('');
+
+      // 일본 선교사 리스트
+      const japanList = missionaries.filter(m => m.country === '일본');
+      const japanUl = document.getElementById('japanList');
+      japanUl.innerHTML = japanList.map(m =>
+        `<li>${m.name} (${m.city || ''}, ${m.organization || ''})</li>`
+      ).join('');
+    });
+
+    loadPrayerCount();
+  </script>
+</body>
+</html> 

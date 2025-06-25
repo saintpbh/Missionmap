@@ -146,6 +146,8 @@
     @media (max-width: 400px) {
       .glass-card { width:98vw; }
     }
+    .clickable { cursor: pointer; transition: background 0.2s; }
+    .clickable:active, .clickable:focus { background: rgba(120,160,255,0.08); outline: none; }
   </style>
 </head>
 <body class="mobile-mode">
@@ -162,14 +164,15 @@
     <!-- 기본 정보 섹션 -->
     <div class="mobile-landing-info">
       <div class="mobile-landing-date" id="current-date">2024년 6월 현재</div>
+      <div id="prayer-count-info" class="mobile-prayer-count-info"></div>
       <div class="mobile-landing-stats">
-        <div class="stat-item">
+        <div class="stat-item clickable" id="stat-item-country" tabindex="0" role="button">
           <div class="stat-label">국가별 파송 현황</div>
-          <div class="stat-content">데이터 로딩 중...</div>
+          <div class="stat-content" id="mobile-country-stats">데이터 로딩 중...</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-item clickable" id="stat-item-presbytery" tabindex="0" role="button">
           <div class="stat-label">노회별 파송 현황</div>
-          <div class="stat-content">데이터 로딩 중...</div>
+          <div class="stat-content" id="mobile-presbytery-stats">데이터 로딩 중...</div>
         </div>
       </div>
     </div>
@@ -326,6 +329,26 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   
+  <!-- Firebase App (modular CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    // 반드시 주요 JS 파일보다 먼저!
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrJIhyTYQ4bTUW4jarFqluD97xKao2kF0",
+      authDomain: "prokworldmap.firebaseapp.com",
+      databaseURL: "https://prokworldmap-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "prokworldmap",
+      storageBucket: "prokworldmap.appspot.com",
+      messagingSenderId: "728381830842",
+      appId: "1:728381830842:web:cfcb810657e1608d91f483",
+      measurementId: "G-SVTPDV602Y"
+    };
+    if (window.firebase && window.firebase.initializeApp) {
+      if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig);
+    }
+  </script>
+  
   <!-- 기본 유틸리티 스크립트 -->
   <script src="js/utils.js"></script>
   
@@ -347,225 +370,97 @@
   
   <!-- 모바일 전용 스크립트 -->
   <script>
-    // 모바일 전용 초기화
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('모바일 페이지 초기화 시작');
-      
-      // 모바일 환경 감지
-      if (window.innerWidth <= 900) {
-        document.body.classList.add('mobile-mode');
-        console.log('모바일 모드 활성화');
+      // 중보기도자 수
+      const prayerCountDiv = document.getElementById('prayer-count-info');
+      if (prayerCountDiv && window.firebase && window.firebase.database) {
+        const db = window.firebase.database();
+        db.ref('prayerCount').on('value', snap => {
+          const count = snap.val();
+          prayerCountDiv.textContent = `현재 ${count || 0}명의 중보기도자가 함께 기도하고 있습니다.`;
+        });
       }
-      
-      // 로딩 인디케이터 숨기기
-      setTimeout(() => {
-        const loading = document.getElementById('mobile-loading');
-        if (loading) {
-          loading.classList.add('hidden');
-          setTimeout(() => {
-            loading.style.display = 'none';
-          }, 500);
+      // 선교사 데이터
+      window.fetchData((err, data) => {
+        if (err) {
+          alert('데이터 로딩 실패: ' + err.message);
+          return;
         }
-      }, 1000);
-      
-      // 모바일 전용 이벤트 리스너들
-      initializeMobileUI();
-      
-      // 국가별/노회별 현황 stat-item 클릭 시 상세 오버레이 표시
-      const statItems = document.querySelectorAll('.mobile-landing-stats .stat-item');
-      if (statItems[0]) {
-        statItems[0].addEventListener('click', function() {
-          if (window.showCountryStatsDetail) window.showCountryStatsDetail();
-        });
-      }
-      if (statItems[1]) {
-        statItems[1].addEventListener('click', function() {
-          if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
-        });
-      }
-    });
-    
-    function initializeMobileUI() {
-      console.log('모바일 UI 초기화 시작');
-      
-      // 모바일 스와이퍼 닫기
-      const closeSwiperBtn = document.getElementById('close-mobile-swiper');
-      const mobileSwiper = document.getElementById('mobile-missionary-swiper');
-      
-      if (closeSwiperBtn && mobileSwiper) {
-        closeSwiperBtn.addEventListener('click', function() {
-          mobileSwiper.style.display = 'none';
-          console.log('모바일 스와이퍼 닫기');
-        });
-      }
-      
-      // 모바일 상세보기 닫기
-      const closeDetailBtn = document.getElementById('mobile-detail-close');
-      const mobileDetailPopup = document.getElementById('mobile-detail-popup');
-      
-      if (closeDetailBtn && mobileDetailPopup) {
-        closeDetailBtn.addEventListener('click', function() {
-          mobileDetailPopup.classList.remove('show');
-          console.log('모바일 상세보기 닫기');
-        });
-      }
-      
-      // 모바일 뉴스바 닫기
-      const closeNewsBtn = document.getElementById('mobile-news-close');
-      const mobileNewsBar = document.getElementById('mobile-news-bar');
-      
-      if (closeNewsBtn && mobileNewsBar) {
-        closeNewsBtn.addEventListener('click', function() {
-          mobileNewsBar.style.display = 'none';
-          console.log('모바일 뉴스바 닫기');
-        });
-      }
-      
-      // 모바일 검색 기능
-      const mobileSearchInput = document.getElementById('mobile-missionary-search');
-      const mobileSearchClear = document.getElementById('mobile-search-clear');
-      
-      if (mobileSearchInput && mobileSearchClear) {
-        mobileSearchClear.addEventListener('click', function() {
-          mobileSearchInput.value = '';
-          mobileSearchInput.focus();
-          console.log('모바일 검색 초기화');
-        });
-      }
-      
-      // 모바일 검색 입력 이벤트
-      if (mobileSearchInput) {
-        mobileSearchInput.addEventListener('input', function() {
-          const query = this.value.trim();
-          if (query.length > 0) {
-            console.log('모바일 검색:', query);
-            // 검색 기능은 globalSearch.js에서 처리됨
+        const missionaries = data.missionaries || [];
+        // 국가별 통계
+        const countrySet = new Set();
+        const countryStats = {};
+        missionaries.forEach(m => {
+          if (m.country) {
+            countrySet.add(m.country);
+            countryStats[m.country] = (countryStats[m.country] || 0) + 1;
           }
         });
-      }
-      
-      console.log('모바일 UI 초기화 완료');
-    }
-    
-    // 페이지 로드 완료 후 추가 초기화
-    window.addEventListener('load', function() {
-      console.log('모바일 페이지 로드 완료');
-      
-      // 모바일 최적화 설정
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(function(err) {
-          console.log('ServiceWorker 등록 실패:', err);
-        });
-      }
-    });
-
-    // 첫화면 → 지도화면 전환
-    document.addEventListener('DOMContentLoaded', function() {
-      const landing = document.getElementById('mobile-landing');
-      const mainApp = document.getElementById('main-app-content');
-      const mainBtn = document.getElementById('landing-main-btn');
-      
-      // 현재 날짜 표시
-      const currentDate = document.getElementById('current-date');
-      if (currentDate) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        currentDate.textContent = `${year}년 ${month}월 현재`;
-      }
-      
-      // 실제 데이터로 통계 업데이트
-      function updateStats() {
-        console.log('통계 업데이트 시작...');
-        
-        if (window.DataManager && window.DataManager.state && window.DataManager.state.isDataReady) {
-          const missionaries = window.DataManager.state.missionaries;
-          const presbyteryStats = window.DataManager.getPresbyteryStats();
-          const countryStats = window.DataManager.getCountryStats();
-          
-          console.log('데이터 확인:', {
-            missionariesCount: missionaries.length,
-            missionaries: missionaries.map(m => m.name),
-            presbyteryStats: presbyteryStats,
-            countryStats: countryStats
+        window.cachedCountryStats = countryStats; // 전역에 저장
+        const countryDiv = document.getElementById('mobile-country-stats');
+        if (countryDiv) {
+          countryDiv.innerHTML = `<b>${countrySet.size}</b>개의 국가에서 <b>${missionaries.length}</b>명의 선교사가 사역하고 있습니다.`;
+          countryDiv.addEventListener('click', function() {
+            if (window.showCountryStatsDetail) window.showCountryStatsDetail();
           });
-          
-          const totalMissionaries = missionaries.length;
-          const totalPresbyteries = Object.keys(presbyteryStats).length;
-          const totalCountries = Object.keys(countryStats).length;
-          
-          // 노회별 파송 현황 업데이트 - 숫자 볼드 처리
-          const presbyteryContent = document.querySelector('.stat-item:first-child .stat-content');
-          if (presbyteryContent) {
-            presbyteryContent.innerHTML = `<b>${totalPresbyteries}</b>개 노회가 총 <b>${totalMissionaries}</b>명의 선교사를 파송하였습니다.`;
-          }
-          
-          // 국가별 파송 현황 업데이트 - 숫자 볼드 처리
-          const countryContent = document.querySelector('.stat-item:last-child .stat-content');
-          if (countryContent) {
-            countryContent.innerHTML = `<b>${totalMissionaries}</b>명의 선교사가 <b>${totalCountries}</b>개국에서 사역중입니다.`;
-          }
-          
-          console.log(`통계 업데이트 완료: ${totalMissionaries}명, ${totalPresbyteries}개 노회, ${totalCountries}개국`);
-        } else {
-          console.log('DataManager가 아직 준비되지 않음');
-          // 로딩 중임을 표시
-          const presbyteryContent = document.querySelector('.stat-item:first-child .stat-content');
-          const countryContent = document.querySelector('.stat-item:last-child .stat-content');
-          
-          if (presbyteryContent) {
-            presbyteryContent.textContent = '데이터 로딩 중...';
-          }
-          if (countryContent) {
-            countryContent.textContent = '데이터 로딩 중...';
-          }
-        }
-      }
-      
-      // DataManager 초기화 및 데이터 로드
-      function initializeDataManager() {
-        if (window.DataManager) {
-          console.log('DataManager 초기화 시작...');
-          
-          // 데이터 로딩 완료 리스너 등록
-          window.DataManager.onDataReady(() => {
-            console.log('DataManager onDataReady 콜백 실행');
-            updateStats();
-          });
-          
-          // 데이터 로드 시작
-          window.DataManager.fetchData((error) => {
-            if (error) {
-              console.error('데이터 로딩 실패:', error);
-            } else {
-              console.log('DataManager fetchData 완료');
-              // fetchData 완료 후에도 한 번 더 업데이트 시도
-              setTimeout(updateStats, 500);
+          countryDiv.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (window.showCountryStatsDetail) window.showCountryStatsDetail();
             }
           });
-        } else {
-          console.log('DataManager가 아직 로드되지 않음, 1초 후 재시도...');
-          setTimeout(initializeDataManager, 1000);
         }
-      }
-      
-      // 페이지 로드 시 즉시 데이터 로드 시작
-      initializeDataManager();
-      
-      // 추가로 3초 후에도 한 번 더 시도 (데이터 로딩이 늦을 경우)
-      setTimeout(() => {
-        if (window.DataManager && window.DataManager.state && window.DataManager.state.isDataReady) {
-          updateStats();
+        // 노회별 통계
+        const presbyterySet = new Set();
+        const presbyteryStats = {};
+        missionaries.forEach(m => {
+          if (m.presbytery) {
+            presbyterySet.add(m.presbytery);
+            presbyteryStats[m.presbytery] = (presbyteryStats[m.presbytery] || 0) + 1;
+          }
+        });
+        window.cachedPresbyteryStats = presbyteryStats; // 전역에 저장
+        const presbyteryDiv = document.getElementById('mobile-presbytery-stats');
+        if (presbyteryDiv) {
+          presbyteryDiv.innerHTML = `<b>${presbyterySet.size}</b>개의 노회에서 <b>${missionaries.length}</b>명의 선교사를 파송하였습니다.`;
+          presbyteryDiv.addEventListener('click', function() {
+            if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+          });
+          presbyteryDiv.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+            }
+          });
         }
-      }, 3000);
-      
-      if (mainBtn) {
-        mainBtn.addEventListener('click', function() {
-          landing.style.display = 'none';
-          mainApp.style.display = '';
+        // 선교사 전체도 캐시
+        window.cachedMissionaries = missionaries;
+      });
+      // 국가별/노회별 통계 박스 클릭 시 상세화면 연결
+      const statCountry = document.getElementById('stat-item-country');
+      if (statCountry) {
+        statCountry.addEventListener('click', function() {
+          if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+        });
+        statCountry.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+          }
         });
       }
-      // 서브 버튼(국가별/노회별/검색)도 필요시 연결 가능
+      const statPresbytery = document.getElementById('stat-item-presbytery');
+      if (statPresbytery) {
+        statPresbytery.addEventListener('click', function() {
+          if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+        });
+        statPresbytery.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+          }
+        });
+      }
     });
   </script>
   <div id="country-stats-screen" class="glass-screen" style="display:none"></div>

@@ -23,24 +23,23 @@
     };
     // 데이터 렌더링
     const tbody = screen.querySelector('#country-stats-tbody');
-    if (window.DataManager) {
-      const stats = window.DataManager.getCountryStats();
-      const countries = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'ko'));
-      // missionaryMap.js의 COUNTRY_FLAGS 우선 참조
-      const flagMap = (window.CountryBackgrounds && window.CountryBackgrounds.COUNTRY_FLAGS) ? window.CountryBackgrounds.COUNTRY_FLAGS : (window.MissionaryMap?.constants?.COUNTRY_FLAGS || {});
-      tbody.innerHTML = countries.map(country => {
-        const flagCode = flagMap[country];
-        let flagImg = '';
-        if (flagCode) {
-          flagImg = `<img src='https://flagcdn.com/w40/${flagCode}.png' alt='' style='width:28px;height:20px;border-radius:3px;'>`;
-        } else {
-          flagImg = `<span style='font-size:1.3em;'>🌐</span>`;
-        }
-        return `<tr><td>${flagImg}</td><td>${country}</td><td style='text-align:right;'><b>${stats[country].count}</b></td></tr>`;
-      }).join('');
-    } else {
-      tbody.innerHTML = '<tr><td colspan="3">데이터를 불러올 수 없습니다.</td></tr>';
-    }
+    // DataManager가 없거나 데이터가 없으면 캐시 사용
+    const stats = (window.DataManager && window.DataManager.getCountryStats && Object.keys(window.DataManager.getCountryStats()).length > 0)
+      ? window.DataManager.getCountryStats()
+      : (window.cachedCountryStats || {});
+    const countries = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'ko'));
+    // missionaryMap.js의 COUNTRY_FLAGS 우선 참조
+    const flagMap = (window.CountryBackgrounds && window.CountryBackgrounds.COUNTRY_FLAGS) ? window.CountryBackgrounds.COUNTRY_FLAGS : (window.MissionaryMap?.constants?.COUNTRY_FLAGS || {});
+    tbody.innerHTML = countries.map(country => {
+      const flagCode = flagMap[country];
+      let flagImg = '';
+      if (flagCode) {
+        flagImg = `<img src='https://flagcdn.com/w40/${flagCode}.png' alt='' style='width:28px;height:20px;border-radius:3px;'>`;
+      } else {
+        flagImg = `<span style='font-size:1.3em;'>🌐</span>`;
+      }
+      return `<tr><td>${flagImg}</td><td>${country}</td><td style='text-align:right;'><b>${stats[country]}</b></td></tr>`;
+    }).join('');
   }
   window.showCountryStatsDetail = showCountryStatsScreen;
 })(); 

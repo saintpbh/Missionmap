@@ -92,7 +92,7 @@ function handlePrayerClick(button, name, location) {
 }
 
 // 메인 상세보기 팝업 함수
-export function showDetailPopup(name, latlng, missionaryInfo, elements) {
+window.showDetailPopup = function(name, latlng, missionaryInfo, elements) {
     const info = missionaryInfo[name] || {};
     const sentDate = info.sent_date ? new Date(info.sent_date) : null;
     const sentYear = sentDate ? sentDate.getFullYear() : '정보 없음';
@@ -251,7 +251,7 @@ function positionPopup(elements) {
 }
 
 // 팝업 닫기 함수
-export function closeDetailPopup(elements) {
+window.closeDetailPopup = function(elements) {
     const popup = elements.detailPopup;
     popup.classList.remove('animate-in');
     popup.classList.add('animate-out');
@@ -263,11 +263,11 @@ export function closeDetailPopup(elements) {
 }
 
 // 설정 변경 함수 (외부에서 호출 가능)
-export function updatePrayerConfig(newConfig) {
+window.updatePrayerConfig = function(newConfig) {
     Object.assign(PRAYER_CONFIG, newConfig);
 }
 
 // 현재 설정 반환 함수
-export function getPrayerConfig() {
+window.getPrayerConfig = function() {
     return { ...PRAYER_CONFIG };
 } 
