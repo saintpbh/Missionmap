@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // DOM 준비 확인 및 초기화
+    let waitCount = 0;
     const waitForTablesAndInit = () => {
         const requiredTables = ['missionary-table-country', 'missionary-table-presbytery'];
         const allExist = requiredTables.every(id => {
@@ -162,8 +163,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (allExist) {
             initTableToggles();
         } else {
-            console.log('setup.js: 테이블 요소 대기 중...');
-            setTimeout(waitForTablesAndInit, 500);
+            waitCount++;
+            if (waitCount <= 5) {
+                console.log('setup.js: 테이블 요소 대기 중... (' + waitCount + '회)');
+                setTimeout(waitForTablesAndInit, 500);
+            } else {
+                console.warn('setup.js: 테이블 요소를 5회 시도했으나 찾지 못해 중단합니다.');
+            }
         }
     };
     

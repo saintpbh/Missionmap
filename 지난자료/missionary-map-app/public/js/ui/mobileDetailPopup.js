@@ -199,26 +199,29 @@
         `;
 
         document.body.appendChild(toast);
-        
-        // 애니메이션 실행
+
+        // 애니메이션으로 표시
         requestAnimationFrame(() => {
             toast.classList.add('show');
         });
 
-        // 자동 제거
+        // 3초 후 자동 제거
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => {
                 if (toast.parentNode) {
                     toast.remove();
                 }
-            }, 400);
+            }, 300);
         }, 3000);
     }
 
-    // 전역 함수로 등록
-    window.showMobileDetailPopup = showMobileDetailPopup;
-    window.closeMobileDetailPopup = closeMobileDetailPopup;
+    // 전역 함수로 노출
+    window.MobileDetailPopup = {
+        show: showMobileDetailPopup,
+        close: closeMobileDetailPopup,
+        showToast: showMobilePrayerToast
+    };
 
-    console.log('모바일 상세보기 모듈 로드 완료');
+    console.log('MobileDetailPopup 모듈 로드 완료');
 })(); 

@@ -48,12 +48,19 @@ const DataManager = {
         this.state.presbyteryStats = {};
         this.state.presbyteryMembers = {};
 
-        this.state.missionaries = data.filter(item => item.name && item.country)
-            .map((item, index) => ({
-                ...item,
-                _id: `missionary_${index}`, // 고유 ID 추가
-                _searchText: this.buildSearchText(item) // 검색용 텍스트
-            }));
+        // 빈 이름 필드를 엄격하게 필터링
+        this.state.missionaries = data.filter(item => {
+            // name이 존재하고, 공백이 아니고, 실제 값이 있는 경우만 포함
+            return item.name && 
+                   item.name.trim() !== '' && 
+                   item.name.trim().length > 0 &&
+                   item.country && 
+                   item.country.trim() !== '';
+        }).map((item, index) => ({
+            ...item,
+            _id: `missionary_${index}`, // 고유 ID 추가
+            _searchText: this.buildSearchText(item) // 검색용 텍스트
+        }));
             
         this.state.missionaries.forEach(item => {
             this.state.missionaryInfo[item.name] = item;
@@ -73,6 +80,7 @@ const DataManager = {
         });
 
         console.log('DataManager: 데이터 처리 완료', this.state.missionaries.length, '명의 선교사');
+        console.log('DataManager: 선교사 목록:', this.state.missionaries.map(m => m.name));
     },
 
     // 검색용 텍스트 생성
@@ -212,4 +220,6 @@ const DataManager = {
             markerMappingsCount: this.state.markerMappings.size
         };
     }
-}; 
+};
+
+window.DataManager = DataManager; 

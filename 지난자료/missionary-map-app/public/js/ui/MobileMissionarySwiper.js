@@ -2,7 +2,7 @@
 (function() {
     // 모바일 감지
     function isMobile() {
-        return window.innerWidth <= 600;
+        return window.innerWidth <= 900;
     }
 
     // 최신 소식 날짜 계산
@@ -112,7 +112,7 @@
         container.innerHTML = `
             <div class="mobile-titlebar">
                 <div class="mobile-titlebar-inner">
-                    <img src="/logo.svg" alt="로고" class="mobile-titlebar-logo" />
+                    <img src="logo.svg" alt="로고" class="mobile-titlebar-logo" />
                     <span class="mobile-titlebar-title">한국기독교장로회 국제협력 선교사</span>
                     <button class="close-mobile-swiper">✕</button>
                 </div>
@@ -143,7 +143,7 @@
                     `).join('')}
                 </div>
             </div>
-            <div class="next-card-indicator">↓</div>
+            <div class="next-card-indicator">🌏</div>
         `;
 
         console.log('Swiper HTML 생성 완료, 초기화 시작');
@@ -158,13 +158,15 @@
             pagination: false,
             allowTouchMove: true,
             autoHeight: false,
-            height: window.innerHeight
+            height: window.innerHeight,
+            on: {
+                init: function() {
+                    console.log('Swiper 초기화 완료');
+                    // 각 카드에 국가별 배경 적용
+                    applyCountryBackgrounds(missionaries);
+                }
+            }
         });
-
-        console.log('Swiper 초기화 완료');
-
-        // 각 카드에 국가별 배경 적용
-        applyCountryBackgrounds(missionaries);
 
         // 이벤트 리스너 설정
         setupMobileSwiperEvents(container, missionaries);
