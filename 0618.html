@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국기독교장로회 해외 선교동역자 지도 (통합 안정화)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #map { height: 100vh; width: 100vw; }
+    .hidden { display: none !important; }
+    h1.top-title {
+      position: absolute; top: 18px; left: 0; right: 0;
+      text-align: center; color: white; font-size: 2rem;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .footer-banner {
+      position: absolute; bottom: 10px; width: 100%; text-align: center;
+      background: rgba(0,0,0,0.6); color: white; font-size: 0.9em; padding: 6px;
+    }
+    /* 뉴스레터 오버레이 */
+    #newsletter-overlay {
+      position: fixed; left: 0; top: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.86);
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #newsletter-content {
+      background: #fff; border-radius: 14px; max-width: 96vw; max-height: 92vh;
+      box-shadow: 0 4px 32px #0008;
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2vw;
+    }
+    #newsletter-close-btn {
+      position: absolute; top: 12px; right: 18px;
+      background: #fff; color: #222;
+      border: none; border-radius: 50%; width: 38px; height: 38px;
+      font-size: 1.9em; cursor: pointer; z-index: 2;
+      box-shadow: 0 2px 7px #9992;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    #newsletter-close-btn:hover { background: #ffe4e4; }
+    #newsletter-content iframe, #newsletter-content img, #newsletter-content video {
+      max-width: 90vw; max-height: 78vh; border-radius: 12px; background: #222;
+      display: block;
+    }
+    .prayer-link {
+      color: #156de4; text-decoration: underline; cursor: pointer; font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <h1 class="top-title">
+    <img src="logo.svg" alt="애니메이션 ON/OFF" class="title-logo" id="titleLogo">
+    한국기독교장로회 해외 선교동역자 지도
+  </h1>
+  <div class="footer-banner">
+    이 지도는 전세계에 흩어져 선교사역을 감당하고 있는 총회파송 해외선교동역자님들의 현황을 시각적으로 보여줍니다.<br>
+    귀한 선교사역을 위해 기도로 함께 하여 주시기를 부탁드립니다.
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const MissionaryMap = {
+        state: { missionaryInfo: {}, isPaused: false },
+        elements: {
+          mapContainer: document.getElementById('map'),
+          detailPopup: document.createElement('div')
+        },
+        map: null,
+
+        init() {
+          this.elements.mapContainer.appendChild(this.elements.detailPopup);
+          this.initMap();
+        },
+
+        initMap() {
+          this.map = L.map('map').setView([20, 0], 2);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(this.map);
+        },
+
+        showNewsletterByDriveId(fileId) {
+          const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          const viewerUrl = `/pdfjs/viewer.html?file=${encodeURIComponent(url)}`;
+
+          document.getElementById('newsletter-overlay')?.remove();
+          const overlay = document.createElement('div');
+          overlay.id = 'newsletter-overlay';
+          overlay.innerHTML = `
+            <div id="newsletter-content">
+              <button id="newsletter-close-btn" title="닫기">✖</button>
+              <iframe src="${viewerUrl}" frameborder="0"></iframe>
+              <div style="font-size:0.95em; color:#777; margin-top:6px;">
+                PDF가 안 보일 경우 <a href="${url}" target="_blank">새 창</a>으로 열어보세요.
+              </div>
+            </div>`;
+
+          document.body.appendChild(overlay);
+          overlay.querySelector('#newsletter-close-btn').onclick = () => overlay.remove();
+          overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+        },
+
+        // 테스트용: 샘플 PDF 열기 버튼 추가
+        injectTestButton() {
+          const btn = document.createElement('button');
+          btn.textContent = '📄 뉴스레터 보기 (테스트)';
+          btn.style = 'position:absolute;top:10px;right:10px;z-index:10000;padding:8px;font-size:1em';
+          btn.onclick = () => {
+            this.showNewsletterByDriveId('1v1yqmwZEwU9nTY7gY6XIxiDqzVLnHglJ');
+          };
+          document.body.appendChild(btn);
+        }
+      };
+
+      MissionaryMap.init();
+      MissionaryMap.injectTestButton();
+      window.MissionaryMap = MissionaryMap;
+    });
+  </script>
+</body>
+</html>
