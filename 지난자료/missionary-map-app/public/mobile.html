@@ -371,15 +371,47 @@
   <!-- 모바일 전용 스크립트 -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 중보기도자 수
+      // 중보기도자 수 - prok-pages와 동일한 방식으로 수정
       const prayerCountDiv = document.getElementById('prayer-count-info');
       if (prayerCountDiv && window.firebase && window.firebase.database) {
         const db = window.firebase.database();
-        db.ref('prayerCount').on('value', snap => {
-          const count = snap.val();
-          prayerCountDiv.textContent = `현재 ${count || 0}명의 중보기도자가 함께 기도하고 있습니다.`;
+        
+        // 사용자 키 생성
+        const userKey = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        console.log('Missionary-app: 사용자 키 생성:', userKey);
+        
+        // 현재 사용자를 prayerUsers에 등록
+        db.ref('prayerUsers').child(userKey).set({
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent,
+          page: window.location.pathname
+        }).then(() => {
+          console.log('Missionary-app: 사용자 등록 완료');
+        }).catch((error) => {
+          console.error('Missionary-app: 사용자 등록 실패:', error);
         });
+        
+        // 실시간 중보기도자 수 감시
+        db.ref('prayerUsers').on('value', (snapshot) => {
+          const count = snapshot.numChildren();
+          console.log('Missionary-app: 중보기도자 수 업데이트:', count, '명');
+          prayerCountDiv.textContent = `현재 ${count}명의 중보기도자가 함께 기도하고 있습니다.`;
+        });
+        
+        // 페이지 언로드 시 사용자 제거
+        window.addEventListener('beforeunload', () => {
+          db.ref('prayerUsers').child(userKey).remove();
+          console.log('Missionary-app: 사용자 제거됨');
+        });
+        
+        // 주기적으로 사용자 상태 갱신 (연결 유지)
+        setInterval(() => {
+          db.ref('prayerUsers').child(userKey).update({
+            timestamp: Date.now()
+          });
+        }, 30000); // 30초마다
       }
+      
       // 선교사 데이터
       window.fetchData((err, data) => {
         if (err) {

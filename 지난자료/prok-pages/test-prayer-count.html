@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>중보기도자 카운트 테스트</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .prayer-count {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #4caf50;
+      text-align: center;
+      margin: 20px 0;
+      padding: 20px;
+      background: #e8f5e8;
+      border-radius: 10px;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.info { background: #d1ecf1; color: #0c5460; }
+    button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #45a049; }
+    .log {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 10px;
+      margin: 10px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🙏 중보기도자 카운트 테스트</h1>
+    
+    <div class="prayer-count">
+      현재 중보기도자: <span id="prayerCount">0</span>명
+    </div>
+    
+    <div id="status" class="status info">Firebase 연결 중...</div>
+    
+    <div>
+      <button onclick="testConnection()">연결 테스트</button>
+      <button onclick="clearLog()">로그 지우기</button>
+      <button onclick="refreshCount()">카운트 새로고침</button>
+    </div>
+    
+    <h3>로그</h3>
+    <div id="log" class="log"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+  
+  <script>
+    // Firebase 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrJIhyTYQ4bTUW4jarFqluD97xKao2kF0",
+      authDomain: "prokworldmap.firebaseapp.com",
+      databaseURL: "https://prokworldmap-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "prokworldmap",
+      storageBucket: "prokworldmap.appspot.com",
+      messagingSenderId: "728381830842",
+      appId: "1:728381830842:web:cfcb810657e1608d91f483",
+      measurementId: "G-SVTPDV602Y"
+    };
+
+    let database;
+    let userKey;
+    let isConnected = false;
+
+    // 로그 함수
+    function log(message) {
+      const logElement = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      logElement.innerHTML += `[${timestamp}] ${message}\n`;
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(message);
+    }
+
+    // 상태 업데이트
+    function updateStatus(message, type = 'info') {
+      const statusElement = document.getElementById('status');
+      statusElement.textContent = message;
+      statusElement.className = `status ${type}`;
+    }
+
+    // Firebase 초기화
+    function initFirebase() {
+      try {
+        if (!window.firebase) {
+          throw new Error('Firebase SDK가 로드되지 않았습니다.');
+        }
+        
+        if (!window.firebase.apps.length) {
+          window.firebase.initializeApp(firebaseConfig);
+        }
+        
+        database = window.firebase.database();
+        log('Firebase 초기화 완료');
+        return true;
+      } catch (error) {
+        log(`Firebase 초기화 실패: ${error.message}`);
+        updateStatus('Firebase 초기화 실패', 'error');
+        return false;
+      }
+    }
+
+    // 사용자 등록
+    function registerUser() {
+      if (!database) {
+        log('데이터베이스가 초기화되지 않았습니다.');
+        return;
+      }
+
+      userKey = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      database.ref('prayerUsers').child(userKey).set({
+        timestamp: Date.now(),
+        userAgent: navigator.userAgent,
+        page: 'test-prayer-count.html'
+      }).then(() => {
+        log(`사용자 등록 완료: ${userKey}`);
+        updateStatus('사용자 등록 완료', 'success');
+      }).catch((error) => {
+        log(`사용자 등록 실패: ${error.message}`);
+        updateStatus('사용자 등록 실패', 'error');
+      });
+    }
+
+    // 중보기도자 수 감시
+    function watchPrayerCount() {
+      if (!database) {
+        log('데이터베이스가 초기화되지 않았습니다.');
+        return;
+      }
+
+      database.ref('prayerUsers').on('value', (snapshot) => {
+        const count = snapshot.numChildren();
+        const users = snapshot.val() || {};
+        
+        document.getElementById('prayerCount').textContent = count;
+        log(`중보기도자 수 업데이트: ${count}명`);
+        
+        if (count > 0) {
+          updateStatus(`실시간 중보기도자 ${count}명`, 'success');
+        } else {
+          updateStatus('현재 중보기도자가 없습니다.', 'info');
+        }
+        
+        // 사용자 목록 로그
+        const userList = Object.keys(users).map(key => ({
+          key: key,
+          timestamp: users[key].timestamp,
+          userAgent: users[key].userAgent,
+          page: users[key].page || 'unknown'
+        }));
+        
+        log(`활성 사용자: ${userList.length}명`);
+        userList.forEach(user => {
+          const timeAgo = Math.floor((Date.now() - user.timestamp) / 1000);
+          log(`  - ${user.key} (${timeAgo}초 전, ${user.page})`);
+        });
+        
+        isConnected = true;
+      }, (error) => {
+        log(`중보기도자 수 감시 실패: ${error.message}`);
+        updateStatus('실시간 감시 실패', 'error');
+        isConnected = false;
+      });
+    }
+
+    // 연결 테스트
+    function testConnection() {
+      log('연결 테스트 시작...');
+      
+      if (!database) {
+        if (!initFirebase()) {
+          return;
+        }
+      }
+      
+      database.ref('.info/connected').on('value', (snapshot) => {
+        const connected = snapshot.val();
+        if (connected) {
+          log('Firebase 연결 성공');
+          updateStatus('Firebase 연결됨', 'success');
+          
+          if (!userKey) {
+            registerUser();
+          }
+          
+          if (!isConnected) {
+            watchPrayerCount();
+          }
+        } else {
+          log('Firebase 연결 끊어짐');
+          updateStatus('Firebase 연결 끊어짐', 'error');
+        }
+      });
+    }
+
+    // 카운트 새로고침
+    function refreshCount() {
+      log('카운트 새로고침...');
+      
+      if (!database) {
+        log('데이터베이스가 초기화되지 않았습니다.');
+        return;
+      }
+      
+      database.ref('prayerUsers').once('value').then((snapshot) => {
+        const count = snapshot.numChildren();
+        document.getElementById('prayerCount').textContent = count;
+        log(`새로고침된 중보기도자 수: ${count}명`);
+        updateStatus(`새로고침 완료: ${count}명`, 'success');
+      }).catch((error) => {
+        log(`새로고침 실패: ${error.message}`);
+        updateStatus('새로고침 실패', 'error');
+      });
+    }
+
+    // 로그 지우기
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+      log('테스트 페이지 로드 완료');
+      
+      // Firebase 초기화
+      if (initFirebase()) {
+        // 사용자 등록
+        registerUser();
+        
+        // 중보기도자 수 감시
+        watchPrayerCount();
+      }
+    });
+
+    // 페이지 언로드 시 사용자 제거
+    window.addEventListener('beforeunload', function() {
+      if (database && userKey) {
+        database.ref('prayerUsers').child(userKey).remove();
+        log('사용자 제거됨');
+      }
+    });
+
+    // 주기적으로 사용자 상태 갱신
+    setInterval(() => {
+      if (database && userKey) {
+        database.ref('prayerUsers').child(userKey).update({
+          timestamp: Date.now()
+        });
+      }
+    }, 30000); // 30초마다
+
+    // 오래된 사용자 정리 (5분 이상 비활성)
+    setInterval(() => {
+      if (database) {
+        database.ref('prayerUsers').once('value').then((snapshot) => {
+          const users = snapshot.val() || {};
+          const now = Date.now();
+          const inactiveThreshold = 5 * 60 * 1000; // 5분
+
+          Object.keys(users).forEach(userKey => {
+            const user = users[userKey];
+            if (now - user.timestamp > inactiveThreshold) {
+              database.ref('prayerUsers').child(userKey).remove();
+              log(`비활성 사용자 제거: ${userKey}`);
+            }
+          });
+        });
+      }
+    }, 60000); // 1분마다
+  </script>
+</body>
+</html> 
