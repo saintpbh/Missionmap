@@ -148,6 +148,96 @@
     }
     .clickable { cursor: pointer; transition: background 0.2s; }
     .clickable:active, .clickable:focus { background: rgba(120,160,255,0.08); outline: none; }
+    .mobile-landing-date {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      font-size: 1.15em;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+      border-radius: 16px;
+      padding: 8px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+    .date-icon {
+      font-size: 1.3em;
+      margin-right: 4px;
+      filter: drop-shadow(0 1px 2px #1976d2aa);
+    }
+    .date-main, .date-sub, .greeting-text {
+    }
+    .date-main {
+      font-size: 1.08em;
+      font-weight: 700;
+      color: #ffe082;
+      text-shadow: 0 1px 2px #1976d2aa;
+    }
+    .date-sub {
+      font-size: 1.08em;
+      color: #e3f2fd;
+      margin-left: 8px;
+    }
+    .weather-info {
+      font-size: 1em;
+      color: #fffde7;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    /* 글래스모피즘 카드 스타일 (파송현황/선교편지 공통) */
+    .stats-card {
+      background: rgba(255,255,255,0.22);
+      border-radius: 18px;
+      margin: 12px 16px;
+      padding: 16px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      text-align: center;
+      backdrop-filter: blur(12px) saturate(1.2);
+      -webkit-backdrop-filter: blur(12px) saturate(1.2);
+      border: 1.5px solid rgba(255,255,255,0.28);
+    }
+    .stats-title {
+      color: #0077c2;
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+    .stats-content {
+      color: #222;
+      font-size: 0.98rem;
+    }
+    .greeting-text {
+      display: block;
+      margin-top: 6px;
+      font-weight: 600;
+      color: #ffe082;
+      text-shadow: 0 1px 2px #1976d2aa;
+      transition: opacity 0.4s, font-size 0.2s;
+      opacity: 1;
+      font-size: 1.08em;
+      min-width: 120px;
+      max-width: 90vw;
+      white-space: nowrap;
+      perspective: 400px;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .greeting-text.flip {
+      animation: flipY 0.7s cubic-bezier(.4,2,.6,1) both;
+    }
+    @keyframes flipY {
+      0% { transform: rotateX(0deg); opacity: 1; }
+      40% { transform: rotateX(90deg); opacity: 0.2; }
+      60% { transform: rotateX(90deg); opacity: 0.2; }
+      100% { transform: rotateX(0deg); opacity: 1; }
+    }
   </style>
 </head>
 <body class="mobile-mode">
@@ -163,7 +253,11 @@
     
     <!-- 기본 정보 섹션 -->
     <div class="mobile-landing-info">
-      <div class="mobile-landing-date" id="current-date">2024년 6월 현재</div>
+      <div class="mobile-landing-date" id="current-date">
+        <span class="date-main"></span>
+        <span class="date-sub"></span>
+        <span id="greeting-text" class="greeting-text"></span>
+      </div>
       <div id="prayer-count-info" class="mobile-prayer-count-info"></div>
       <div class="mobile-landing-stats">
         <div class="stat-item clickable" id="stat-item-country" tabindex="0" role="button">
@@ -173,6 +267,13 @@
         <div class="stat-item clickable" id="stat-item-presbytery" tabindex="0" role="button">
           <div class="stat-label">노회별 파송 현황</div>
           <div class="stat-content" id="mobile-presbytery-stats">데이터 로딩 중...</div>
+        </div>
+          <div class="stat-item clickable" id="stat-item-presbytery" tabindex="0" role="button">
+          <div class="stat-label">선교편지 (최근 3개월)</div>
+          <div class="stats-content" id="mobile-news-stats">
+          현재 <b id="recent-news-count">0</b>개의 새로운 소식이 있습니다.
+        </div>
+      
         </div>
       </div>
     </div>
@@ -324,8 +425,8 @@
   </div>
 
   <!-- 외부 라이브러리 스크립트 -->
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
+  <!-- <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script> -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
   
@@ -357,11 +458,11 @@
   <script src="js/countryBackgrounds.js"></script>
   <script src="js/ui/CountryStatsDetail.js"></script>
   <script src="js/ui/PresbyteryStatsDetail.js"></script>
-  <script src="js/setup.js?v=1.0.2"></script>
+  <!-- <script src="js/setup.js?v=1.0.2"></script> -->
   <script src="js/uiManager.js?v=1.0.2"></script>
-  <script src="js/missionaryMap.js?v=1.0.2"></script>
+  <!-- <script src="js/missionaryMap.js?v=1.0.2"></script> -->
   <script src="js/globalSearch.js?v=1.0.2"></script>
-  <script src="js/news.js?v=1.0.2"></script>
+  <!-- <script src="js/news.js?v=1.0.2"></script> -->
   
   <!-- UI 컴포넌트 스크립트 -->
   <script src="js/ui/detailPopup.js?v=1.0.2"></script>
@@ -395,7 +496,7 @@
         db.ref('prayerUsers').on('value', (snapshot) => {
           const count = snapshot.numChildren();
           console.log('Missionary-app: 중보기도자 수 업데이트:', count, '명');
-          prayerCountDiv.textContent = `현재 ${count}명의 중보기도자가 함께 기도하고 있습니다.`;
+          prayerCountDiv.textContent = `현재 ${count}명의 중보기도자가 함께 기도하고 있습니다`;
         });
         
         // 페이지 언로드 시 사용자 제거
@@ -494,8 +595,217 @@
         });
       }
     });
+
+    // 날짜/시간/날씨 stunning 스타일 적용
+    function getStunningDateTime() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      return {
+        main: `${yyyy}.${mm}.${dd}`,
+        sub: `${hh}:${min}:${ss}`
+      };
+    }
+    function updateStunningDate() {
+      const dateDiv = document.getElementById('current-date');
+      if (!dateDiv) return;
+      const mainSpan = dateDiv.querySelector('.date-main');
+      const subSpan = dateDiv.querySelector('.date-sub');
+      const weatherSpan = dateDiv.querySelector('.weather-info');
+      const {main, sub} = getStunningDateTime();
+      if (mainSpan) mainSpan.textContent = main;
+      if (subSpan) subSpan.textContent = sub;
+      if (weatherSpan && window._weatherText) weatherSpan.innerHTML = window._weatherText;
+    }
+    updateStunningDate();
+    setInterval(updateStunningDate, 1000);
+    // 위치 기반 날씨
+    /*
+    function fetchWeather(lat, lon) {
+      const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY'; // 본인 키로 교체
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=kr`;
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.weather && data.weather[0]) {
+            const icon = data.weather[0].icon;
+            const desc = data.weather[0].description;
+            const temp = Math.round(data.main.temp);
+            window._weatherText = ` <img src="https://openweathermap.org/img/wn/${icon}.png" style="vertical-align:middle;width:22px;"> ${desc} ${temp}°C`;
+            updateStunningDate();
+          }
+        });
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        fetchWeather(pos.coords.latitude, pos.coords.longitude);
+      });
+    }
+    */
+
+    // 최근 3개월 뉴스/편지 개수 계산 (실제 데이터 연동)
+    document.addEventListener('DOMContentLoaded', function() {
+      function countRecentNews(newsArray) {
+        const now = new Date();
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        return newsArray.filter(item => {
+          if (!item.lastUpdate) return false;
+          const date = new Date(item.lastUpdate);
+          return date >= threeMonthsAgo;
+        }).length;
+      }
+      // 실제 데이터: window.cachedNews 또는 DataManager.state.news 등
+      var newsArray = window.cachedNews || (window.DataManager && window.DataManager.state && window.DataManager.state.news) || [];
+      var countElem = document.getElementById('recent-news-count');
+      if (countElem) countElem.textContent = countRecentNews(newsArray);
+    });
+
+    // 최근 3개월 missionaries lastUpdate 기준 소식 개수 계산 (stat-item-presbytery 아래 recent-news-count에 적용)
+    if (window.DataManager && window.DataManager.onDataReady) {
+      window.DataManager.onDataReady(function() {
+        var missionaries = window.DataManager.state.missionaries || [];
+        var now = new Date();
+        var threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        var count = missionaries.filter(m => {
+          if (!m.lastUpdate) return false;
+          var date = new Date(m.lastUpdate);
+          return date >= threeMonthsAgo;
+        }).length;
+        var countElem = document.getElementById('recent-news-count');
+        if (countElem) countElem.textContent = count;
+      });
+    }
+
+    // 시간대별 다국어 인사말
+    const greetingsByTime = {
+      morning: [
+        "좋은 아침입니다!", "Good morning!", "¡Buenos días!", "Bonjour!", "Guten Morgen!", "Buongiorno!", "Bom dia!", "Доброе утро!", "早上好！", "おはようございます！", "सुप्रभात!", "Selamat pagi!", "สวัสดีตอนเช้า!", "God morgen!", "Goedemorgen!", "Dzień dobry!", "Καλημέρα!", "Günaydın!", "בוקר טוב!"
+      ],
+      afternoon: [
+        "좋은 오후입니다!", "Good afternoon!", "¡Buenas tardes!", "Bon après-midi!", "Guten Tag!", "Buon pomeriggio!", "Boa tarde!", "Добрый день!", "下午好！", "こんにちは！", "नमस्कार!", "Selamat sore!", "สวัสดีตอนบ่าย!", "God eftermiddag!", "Goedemiddag!", "Dzień dobry!", "Καλησπέρα!", "Merhaba!", "שלום!"
+      ],
+      evening: [
+        "좋은 저녁입니다!", "Good evening!", "¡Buenas noches!", "Bonsoir!", "Guten Abend!", "Buona sera!", "Boa noite!", "Добрый вечер!", "晚上好！", "こんばんは！", "शुभ संध्या!", "Selamat malam!", "สวัสดีตอนเย็น!", "God aften!", "Goedenavond!", "Dobry wieczór!", "Καλησπέρα!", "İyi akşamlar!", "ערב טוב!"
+      ]
+    };
+    let greetIdx = 0;
+    let greetTimer = null;
+    let lastTouchTime = Date.now();
+    function getTimePeriod() {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'morning';
+      if (hour < 18) return 'afternoon';
+      return 'evening';
+    }
+    function showGreetingAnimated(nextIdx = null) {
+      const period = getTimePeriod();
+      const arr = greetingsByTime[period];
+      const greetElem = document.getElementById('greeting-text');
+      if (!greetElem) return;
+      greetElem.classList.remove('flip');
+      void greetElem.offsetWidth; // reflow for restart animation
+      if (nextIdx !== null) greetIdx = nextIdx;
+      greetElem.classList.add('flip');
+      setTimeout(() => {
+        greetElem.textContent = arr[greetIdx];
+        greetElem.classList.remove('flip');
+        greetIdx = (greetIdx + 1) % arr.length;
+      }, 350);
+    }
+    function autoGreetingLoop() {
+      if (greetTimer) clearInterval(greetTimer);
+      greetTimer = setInterval(() => {
+        if (Date.now() - lastTouchTime >= 10000) {
+          showGreetingAnimated();
+        }
+      }, 10000);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      showGreetingAnimated(0);
+      autoGreetingLoop();
+      const clockIcon = document.getElementById('clock-icon');
+      if (clockIcon) {
+        clockIcon.style.cursor = 'pointer';
+        clockIcon.addEventListener('click', function() {
+          lastTouchTime = Date.now();
+          showGreetingAnimated();
+        });
+        clockIcon.addEventListener('touchstart', function() {
+          lastTouchTime = Date.now();
+          showGreetingAnimated();
+        });
+      }
+      const greetElem = document.getElementById('greeting-text');
+      if (greetElem) {
+        greetElem.style.cursor = 'pointer';
+        greetElem.addEventListener('click', function() {
+          lastTouchTime = Date.now();
+          showGreetingAnimated();
+        });
+        greetElem.addEventListener('touchstart', function() {
+          lastTouchTime = Date.now();
+          showGreetingAnimated();
+        });
+      }
+    });
   </script>
   <div id="country-stats-screen" class="glass-screen" style="display:none"></div>
   <div id="presbytery-stats-screen" class="glass-screen" style="display:none"></div>
+  <!--
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 지도 및 마커 표시 함수 (중복 map 생성 방지)
+    function showMapWithMarkers() {
+      if (window._leafletMap) {
+        if (window._leafletMarkers) {
+          window._leafletMap.removeLayer(window._leafletMarkers);
+        }
+      } else {
+        window._leafletMap = L.map('map', {
+          zoomControl: true,
+          attributionControl: false,
+          dragging: true,
+          tap: false
+        }).setView([20, 100], 2.2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          minZoom: 2,
+        }).addTo(window._leafletMap);
+      }
+      var markers = L.markerClusterGroup();
+      var missionaries = window.cachedMissionaries || [];
+      missionaries.forEach(function(m) {
+        if (m.lat && m.lng) {
+          var marker = L.marker([parseFloat(m.lat), parseFloat(m.lng)]);
+          var popupHtml = `
+            <div style='min-width:120px;text-align:center;'>
+              <div style='font-weight:700;font-size:1.05em;'>${m.name}</div>
+              <div style='color:#1976d2;font-size:0.95em;'>${m.city ? m.city+', ' : ''}${m.country}</div>
+              <img src='${m.image || 'https://via.placeholder.com/90'}' alt='${m.name}' style='width:60px;height:60px;border-radius:50%;margin:6px auto 0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.09);' />
+            </div>
+          `;
+          marker.bindPopup(popupHtml);
+          markers.addLayer(marker);
+        }
+      });
+      window._leafletMap.addLayer(markers);
+      window._leafletMarkers = markers;
+    }
+    document.querySelectorAll('.nav-btn').forEach(function(btn, idx) {
+      btn.addEventListener('click', function() {
+        if (btn.textContent.includes('지도')) {
+          document.getElementById('mobile-landing').style.display = 'none';
+          document.getElementById('main-app-content').style.display = '';
+          showMapWithMarkers();
+        }
+      });
+    });
+  });
+  </script>
+  -->
 </body>
 </html> 

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>선교사 기도카드 - 모바일</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="css/mobile.css?v=1.0.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body {
+      width: 100%;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      height: 100%;
+      min-height: 100vh;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body { 
+      min-height: 100vh;
+      height: 100vh;
+      width: 100%;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      /* 원하는 그라데이션 색상으로 변경 가능 */
+      overflow-x: hidden;
+      font-family: Pretendard, Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .mobile-titlebar {
+      width: 100vw;
+      max-width: 100vw;
+      min-width: 320px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.18);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .mobile-titlebar-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: center;
+      width: 100%;
+    }
+    .mobile-titlebar-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .mobile-titlebar-logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+    .mobile-titlebar-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.5px;
+    }
+    .swiper, .mobile-titlebar, .missionary-card {
+      max-width: 400px;
+      min-width: 320px;
+      width: 100vw;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+    .swiper { height: 100vh; }
+    .swiper-slide { display: flex; align-items: center; justify-content: center; background: #fff; }
+    .missionary-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.13); padding: 1.5rem 0.8rem 1.2rem 0.8rem; display: flex; flex-direction: column; align-items: center; }
+    .missionary-avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.09); }
+    .missionary-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .missionary-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; color: #222; text-align: center; }
+    .missionary-location { font-size: 0.9rem; color: #888; margin-bottom: 0.8rem; text-align: center; }
+    .missionary-info-row { display: flex; justify-content: space-between; width: 100%; margin: 0.5rem 0 0.8rem 0; font-size: 0.85rem; color: #555; }
+    .prayer-btn { background: linear-gradient(145deg, #4caf50, #43a047); border: none; width: 44px; height: 44px; border-radius: 50%; color: white; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 0.8rem 0 0.5rem 0; box-shadow: 0 4px 10px rgba(0,0,0,0.13); transition: box-shadow 0.2s; }
+    .prayer-btn:active { box-shadow: 0 2px 6px rgba(76,175,80,0.18); }
+    .prayer-section { width: 100%; background: #f7f7fa; border-radius: 12px; padding: 0.8rem; margin-top: 0.8rem; font-size: 0.85rem; color: #333; text-align: left; }
+    .close-mobile-swiper { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.08); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 1.1rem; color: #333; z-index: 10; }
+    .swiper-pagination-bullets { bottom: 16px !important; }
+    .missionary-card table {
+      width: 100%;
+      max-width: 100%;
+      table-layout: auto;
+      word-break: keep-all;
+      border-collapse: collapse;
+    }
+    .missionary-card th, .missionary-card td {
+      font-size: 0.95em;
+      padding: 0.3em 0.5em;
+      text-align: center;
+    }
+    /* 중보기도자 수 표시 스타일 */
+    .prayer-status-box {
+      max-width: 400px;
+      min-width: 320px;
+      width: 100vw;
+      margin: 0 auto 1rem auto;
+      box-sizing: border-box;
+      padding: 1rem 1rem 0.8rem 1rem;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #e8f5e8, #d4edda);
+      color: #155724;
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .prayer-status-box .prayer-icon {
+      font-size: 1.2rem;
+    }
+    .prayer-status-box .prayer-count-number {
+      font-weight: 700;
+      color: #4caf50;
+    }
+    @media (max-width: 400px) {
+      .swiper, .mobile-titlebar, .missionary-card, .prayer-status-box {
+        max-width: 95vw;
+        min-width: 320px;
+        width: 95vw;
+      }
+      .missionary-card { padding: 1.1rem 0.4rem 0.8rem 0.4rem; }
+      .missionary-name { font-size: 1rem; }
+      .prayer-section { font-size: 0.8rem; }
+      .prayer-status-box { 
+        font-size: 0.98rem; 
+        padding: 0.8rem 0.5rem 0.6rem 0.5rem; 
+      }
+      .missionary-card th, .missionary-card td {
+        font-size: 0.85em;
+        padding: 0.2em 0.3em;
+      }
+    }
+    @media (max-width: 350px) {
+      .swiper, .mobile-titlebar, .missionary-card, .prayer-status-box {
+        max-width: 100vw;
+        min-width: 320px;
+        width: 100vw;
+      }
+      .missionary-card { padding: 0.8rem 0.2rem 0.6rem 0.2rem; }
+      .missionary-name { font-size: 0.95rem; }
+      .prayer-section { font-size: 0.75rem; }
+      .prayer-status-box { 
+        font-size: 0.92rem; 
+        padding: 0.6rem 0.2rem 0.4rem 0.2rem; 
+      }
+    }
+    .status-box, .prayer-info-box {
+      max-width: 400px;
+      min-width: 320px;
+      width: 100vw;
+      margin: 0 auto 1rem auto;
+      box-sizing: border-box;
+      padding: 1rem 1rem 0.8rem 1rem;
+      border-radius: 16px;
+      background: #e0f7fa;
+      color: #222;
+      font-size: 1.05rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    @media (max-width: 400px) {
+      .status-box, .prayer-info-box {
+        max-width: 95vw;
+        min-width: 320px;
+        width: 95vw;
+        font-size: 0.98rem;
+        padding: 0.8rem 0.5rem 0.6rem 0.5rem;
+      }
+    }
+    @media (max-width: 350px) {
+      .status-box, .prayer-info-box {
+        max-width: 100vw;
+        min-width: 320px;
+        width: 100vw;
+        font-size: 0.92rem;
+        padding: 0.6rem 0.2rem 0.4rem 0.2rem;
+      }
+    }
+    .missionary-card, .status-box, .prayer-info-box {
+      overflow-x: auto;
+    }
+    .missionary-card table,
+    .status-box table,
+    .prayer-info-box table {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      table-layout: auto !important;
+      box-sizing: border-box;
+      overflow-x: auto;
+      display: block;
+    }
+    .missionary-card th, .missionary-card td,
+    .status-box th, .status-box td,
+    .prayer-info-box th, .prayer-info-box td {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      word-break: break-word;
+      white-space: normal;
+    }
+    .world-map-card {
+      width: 100%;
+      max-width: 400px;
+      min-width: 320px;
+      height: 220px;
+      margin: 0 auto 18px auto;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      background: #e0f7fa;
+    }
+    #world-map { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <!-- 모바일 타이틀바 -->
+  <div class="mobile-titlebar">
+    <div class="mobile-titlebar-inner">
+      <span class="mobile-titlebar-logo"><img src="logo.svg" alt="로고"></span>
+      <span class="mobile-titlebar-title">한국기독교장로회 선교사 파송지도</span>
+    </div>
+  </div>
+  <!-- 지도 영역 -->
+  <div class="world-map-card"><div id="world-map"></div></div>
+  <!-- 중보기도자 수 표시 -->
+  <div id="prayer-status" class="prayer-status-box" style="display: none;">
+    <span class="prayer-icon">🙏</span>
+    <span>현재 <span class="prayer-count-number">0</span>명의 중보기도자가 함께 기도하고 있습니다</span>
+  </div>
+  
+  <!-- worldMap 통합 테이블 -->
+  <div id="worldMap" class="status-box"></div>
+
+  <div id="mobile-missionary-swiper"></div>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // 국가별 위도/경도 샘플 (실제 서비스시 더 많은 국가 추가 가능)
+    const countryLatLng = {
+      '대한민국': {lat: 36.5, lng: 127.8},
+      '일본': {lat: 36.2, lng: 138.2},
+      '미국': {lat: 39.8, lng: -98.6},
+      '중국': {lat: 35.9, lng: 104.2},
+      '필리핀': {lat: 12.9, lng: 121.8},
+      '인도네시아': {lat: -2.5, lng: 118.0},
+      '태국': {lat: 15.8, lng: 100.9},
+      '인도': {lat: 21.1, lng: 78.0},
+      '몽골': {lat: 46.8, lng: 103.1},
+      '호주': {lat: -25.3, lng: 133.8},
+      '영국': {lat: 54.0, lng: -2.0},
+      '독일': {lat: 51.2, lng: 10.4},
+      '브라질': {lat: -14.2, lng: -51.9},
+      '러시아': {lat: 61.5, lng: 105.3},
+      '카자흐스탄': {lat: 48.0, lng: 66.9},
+      '우즈베키스탄': {lat: 41.4, lng: 64.6},
+      '키르기스스탄': {lat: 41.2, lng: 74.6},
+      '캄보디아': {lat: 12.6, lng: 104.9},
+      '라오스': {lat: 19.8, lng: 102.6},
+      '베트남': {lat: 14.1, lng: 108.3},
+      '미얀마': {lat: 21.9, lng: 95.9},
+      '파키스탄': {lat: 30.4, lng: 69.3},
+      '방글라데시': {lat: 23.7, lng: 90.4},
+      '네팔': {lat: 28.4, lng: 84.1},
+      '스리랑카': {lat: 7.9, lng: 80.7},
+      '케냐': {lat: -0.0, lng: 37.9},
+      '탄자니아': {lat: -6.4, lng: 34.9},
+      '우간다': {lat: 1.3, lng: 32.3},
+      '에티오피아': {lat: 9.1, lng: 40.5},
+      '짐바브웨': {lat: -19.0, lng: 29.2},
+      '남아프리카공화국': {lat: -30.6, lng: 22.9},
+      // ... 필요시 추가 ...
+    };
+    // 지도 렌더링 함수
+    function renderWorldMapWithMarkers(missionaries) {
+      const countryStats = {};
+      missionaries.forEach(m => {
+        if (m.country) {
+          if (!countryStats[m.country]) countryStats[m.country] = { count: 0, lat: 0, lng: 0 };
+          countryStats[m.country].count++;
+          const coords = countryLatLng[m.country];
+          if (coords) {
+            countryStats[m.country].lat = coords.lat;
+            countryStats[m.country].lng = coords.lng;
+          }
+        }
+      });
+      const map = L.map('world-map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 2, maxZoom: 5 }).addTo(map);
+      Object.entries(countryStats).forEach(([country, stat]) => {
+        if (stat.lat && stat.lng) {
+          L.marker([stat.lat, stat.lng])
+            .addTo(map)
+            .bindPopup(`${country}<br>선교사 ${stat.count}명`);
+        }
+      });
+    }
+    // DataManager의 onDataReady 리스너 등록
+    DataManager.onDataReady(function() {
+      console.log('Mobile: DataManager 데이터 준비 완료');
+      console.log('Mobile: 선교사 데이터 수:', DataManager.state.missionaries.length);
+      
+      // worldMap 테이블 생성 및 렌더링
+      renderWorldMapTable(DataManager.state.missionaries);
+      
+      // 지도에 국가별 선교사 마커 표시
+      renderWorldMapWithMarkers(DataManager.state.missionaries);
+      
+      // 선교사 데이터 정렬 (최신 업데이트 순)
+      const missionaries = DataManager.state.missionaries.slice().sort((a, b) => {
+        const dateA = new Date(a.lastUpdate || 0);
+        const dateB = new Date(b.lastUpdate || 0);
+        return dateB - dateA;
+      });
+    });
+  </script>
+</body>
+</html> 

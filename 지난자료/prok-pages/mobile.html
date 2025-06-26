@@ -2,311 +2,215 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>선교사 기도카드 - 모바일</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-  <link rel="stylesheet" href="css/mobile.css?v=1.0.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한국기독교장로회 선교사 파송지도</title>
+  <link rel="stylesheet" href="../map/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    html, body {
-      min-width: 0 !important;
-      max-width: 100vw !important;
-      width: 100vw !important;
-      box-sizing: border-box;
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #b2e0ff 0%, #6bb6ff 100%);
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     }
-    body { 
-      background: #f5f6fa; 
-      margin: 0; 
-      font-family: Pretendard, Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    .swiper, .mobile-titlebar, .missionary-card {
+    .mobile-container {
       max-width: 400px;
-      min-width: 320px;
-      width: 100vw;
       margin: 0 auto;
-      box-sizing: border-box;
+      padding-bottom: 70px;
     }
-    .swiper { height: 100vh; }
-    .swiper-slide { display: flex; align-items: center; justify-content: center; background: #fff; }
-    .missionary-card { background: #fff; border-radius: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.13); padding: 1.5rem 0.8rem 1.2rem 0.8rem; display: flex; flex-direction: column; align-items: center; }
-    .missionary-avatar { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.09); }
-    .missionary-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .missionary-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.2rem; color: #222; text-align: center; }
-    .missionary-location { font-size: 0.9rem; color: #888; margin-bottom: 0.8rem; text-align: center; }
-    .missionary-info-row { display: flex; justify-content: space-between; width: 100%; margin: 0.5rem 0 0.8rem 0; font-size: 0.85rem; color: #555; }
-    .prayer-btn { background: linear-gradient(145deg, #4caf50, #43a047); border: none; width: 44px; height: 44px; border-radius: 50%; color: white; font-size: 1.5rem; cursor: pointer; display: flex; justify-content: center; align-items: center; margin: 0.8rem 0 0.5rem 0; box-shadow: 0 4px 10px rgba(0,0,0,0.13); transition: box-shadow 0.2s; }
-    .prayer-btn:active { box-shadow: 0 2px 6px rgba(76,175,80,0.18); }
-    .prayer-section { width: 100%; background: #f7f7fa; border-radius: 12px; padding: 0.8rem; margin-top: 0.8rem; font-size: 0.85rem; color: #333; text-align: left; }
-    .close-mobile-swiper { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.08); border: none; border-radius: 50%; width: 28px; height: 28px; font-size: 1.1rem; color: #333; z-index: 10; }
-    .swiper-pagination-bullets { bottom: 16px !important; }
-    .missionary-card table {
-      width: 100%;
-      max-width: 100%;
-      table-layout: auto;
-      word-break: keep-all;
-      border-collapse: collapse;
+    .mobile-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 24px 0 8px 0;
+      justify-content: center;
     }
-    .missionary-card th, .missionary-card td {
-      font-size: 0.95em;
-      padding: 0.3em 0.5em;
+    .logo {
+      width: 40px;
+      height: 40px;
+    }
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+    }
+    .subtitle {
       text-align: center;
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 8px;
     }
-    
-    /* 중보기도자 수 표시 스타일 */
-    .prayer-status-box {
-      max-width: 400px;
-      min-width: 320px;
-      width: 100vw;
-      margin: 0 auto 1rem auto;
-      box-sizing: border-box;
-      padding: 1rem 1rem 0.8rem 1rem;
+    .prayer-count {
+      background: #e3f3ff;
+      color: #0077c2;
       border-radius: 16px;
-      background: linear-gradient(145deg, #e8f5e8, #d4edda);
-      color: #155724;
-      font-size: 1.05rem;
-      font-weight: 600;
       text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      margin: 0 16px 16px 16px;
+      padding: 12px 0;
+      font-weight: 600;
+      font-size: 1.05rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .prayer-count .count {
+      color: #0a5fff;
+      font-weight: 700;
+      font-size: 1.2em;
+    }
+    .map-wrapper {
+      width: 100vw;
+      max-width: 400px;
+      height: 55vh;
+      max-height: 320px;
+      margin: 0 auto 16px auto;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      background: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
     }
-    .prayer-status-box .prayer-icon {
-      font-size: 1.2rem;
+    #missionary-map {
+      width: 100%;
+      height: 100%;
     }
-    .prayer-status-box .prayer-count-number {
+    .stats-card {
+      background: rgba(255,255,255,0.85);
+      border-radius: 18px;
+      margin: 12px 16px;
+      padding: 16px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      text-align: center;
+    }
+    .stats-title {
+      color: #0077c2;
       font-weight: 700;
-      color: #4caf50;
-    }
-    
-    @media (max-width: 400px) {
-      .swiper, .mobile-titlebar, .missionary-card, .prayer-status-box {
-        max-width: 95vw;
-        min-width: 320px;
-        width: 95vw;
-      }
-      .missionary-card { padding: 1.1rem 0.4rem 0.8rem 0.4rem; }
-      .missionary-name { font-size: 1rem; }
-      .prayer-section { font-size: 0.8rem; }
-      .prayer-status-box { 
-        font-size: 0.98rem; 
-        padding: 0.8rem 0.5rem 0.6rem 0.5rem; 
-      }
-      .missionary-card th, .missionary-card td {
-        font-size: 0.85em;
-        padding: 0.2em 0.3em;
-      }
-    }
-    @media (max-width: 350px) {
-      .swiper, .mobile-titlebar, .missionary-card, .prayer-status-box {
-        max-width: 100vw;
-        min-width: 320px;
-        width: 100vw;
-      }
-      .missionary-card { padding: 0.8rem 0.2rem 0.6rem 0.2rem; }
-      .missionary-name { font-size: 0.95rem; }
-      .prayer-section { font-size: 0.75rem; }
-      .prayer-status-box { 
-        font-size: 0.92rem; 
-        padding: 0.6rem 0.2rem 0.4rem 0.2rem; 
-      }
-    }
-    .status-box, .prayer-info-box {
-      max-width: 400px;
-      min-width: 320px;
-      width: 100vw;
-      margin: 0 auto 1rem auto;
-      box-sizing: border-box;
-      padding: 1rem 1rem 0.8rem 1rem;
-      border-radius: 16px;
-      background: #e0f7fa;
-      color: #222;
       font-size: 1.05rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      margin-bottom: 4px;
     }
-    @media (max-width: 400px) {
-      .status-box, .prayer-info-box {
-        max-width: 95vw;
-        min-width: 320px;
-        width: 95vw;
-        font-size: 0.98rem;
-        padding: 0.8rem 0.5rem 0.6rem 0.5rem;
-      }
+    .stats-desc {
+      color: #222;
+      font-size: 0.98rem;
     }
-    @media (max-width: 350px) {
-      .status-box, .prayer-info-box {
-        max-width: 100vw;
-        min-width: 320px;
-        width: 100vw;
-        font-size: 0.92rem;
-        padding: 0.6rem 0.2rem 0.4rem 0.2rem;
-      }
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100vw;
+      max-width: 400px;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 56px;
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+      z-index: 100;
     }
-    .missionary-card, .status-box, .prayer-info-box {
-      overflow-x: auto;
+    .mobile-nav a {
+      flex: 1;
+      text-align: center;
+      color: #0077c2;
+      font-weight: 600;
+      font-size: 0.98rem;
+      text-decoration: none;
+      padding: 8px 0;
+      border-radius: 12px;
+      transition: background 0.2s;
     }
-    .missionary-card table,
-    .status-box table,
-    .prayer-info-box table {
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: 100% !important;
-      table-layout: auto !important;
-      box-sizing: border-box;
-      overflow-x: auto;
-      display: block;
-    }
-    .missionary-card th, .missionary-card td,
-    .status-box th, .status-box td,
-    .prayer-info-box th, .prayer-info-box td {
-      min-width: 0 !important;
-      max-width: 100% !important;
-      word-break: break-word;
-      white-space: normal;
+    .mobile-nav a.active, .mobile-nav a:hover {
+      background: #e3f3ff;
+      color: #0a5fff;
     }
   </style>
 </head>
 <body>
-  <!-- 중보기도자 수 표시 -->
-  <div id="prayer-status" class="prayer-status-box" style="display: none;">
-    <span class="prayer-icon">🙏</span>
-    <span>현재 <span class="prayer-count-number">0</span>명의 중보기도자가 함께 기도하고 있습니다</span>
+  <div class="mobile-container">
+    <!-- 상단 로고/타이틀 -->
+    <header class="mobile-header">
+      <img src="../map/logo.svg" alt="로고" class="logo" />
+      <h1>한국기독교장로회 선교사 파송지도</h1>
+    </header>
+    <!-- 서브타이틀 -->
+    <div class="subtitle">2024년 6월 현재</div>
+    <!-- 실시간 중보기도자 수 -->
+    <div class="prayer-count">
+      현재 <span class="count">5</span>명의 중보기도자가 함께 기도하고 있습니다.
+    </div>
+    <!-- 지도 -->
+    <div class="map-wrapper">
+      <div id="missionary-map">
+        <!-- 지도 라이브러리 연동 필요 (예: leaflet.js, kakao map 등) -->
+      </div>
+    </div>
+    <!-- 국가별/노회별 현황 카드 -->
+    <div class="stats-card">
+      <div class="stats-title">국가별 파송 현황</div>
+      <div class="stats-desc">28개의 국가에서 <b>69명</b>의 선교사가 사역하고 있습니다.</div>
+    </div>
+    <div class="stats-card">
+      <div class="stats-title">노회별 파송 현황</div>
+      <div class="stats-desc">22개의 노회에서 <b>69명</b>의 선교사를 파송하였습니다.</div>
+    </div>
+    <!-- 하단 네비게이션 -->
+    <nav class="mobile-nav">
+      <a class="active">홈</a>
+      <a>지도</a>
+      <a>검색</a>
+      <a>뉴스</a>
+      <a>내 정보</a>
+    </nav>
   </div>
-  
-  <div id="mobile-missionary-swiper"></div>
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-  
-  <!-- Firebase 설정 -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/dataManager.js"></script>
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCrJIhyTYQ4bTUW4jarFqluD97xKao2kF0",
-      authDomain: "prokworldmap.firebaseapp.com",
-      databaseURL: "https://prokworldmap-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "prokworldmap",
-      storageBucket: "prokworldmap.appspot.com",
-      messagingSenderId: "728381830842",
-      appId: "1:728381830842:web:cfcb810657e1608d91f483",
-      measurementId: "G-SVTPDV602Y"
-    };
-    
-    // Firebase 초기화
-    if (window.firebase && window.firebase.initializeApp) {
-      if (!window.firebase.apps.length) {
-        window.firebase.initializeApp(firebaseConfig);
-        console.log('Firebase 초기화 완료');
-      }
-    }
-  </script>
-  
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="js/utils.js?v=1.0.0"></script>
-  <script src="js/dataManager.js?v=1.0.1"></script>
-  <script src="js/ui/MobileMissionarySwiper.js?v=1.0.1"></script>
-  
-  <script>
-    // 중보기도자 수 표시 업데이트 함수
-    function updatePrayerStatusDisplay(count) {
-      console.log('Mobile: updatePrayerStatusDisplay 호출됨, count:', count);
-      
-      const prayerStatusBox = document.getElementById('prayer-status');
-      const prayerCountNumber = document.querySelector('.prayer-count-number');
-      
-      console.log('Mobile: prayerStatusBox:', prayerStatusBox);
-      console.log('Mobile: prayerCountNumber:', prayerCountNumber);
-      
-      if (prayerStatusBox && prayerCountNumber) {
-        prayerCountNumber.textContent = count;
-        prayerStatusBox.style.display = 'flex';
-        
-        console.log('Mobile: 중보기도자 수 업데이트 완료:', count);
-        
-        // 애니메이션 효과
-        prayerStatusBox.style.opacity = '0';
-        prayerStatusBox.style.transform = 'translateY(-10px)';
-        prayerStatusBox.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        
-        setTimeout(() => {
-          prayerStatusBox.style.opacity = '1';
-          prayerStatusBox.style.transform = 'translateY(0)';
-        }, 100);
-      } else {
-        console.error('Mobile: 중보기도자 수 표시 요소를 찾을 수 없습니다.');
-      }
-    }
-    
-    // 페이지 로드 완료 후 초기화
+    // 지도 초기화 및 마커 표시
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Mobile: DOM 로드 완료, DataManager 초기화 시작');
-      
-      // 중보기도자 수 표시 초기화
-      updatePrayerStatusDisplay(0);
-      
-      // DataManager 초기화 및 데이터 로딩
-      if (typeof DataManager !== 'undefined') {
-        console.log('Mobile: DataManager 발견, 데이터 로딩 시작');
-        
-        // DataManager의 onDataReady 리스너 등록
-        DataManager.onDataReady(function() {
-          console.log('Mobile: DataManager 데이터 준비 완료');
-          console.log('Mobile: 선교사 데이터 수:', DataManager.state.missionaries.length);
-          
-          // 선교사 데이터 정렬 (최신 업데이트 순)
-          const missionaries = DataManager.state.missionaries.slice().sort((a, b) => {
-            const dateA = new Date(a.lastUpdate || 0);
-            const dateB = new Date(b.lastUpdate || 0);
-            return dateB - dateA;
+      // leaflet 지도 생성
+      var map = L.map('missionary-map', {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: true,
+        tap: false
+      }).setView([20, 100], 2.2);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        minZoom: 2,
+      }).addTo(map);
+
+      // 선교사 데이터 준비 시 마커 표시
+      if (window.DataManager) {
+        window.DataManager.onDataReady(function() {
+          var missionaries = window.DataManager.state.missionaries;
+          console.log('[지도] 마커 표시 시작, missionaries.length:', missionaries.length, missionaries);
+          missionaries.forEach(function(m, idx) {
+            console.log(`[지도] 마커 후보 #${idx}:`, m.name, 'lat:', m.lat, 'lng:', m.lng);
+            if (m.lat && m.lng) {
+              var marker = L.marker([parseFloat(m.lat), parseFloat(m.lng)]).addTo(map);
+              var popupHtml = `
+                <div style='min-width:120px;text-align:center;'>
+                  <div style='font-weight:700;font-size:1.05em;'>${m.name}</div>
+                  <div style='color:#1976d2;font-size:0.95em;'>${m.city ? m.city+', ' : ''}${m.country}</div>
+                  <img src='${m.image || 'https://via.placeholder.com/90'}' alt='${m.name}' style='width:60px;height:60px;border-radius:50%;margin:6px auto 0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.09);' />
+                </div>
+              `;
+              marker.bindPopup(popupHtml);
+              console.log(`[지도] 마커 생성됨:`, m.name);
+            } else {
+              console.warn(`[지도] lat/lng 없음, 마커 생략:`, m.name, m);
+            }
           });
-          
-          console.log('Mobile: 정렬된 선교사 수:', missionaries.length);
-          
-          // 모바일 스와이퍼 표시
-          if (window.showMobileMissionarySwiper) {
-            console.log('Mobile: showMobileMissionarySwiper 함수 호출');
-            window.showMobileMissionarySwiper(missionaries);
-          } else {
-            console.error('Mobile: showMobileMissionarySwiper 함수를 찾을 수 없습니다.');
-          }
         });
-        
         // 데이터 로딩 시작
-        console.log('Mobile: DataManager.fetchData 호출');
-        DataManager.fetchData(function(error) {
-          if (error) {
-            console.error('Mobile: 데이터 로딩 실패:', error);
-            return;
-          }
-          console.log('Mobile: DataManager.fetchData 완료');
-        });
+        window.DataManager.fetchData();
       } else {
-        console.error('Mobile: DataManager를 찾을 수 없습니다.');
+        console.error('[지도] window.DataManager가 없습니다!');
       }
-    });
-    
-    // DataManager의 중보기도자 수 업데이트 함수 오버라이드
-    if (typeof DataManager !== 'undefined') {
-      const originalUpdatePrayerCountDisplay = DataManager.updatePrayerCountDisplay;
-      DataManager.updatePrayerCountDisplay = function(count) {
-        // 원래 함수 호출
-        if (originalUpdatePrayerCountDisplay) {
-          originalUpdatePrayerCountDisplay.call(this, count);
-        }
-        
-        // 모바일 페이지의 중보기도자 수 표시 업데이트
-        updatePrayerStatusDisplay(count);
-      };
-    }
-    
-    // 페이지 언로드 시 정리
-    window.addEventListener('beforeunload', function() {
-      console.log('Mobile: 페이지 언로드, 정리 작업 수행');
     });
   </script>
 </body>
