@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="css/mobile.css">
   <link rel="stylesheet" href="css/mobile-detail.css">
   <link rel="stylesheet" href="css/greeting.css">
+  <link rel="stylesheet" href="css/flipclock-custom.css">
+  <link rel="stylesheet" href="css/presbytery-stats-luxury.css">
+  <link rel="stylesheet" href="css/sending-stats.css">
   
   <!-- Shoelace JS -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.0/cdn/shoelace.js"></script>
@@ -75,10 +78,10 @@
     
     <div class="mobile-landing-bottom-nav">
       <button class="nav-btn active">홈</button>
+      <button class="nav-btn">선교편지</button>
       <button class="nav-btn">지도</button>
       <button class="nav-btn">검색</button>
-      <button class="nav-btn">뉴스</button>
-      <button class="nav-btn" id="logo-settings-btn">설정</button>
+      <button class="nav-btn" id="logo-settings-btn">내정보</button>
     </div>
     
     <!-- 로고 설정 패널 -->
@@ -425,8 +428,8 @@
     // 최근 3개월 missionaries lastUpdate 기준 소식 개수 계산 (stat-item-presbytery 아래 recent-news-count에 적용)
     // DataManager 의존 코드 제거
   </script>
-  <div id="country-stats-screen" class="glass-screen" style="display:none"></div>
-  <div id="presbytery-stats-screen" class="glass-screen" style="display:none"></div>
+  <div id="country-stats-screen" class="glass-screen sending-glass-screen" style="display:none"></div>
+  <div id="presbytery-stats-screen" class="glass-screen sending-glass-screen" style="display:none"></div>
 
   <script>
     // 플립 시계 초기화
@@ -499,5 +502,6 @@
       });
     });
   </script>
+  <script src="js/ui/SendingStats.js"></script>
 </body>
 </html> 

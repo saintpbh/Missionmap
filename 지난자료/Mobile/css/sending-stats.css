@@ -1,0 +1,135 @@
+/* 파송현황 공통 글라스모피즘/럭셔리 스타일 */
+
+.sending-glass-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(120deg, #e0e7ef 0%, #f5f7fa 100%);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  z-index: 1000;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sending-glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.65) 60%, rgba(63,81,181,0.12) 100%);
+  box-shadow: 0 2px 8px 0 rgba(31,38,135,0.10);
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  animation: glassFadeIn 0.7s cubic-bezier(.4,2,.6,1) 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes glassFadeIn {
+  0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+  100% { opacity: 1; transform: none; }
+}
+
+.sending-glass-title {
+  font-size: 1.45em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 50%, #7986cb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  flex-shrink: 0;
+}
+.sending-glass-title .sending-icon {
+  font-size: 1.2em;
+  color: #ffc107;
+  filter: drop-shadow(0 1px 2px #fff6);
+}
+
+.sending-glass-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255,255,255,0.55);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px 0 rgba(63,81,181,0.07);
+  display: table;
+  flex: 1;
+  min-height: 0;
+}
+.sending-glass-table th, .sending-glass-table td {
+  padding: 0.7em 0.5em;
+  text-align: center;
+  font-size: 1.05em;
+  display: table-cell;
+}
+.sending-glass-table th {
+  background: linear-gradient(90deg, #f5f7fa 60%, #e0e7ef 100%);
+  color: #3f51b5;
+  font-weight: 700;
+  border-bottom: 2px solid #e0e7ef;
+}
+.sending-glass-table tr {
+  transition: background 0.18s;
+  display: table-row;
+}
+.sending-glass-table tr:hover {
+  background: rgba(255,215,0,0.08);
+}
+.sending-glass-table td {
+  color: #2c3e50;
+  border-bottom: 1px solid #f0f0f0;
+}
+.sending-glass-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sending-glass-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fffbe6 60%, #ffe082 100%);
+  box-shadow: 0 2px 8px 0 rgba(255,215,0,0.13);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  color: #bfa100;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  z-index: 10;
+}
+.sending-glass-close-btn:hover {
+  background: linear-gradient(135deg, #ffe082 60%, #fffbe6 100%);
+  box-shadow: 0 4px 16px 0 rgba(255,215,0,0.22);
+  transform: scale(1.08) rotate(-8deg);
+}
+
+.sending-glass-table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  padding-bottom: 50px;
+} 
