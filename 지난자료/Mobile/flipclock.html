@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=400, initial-scale=1.0, user-scalable=no">
+  <title>FlipClock 400px 테스트</title>
+  <link rel="stylesheet" href="vendor/flipclock/flipclock.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .flipclock-container {
+      width: 320px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      padding: 24px 0 24px 0;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #flipclock {
+      display: block;
+      margin: 0 auto;
+      transform: scale(0.5);
+      transform-origin: top center;
+    }
+  </style>
+</head>
+<body>
+  <div class="flipclock-container">
+    <h2 style="color:#ffe082; text-align:center; margin-bottom:18px;">FlipClock 400px 테스트</h2>
+    <div id="flipclock"></div>
+  </div>
+  <script src="vendor/flipclock/flipclock.min.js"></script>
+  <script>
+    $(function() {
+      var clock = new FlipClock(document.getElementById('flipclock'), {
+        clockFace: 'TwentyFourHourClock',
+        showSeconds: true,
+        autoStart: true
+      });
+    });
+  </script>
+</body>
+</html> 

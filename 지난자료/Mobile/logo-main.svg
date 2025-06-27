@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5fc1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2c3e50;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8e44ad;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6c3483;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#17a2b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#138496;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Blue Cross -->
+  <path d="M300 20 L340 20 L340 260 L580 260 L580 300 L340 300 L340 540 L300 540 L300 300 L20 300 L20 260 L300 260 Z" fill="url(#blueGrad)"/>
+  
+  <!-- Purple Circle -->
+  <ellipse cx="180" cy="350" rx="120" ry="80" fill="none" stroke="url(#purpleGrad)" stroke-width="35" transform="rotate(-15 180 350)"/>
+  
+  <!-- Cyan Shape -->
+  <path d="M400 450 Q500 350 450 250 Q400 200 350 250 Q300 300 350 350 Q400 400 450 450 Q500 500 550 450 Q600 400 550 350 Q500 300 450 350 Q400 400 400 450" fill="none" stroke="url(#cyanGrad)" stroke-width="30"/>
+</svg> 

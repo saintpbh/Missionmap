@@ -1,0 +1,11 @@
+.date-sub {
+  font-size: 1.08em;
+  color: #e3f2fd;
+  margin-left: 8px;
+  font-family: 'Share Tech Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+  font-weight: 700;
+  min-width: 60px;
+  display: inline-block;
+  text-align: left;
+  letter-spacing: 1px;
+} 

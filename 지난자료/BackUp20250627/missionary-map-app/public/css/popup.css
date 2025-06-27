@@ -1,0 +1,321 @@
+/* popup.css: 팝업, 모달, 상세보기 등 */
+
+#detailPopup {
+    position: fixed;
+    z-index: 10000;
+    display: none;
+    max-width: 400px;
+    min-width: 320px;
+    border-radius: 20px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+}
+
+#detailPopup.animate-in {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+#detailPopup.animate-out {
+    transform: scale(0.95) translateY(-10px);
+    opacity: 0;
+}
+
+/* 모던 팝업 컨테이너 */
+.detail-popup-modern {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+    backdrop-filter: blur(40px) saturate(200%);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    border-radius: 24px; /* 미세 조정 */
+    overflow: hidden;
+    position: relative;
+    box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.4),
+        0 0 0 1.5px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* 닫기 버튼 - 더 정제된 스타일 */
+.close-btn-modern {
+    position: absolute;
+    top: 20px; /* 위치 조정 */
+    right: 20px; /* 위치 조정 */
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.close-btn-modern:hover {
+    background: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* 헤더 섹션 - 조명 효과 추가 */
+.popup-header {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: transparent;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.popup-header::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px; /* 크기 조정 */
+    height: 200px; /* 크기 조정 */
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+}
+
+/* 선교사 아바타 - 더 입체적으로 */
+.missionary-avatar {
+    width: 100px; /* 크기 축소 */
+    height: 100px; /* 크기 축소 */
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 24px 0 16px 0; /* 여백 축소 */
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1.5px rgba(255, 255, 255, 0.2) inset;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.missionary-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.4),
+        0 0 0 1.5px rgba(255, 255, 255, 0.3) inset;
+}
+
+.missionary-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* 선교사 정보 - 가독성 향상 */
+.missionary-info {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    margin-bottom: 16px; /* 여백 축소 */
+}
+
+.missionary-name {
+    font-size: 22px; /* 폰트 크기 조정 */
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 4px 0; /* 여백 축소 */
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.missionary-location {
+    font-size: 15px; /* 폰트 크기 조정 */
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 기도 버튼 - 세련된 디자인 */
+.prayer-btn {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 52px; /* 크기 축소 */
+    height: 52px; /* 크기 축소 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px; /* 여백 축소 */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.prayer-btn:hover {
+    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.prayer-btn:active {
+    transform: scale(0.95);
+}
+
+.prayer-btn.prayed {
+    background: rgba(34, 197, 94, 0.5);
+    border-color: rgba(34, 197, 94, 0.7);
+    transform: scale(1.1);
+}
+
+.prayer-emoji {
+    font-size: 24px; /* 아이콘 크기 조정 */
+    transition: transform 0.2s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    color: #fff;
+}
+
+/* 팝업 본문 - 콘텐츠 집중도 향상 */
+.popup-body {
+    padding: 0 24px 24px;
+}
+
+/* 정보 그리드 */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0 24px 0;
+    padding: 16px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+}
+
+.info-icon {
+    font-size: 20px;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+.info-label {
+    font-size: 11px;
+    font-weight: 400;
+    color: #b0b0b0;
+}
+
+.info-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* 기도제목 섹션 */
+.prayer-section {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.prayer-content {
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 기도 토스트 알림 */
+.prayer-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(34, 197, 94, 0.3);
+    z-index: 10001;
+    transform: translateX(400px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.prayer-toast.show {
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-icon {
+    font-size: 20px;
+}
+
+.toast-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toast-main {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.toast-sub {
+    font-size: 12px;
+    opacity: 0.9;
+} 

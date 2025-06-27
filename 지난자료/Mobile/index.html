@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ko" class="sl-theme-light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>한국기독교장로회 국제협력 선교사 - 모바일</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  
+  <!-- Shoelace CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
+  
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  
+  <!-- 모바일 전용 CSS -->
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/mobile-detail.css">
+  <link rel="stylesheet" href="css/greeting.css">
+  
+  <!-- Shoelace JS -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.0/cdn/shoelace.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="mobile-mode">
+  <!-- 모바일 첫화면(랜딩) -->
+  <div id="mobile-landing" class="mobile-landing logo-medium logo-normal">
+    <!-- 상단 바 -->
+    <div class="mobile-landing-topbar">
+      <div class="mobile-landing-topbar-content">
+        <img src="logo.svg" alt="로고" class="mobile-landing-logo">
+        <div class="mobile-landing-title">한국기독교장로회 국제협력 선교사</div>
+      </div>
+    </div>
+    
+    <!-- 기본 정보 섹션 -->
+    <div class="mobile-landing-info">
+      <div id="prayer-count-info" class="mobile-prayer-count-info"></div>
+      <div class="mobile-landing-stats">
+        <div class="stat-item" id="stat-item-clock">
+          <div class="stat-label">현재 시간</div>
+          <div class="stat-content">
+            <div id="flip-clock-container"></div>
+            <div class="greeting-display">
+              <span id="greeting-text" class="greeting-text"></span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-item clickable" id="stat-item-country" tabindex="0" role="button">
+          <div class="stat-label">국가별 파송 현황</div>
+          <div class="stat-content" id="mobile-country-stats">데이터 로딩 중...</div>
+        </div>
+        <div class="stat-item clickable" id="stat-item-presbytery" tabindex="0" role="button">
+          <div class="stat-label">노회별 파송 현황</div>
+          <div class="stat-content" id="mobile-presbytery-stats">데이터 로딩 중...</div>
+        </div>
+        <div class="stat-item clickable" id="stat-item-news" tabindex="0" role="button">
+          <div class="stat-label">선교편지 (최근 3개월)</div>
+          <div class="stat-content" id="mobile-news-stats">
+          현재 <b id="recent-news-count">0</b>개의 새로운 소식이 있습니다.
+        </div>
+      
+        </div>
+      </div>
+    </div>
+    
+    
+    <div class="mobile-landing-bottom-nav">
+      <button class="nav-btn active">홈</button>
+      <button class="nav-btn">지도</button>
+      <button class="nav-btn">검색</button>
+      <button class="nav-btn">뉴스</button>
+      <button class="nav-btn" id="logo-settings-btn">설정</button>
+    </div>
+    
+    <!-- 로고 설정 패널 -->
+    <div id="logo-settings-panel" class="logo-settings-panel">
+      <div class="settings-content">
+        <h3>배경 로고 설정</h3>
+        <div class="setting-group">
+          <label>크기:</label>
+          <div class="size-buttons">
+            <button class="size-btn" data-size="small">작게</button>
+            <button class="size-btn active" data-size="medium">보통</button>
+            <button class="size-btn" data-size="large">크게</button>
+            <button class="size-btn" data-size="xlarge">매우 크게</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label>투명도:</label>
+          <div class="opacity-buttons">
+            <button class="opacity-btn" data-opacity="light">연하게</button>
+            <button class="opacity-btn active" data-opacity="normal">보통</button>
+            <button class="opacity-btn" data-opacity="visible">진하게</button>
+          </div>
+        </div>
+        <button class="close-settings">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기존 지도/본문 등은 첫화면 진입 시 숨김 처리 -->
+  <div id="main-app-content" style="display:none;">
+    <!-- 모바일 로딩 인디케이터 -->
+    <div id="mobile-loading" class="mobile-loading">
+      <div class="mobile-loading-spinner"></div>
+    </div>
+
+    <!-- 지도 컨테이너 -->
+    <div id="map"></div>
+    
+    <!-- 모바일 타이틀바 -->
+    <div class="mobile-titlebar">
+      <div class="mobile-titlebar-inner">
+        <div class="mobile-titlebar-logo">
+          <img src="logo.svg" alt="로고" style="height: 1.2em;">
+        </div>
+        <div class="mobile-titlebar-title">
+          선교사 파송지도
+        </div>
+      </div>
+    </div>
+    
+    <!-- 모바일 선교사 스와이퍼 -->
+    <div id="mobile-missionary-swiper">
+      <div class="swiper">
+        <div class="swiper-wrapper">
+          <!-- 선교사 카드들이 여기에 동적으로 추가됩니다 -->
+        </div>
+        <!-- Swiper 네비게이션 -->
+        <div class="swiper-pagination"></div>
+      </div>
+      
+      <!-- 닫기 버튼 -->
+      <button class="close-mobile-swiper" id="close-mobile-swiper">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <!-- 하단 힌트 이미지 -->
+      <div class="bottom-hint-image">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'/%3E%3Cpath d='M30 50 L45 65 L70 35' stroke='rgba(255,255,255,0.6)' stroke-width='3' fill='none'/%3E%3C/svg%3E" alt="힌트">
+      </div>
+    </div>
+    
+    <!-- 모바일 검색 컨테이너 -->
+    <div class="mobile-search-container" id="mobile-search-container">
+      <div class="mobile-search-input-wrapper">
+        <span class="mobile-search-icon">🔍</span>
+        <input type="text" id="mobile-missionary-search" placeholder="선교사 이름, 국가, 기관을 검색하세요..." autocomplete="off">
+        <button type="button" class="mobile-search-clear" id="mobile-search-clear">✕</button>
+      </div>
+      <div id="mobile-search-results" class="mobile-search-results-dropdown"></div>
+    </div>
+    
+    <!-- 모바일 UI 컨트롤 -->
+    <div id="mobile-ui-controls">
+      <sl-icon-button id="mobileSettingsBtn" name="gear-fill" label="설정" style="font-size: 1.2rem;"></sl-icon-button>
+      <sl-icon-button id="mobileFullscreenBtn" name="fullscreen" label="전체화면" style="font-size: 1.2rem;"></sl-icon-button>
+    </div>
+    
+    <!-- 모바일 상세보기 팝업 -->
+    <div id="mobile-detail-popup" class="mobile-detail-popup">
+      <div class="mobile-detail-content">
+        <!-- 상세 내용이 여기에 동적으로 추가됩니다 -->
+      </div>
+      <button class="mobile-detail-close" id="mobile-detail-close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 모바일 테이블 오버레이 -->
+    <div id="mobile-missionary-table-country" class="mobile-country-table-overlay"></div>
+    <div id="mobile-missionary-table-presbytery" class="mobile-presbytery-table-overlay"></div>
+    
+    <!-- 모바일 종료 버튼들 -->
+    <sl-button id="mobile-country-exit-btn" variant="danger" size="medium" pill class="mobile-exit-btn">
+      <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+      국가별 보기 종료
+    </sl-button>
+    
+    <sl-button id="mobile-presbytery-exit-btn" variant="danger" size="medium" pill class="mobile-exit-btn">
+      <sl-icon slot="prefix" name="arrow-left"></sl-icon>
+      노회별 보기 종료
+    </sl-button>
+    
+    <!-- 모바일 가이드 메시지 -->
+    <div id="mobile-map-guide" class="mobile-map-guide">
+      이 지도는 전세계에 흩어져 선교사역을 감당하고 있는 총회파송 해외선교동역자님들의 현황을 시각적으로 보여줍니다.<br>
+      귀한 선교사역을 위해 기도로 함께 하여 주시기를 부탁드립니다.
+    </div>
+    
+    <!-- 모바일 뉴스바 -->
+    <div id="mobile-news-bar" class="mobile-news-bar">
+      <div class="mobile-news-content">
+        <span class="mobile-news-text">최신 선교 소식을 확인하세요</span>
+      </div>
+      <button class="mobile-news-close" id="mobile-news-close">✕</button>
+    </div>
+    
+    <!-- 모바일 기도 확인 토스트 -->
+    <div id="mobile-prayer-toast" class="mobile-prayer-toast">
+      <div class="mobile-toast-content">
+        <span class="mobile-toast-icon">🙏</span>
+        <div class="mobile-toast-text">
+          <div class="mobile-toast-main">기도가 기록되었습니다</div>
+          <div class="mobile-toast-sub">함께 기도해 주셔서 감사합니다</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 외부 라이브러리 스크립트 -->
+  <!-- <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script> -->
+  <!-- <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  
+  <!-- Firebase App (modular CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    // 반드시 주요 JS 파일보다 먼저!
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrJIhyTYQ4bTUW4jarFqluD97xKao2kF0",
+      authDomain: "prokworldmap.firebaseapp.com",
+      databaseURL: "https://prokworldmap-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "prokworldmap",
+      storageBucket: "prokworldmap.appspot.com",
+      messagingSenderId: "728381830842",
+      appId: "1:728381830842:web:cfcb810657e1608d91f483",
+      measurementId: "G-SVTPDV602Y"
+    };
+    if (window.firebase && window.firebase.initializeApp) {
+      if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig);
+    }
+  </script>
+  
+  <!-- 기본 유틸리티 스크립트 -->
+  <script src="js/utils.js"></script>
+  <script src="js/countryBackgrounds.js"></script>
+  <script src="js/flipClock.js"></script>
+  <script src="js/greetingManager.js"></script>
+  <script src="js/ui/CountryStatsDetail.js"></script>
+  <script src="js/ui/PresbyteryStatsDetail.js"></script>
+  <!-- UI 컴포넌트 스크립트 -->
+  <script src="js/ui/detailPopup.js"></script>
+  <script src="js/ui/mobileDetailPopup.js"></script>
+  <script src="js/ui/MobileMissionarySwiper.js"></script>
+  <script src="js/newsletterPopup.js"></script>
+  <!-- 모바일 전용 스크립트 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 날짜 표시 기능 다시 추가
+      function updateDate() {
+        const dateElement = document.querySelector('.date-main');
+        if (!dateElement) return;
+        
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        
+        dateElement.textContent = `${yyyy}.${mm}.${dd}`;
+      }
+      
+      // 페이지 로드 시 즉시 실행하고, 날이 바뀔 수 있으니 1분마다 체크
+      updateDate();
+      setInterval(updateDate, 60000);
+
+      // 중보기도자 수 - prok-pages와 동일한 방식으로 수정
+      const prayerCountDiv = document.getElementById('prayer-count-info');
+      if (prayerCountDiv && window.firebase && window.firebase.database) {
+        const db = window.firebase.database();
+        
+        // 사용자 키 생성
+        const userKey = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        console.log('Missionary-app: 사용자 키 생성:', userKey);
+        
+        // 현재 사용자를 prayerUsers에 등록
+        db.ref('prayerUsers').child(userKey).set({
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent,
+          page: window.location.pathname
+        }).then(() => {
+          console.log('Missionary-app: 사용자 등록 완료');
+        }).catch((error) => {
+          console.error('Missionary-app: 사용자 등록 실패:', error);
+        });
+        
+        // 실시간 중보기도자 수 감시
+        db.ref('prayerUsers').on('value', (snapshot) => {
+          const count = snapshot.numChildren();
+          console.log('Missionary-app: 중보기도자 수 업데이트:', count, '명');
+          prayerCountDiv.textContent = `현재 ${count}명의 중보기도자가 함께 기도하고 있습니다`;
+        });
+        
+        // 페이지 언로드 시 사용자 제거
+        window.addEventListener('beforeunload', () => {
+          db.ref('prayerUsers').child(userKey).remove();
+          console.log('Missionary-app: 사용자 제거됨');
+        });
+        
+        // 주기적으로 사용자 상태 갱신 (연결 유지)
+        setInterval(() => {
+          db.ref('prayerUsers').child(userKey).update({
+            timestamp: Date.now()
+          });
+        }, 30000); // 30초마다
+      }
+      
+      // 선교사 데이터
+      window.fetchData((err, data) => {
+        if (err) {
+          alert('데이터 로딩 실패: ' + err.message);
+          return;
+        }
+        const missionaries = data.missionaries || [];
+        // 국가별 통계
+        const countrySet = new Set();
+        const countryStats = {};
+        missionaries.forEach(m => {
+          if (m.country) {
+            countrySet.add(m.country);
+            countryStats[m.country] = (countryStats[m.country] || 0) + 1;
+          }
+        });
+        window.cachedCountryStats = countryStats; // 전역에 저장
+        const countryDiv = document.getElementById('mobile-country-stats');
+        if (countryDiv) {
+          countryDiv.innerHTML = `<b>${countrySet.size}</b>개의 국가에서 <b>${missionaries.length}</b>명의 선교사가 사역하고 있습니다.`;
+          countryDiv.addEventListener('click', function() {
+            if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+          });
+          countryDiv.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+            }
+          });
+        }
+        // 노회별 통계
+        const presbyterySet = new Set();
+        const presbyteryStats = {};
+        missionaries.forEach(m => {
+          if (m.presbytery) {
+            presbyterySet.add(m.presbytery);
+            presbyteryStats[m.presbytery] = (presbyteryStats[m.presbytery] || 0) + 1;
+          }
+        });
+        window.cachedPresbyteryStats = presbyteryStats; // 전역에 저장
+        const presbyteryDiv = document.getElementById('mobile-presbytery-stats');
+        if (presbyteryDiv) {
+          presbyteryDiv.innerHTML = `<b>${presbyterySet.size}</b>개의 노회에서 <b>${missionaries.length}</b>명의 선교사를 파송하였습니다.`;
+          presbyteryDiv.addEventListener('click', function() {
+            if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+          });
+          presbyteryDiv.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+            }
+          });
+        }
+        // 선교사 전체도 캐시
+        window.cachedMissionaries = missionaries;
+      });
+      // 국가별/노회별 통계 박스 클릭 시 상세화면 연결
+      const statCountry = document.getElementById('stat-item-country');
+      if (statCountry) {
+        statCountry.addEventListener('click', function() {
+          if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+        });
+        statCountry.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (window.showCountryStatsDetail) window.showCountryStatsDetail();
+          }
+        });
+      }
+      const statPresbytery = document.getElementById('stat-item-presbytery');
+      if (statPresbytery) {
+        statPresbytery.addEventListener('click', function() {
+          if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+        });
+        statPresbytery.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (window.showPresbyteryStatsDetail) window.showPresbyteryStatsDetail();
+          }
+        });
+      }
+    });
+
+    // 최근 3개월 뉴스/편지 개수 계산 (실제 데이터 연동)
+    document.addEventListener('DOMContentLoaded', function() {
+      function countRecentNews(newsArray) {
+        const now = new Date();
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        return newsArray.filter(item => {
+          if (!item.lastUpdate) return false;
+          const date = new Date(item.lastUpdate);
+          return date >= threeMonthsAgo;
+        }).length;
+      }
+      // 실제 데이터: window.cachedNews만 사용 (DataManager 참조 제거)
+      var newsArray = window.cachedNews || [];
+      var countElem = document.getElementById('recent-news-count');
+      if (countElem) countElem.textContent = countRecentNews(newsArray);
+    });
+
+    // 최근 3개월 missionaries lastUpdate 기준 소식 개수 계산 (stat-item-presbytery 아래 recent-news-count에 적용)
+    // DataManager 의존 코드 제거
+  </script>
+  <div id="country-stats-screen" class="glass-screen" style="display:none"></div>
+  <div id="presbytery-stats-screen" class="glass-screen" style="display:none"></div>
+
+  <script>
+    // 플립 시계 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+      const flipClockContainer = document.getElementById('flip-clock-container');
+      if (flipClockContainer) {
+        new FlipClock(flipClockContainer);
+      }
+      
+      // 인사말 매니저 초기화
+      if (window.GreetingManager) {
+        new GreetingManager();
+      }
+      
+      // 로고 설정 패널 기능
+      const settingsBtn = document.getElementById('logo-settings-btn');
+      const settingsPanel = document.getElementById('logo-settings-panel');
+      const closeBtn = document.querySelector('.close-settings');
+      const mobileLanding = document.getElementById('mobile-landing');
+      
+      // 설정 패널 열기
+      if (settingsBtn) {
+        settingsBtn.addEventListener('click', function() {
+          settingsPanel.classList.add('show');
+        });
+      }
+      
+      // 설정 패널 닫기
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          settingsPanel.classList.remove('show');
+        });
+      }
+      
+      // 배경 클릭으로 닫기
+      if (settingsPanel) {
+        settingsPanel.addEventListener('click', function(e) {
+          if (e.target === settingsPanel) {
+            settingsPanel.classList.remove('show');
+          }
+        });
+      }
+      
+      // 크기 버튼 이벤트
+      document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          // 활성 상태 변경
+          document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          // 로고 크기 클래스 변경
+          const size = this.dataset.size;
+          mobileLanding.classList.remove('logo-small', 'logo-medium', 'logo-large', 'logo-xlarge');
+          mobileLanding.classList.add('logo-' + size);
+        });
+      });
+      
+      // 투명도 버튼 이벤트
+      document.querySelectorAll('.opacity-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          // 활성 상태 변경
+          document.querySelectorAll('.opacity-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          // 로고 투명도 클래스 변경
+          const opacity = this.dataset.opacity;
+          mobileLanding.classList.remove('logo-light', 'logo-normal', 'logo-visible');
+          mobileLanding.classList.add('logo-' + opacity);
+        });
+      });
+    });
+  </script>
+</body>
+</html> 
