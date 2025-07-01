@@ -1,0 +1,55 @@
+/* missionary-input responsive: 반응형 미디어쿼리 */
+
+@media (max-width: 768px) {
+  .action-bar {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+  }
+  .page-info {
+    text-align: center;
+  }
+  .action-buttons {
+    justify-content: center;
+  }
+  .missionary-form-container {
+    padding: 20px;
+  }
+  .form-tabs {
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 15px;
+    font-size: 13px;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+  .form-actions button {
+    width: 100%;
+  }
+  .bottom-spacer {
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-bar {
+    padding: 15px;
+  }
+  .missionary-form-container {
+    padding: 15px;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 12px;
+    font-size: 16px; /* 모바일에서 자동 확대 방지 */
+  }
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+} 

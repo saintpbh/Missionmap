@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>선교사 관리</title>
+    <link rel="stylesheet" href="css/common/base.css">
+    <link rel="stylesheet" href="css/common/navigation.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/missionary-management.css">
+    <style>
+        /* 로그인이 확인되기 전까지 페이지 내용을 숨깁니다. */
+        body { display: none; }
+        
+        .count-badge {
+            background: #007bff;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .search-section {
+            display: flex;
+            align-items: center;
+        }
+        
+        .loading-placeholder {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body data-page="missionary-management">
+    <div id="nav-container"></div>
+
+    <main class="admin-main">
+        <h1>👥 선교사 관리 <span class="count-badge" id="missionaryCount">0</span></h1>
+        <div class="action-bar">
+            <div class="search-section">
+                <input type="text" id="missionarySearch" placeholder="이름 또는 국가로 검색..." class="search-input">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="includeArchived">
+                    아카이브 포함
+                </label>
+            </div>
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" id="addMissionaryBtn">
+                    ➕ 선교사 추가
+                </button>
+            </div>
+        </div>
+
+        <div class="missionary-list-container">
+            <div id="missionaryList" class="missionary-list">
+                <!-- 기존 missionaryList 내용은 missionaryManagement.js에서 동적으로 생성됩니다. -->
+                <div class="loading-placeholder">
+                    <div class="loading-spinner"></div>
+                    <p>선교사 목록을 불러오는 중...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 관리자 로그인</h2>
+                <button type="button" class="close-btn" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); performLogin();">
+                    <div class="form-group">
+                        <label for="loginEmail">이메일:</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">비밀번호:</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <div id="loginStatus" class="login-status"></div>
+                    <button type="submit" class="btn btn-primary">로그인</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 이 페이지에서 사용하던 모달들은 일단 비활성화 합니다. 필요 시 다시 추가할 수 있습니다. -->
+
+         <!-- Firebase SDK (CDN) -->
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+     <!-- Firebase Config -->
+     <script src="js/firebase-config.js"></script>
+     
+     <!-- Common Navigation -->
+     <script src="js/common/navigation.js"></script>
+
+    <!-- Page Protection & Auth -->
+    <script src="js/auth.js"></script>
+    
+    <!-- Page Scripts -->
+    <script src="js/firebaseService.js"></script>
+    <script src="js/missionaryManagement.js"></script>
+
+    <!-- Nav Loader & Event Listeners -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('nav.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('nav-container').innerHTML = data;
+                    
+                    const logoutButton = document.getElementById('logout-button');
+                    if(logoutButton) {
+                        logoutButton.addEventListener('click', () => {
+                            firebase.auth().signOut();
+                        });
+                    }
+
+                    const userEmailSpan = document.getElementById('user-email');
+                    firebase.auth().onAuthStateChanged(user => {
+                        if(user && userEmailSpan) {
+                            userEmailSpan.textContent = user.email;
+                        }
+                    });
+                });
+
+            const addBtn = document.getElementById('addMissionaryBtn');
+            if(addBtn) {
+                addBtn.onclick = () => window.location.href = 'missionary-input.html';
+            }
+        });
+    </script>
+</body>
+</html> 

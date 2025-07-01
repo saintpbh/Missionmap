@@ -6,47 +6,129 @@
   <title>선교편지 스와이프 테스트</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
   <style>
-    body { background: #f5f7fa; margin: 0; font-family: 'Pretendard', 'Inter', sans-serif; }
-    .news-swiper-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .swiper { width: 100vw; height: 100vh; }
-    .swiper-slide { display: flex; align-items: center; justify-content: center; }
-    .news-card {
-      width: 90vw; max-width: 500px; min-height: 480px; background: rgba(255,255,255,0.95);
-      border-radius: 24px; box-shadow: 0 8px 32px rgba(31,38,135,0.13);
-      padding: 1.5rem 1.2rem 1.2rem 1.2rem; display: flex; flex-direction: column;
-      align-items: center; position: relative; margin: 0 5vw;
+    body { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0; 
+      font-family: 'Pretendard', 'Inter', sans-serif; 
+      min-height: 100vh;
+      position: relative;
     }
+    
+    /* 고급스러운 배경 그라데이션 오버레이 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .news-swiper-container { 
+      width: 100vw; 
+      height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      position: relative;
+      z-index: 2;
+    }
+    
+    .swiper { 
+      width: 100vw; 
+      height: 100vh; 
+    }
+    
+    .swiper-slide { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+    }
+    
+    .news-card {
+      width: 100vw !important; 
+      min-height: 480px; 
+      background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+      border-radius: 24px; 
+      box-shadow: 
+        0 8px 32px rgba(31,38,135,0.15),
+        0 0 0 1px rgba(255,255,255,0.1);
+      padding: 1.5rem 1.2rem 1.2rem 1.2rem; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      position: relative; 
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      box-sizing: border-box;
+    }
+    
+    /* 350px 이상에서는 90% 폭, 좌우 5% 여유 */
+    @media (min-width: 350px) {
+      .news-card {
+        width: 90vw !important;
+        margin: 0 5vw !important;
+      }
+    }
+    
+    /* 모든 swiper-slide 내부의 news-card에도 적용 */
+    .swiper-slide .news-card {
+      width: 100vw !important; 
+    }
+    
+    @media (min-width: 350px) {
+      .swiper-slide .news-card {
+        width: 90vw !important;
+        margin: 0 5vw !important;
+      }
+    }
+    
     .news-photo-swiper {
       width: 100%;
       height: 180px;
       margin-bottom: 1rem;
       border-radius: 16px;
       overflow: hidden;
-      background: #e0e7ef;
+      background: linear-gradient(135deg, #e0e7ef 0%, #f0f4f8 100%);
       position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
+    
     .news-photo-swiper .swiper-button-next,
     .news-photo-swiper .swiper-button-prev {
       color: #3f51b5;
-      background: rgba(255,255,255,0.7);
+      background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
       border-radius: 50%;
       width: 36px;
       height: 36px;
       top: 50%;
       transform: translateY(-50%);
-      box-shadow: 0 2px 8px rgba(63,81,181,0.13);
+      box-shadow: 
+        0 2px 8px rgba(63,81,181,0.15),
+        0 0 0 1px rgba(255,255,255,0.3);
+      backdrop-filter: blur(5px);
     }
+    
     .news-photo-swiper .swiper-button-next {
       right: 8px;
     }
+    
     .news-photo-swiper .swiper-button-prev {
       left: 8px;
     }
+    
     .news-photo-swiper .swiper-button-next:after,
     .news-photo-swiper .swiper-button-prev:after {
       font-size: 1.5em;
       font-weight: bold;
     }
+    
     .news-card-photo {
       width: 100%;
       height: 100%;
@@ -55,12 +137,99 @@
       margin-bottom: 0;
       background: none;
     }
-    .news-card-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .news-card-meta { font-size: 0.98rem; color: #3f51b5; margin-bottom: 0.5rem; display: flex; gap: 0.7em; align-items: center; }
-    .news-card-mission { font-size: 0.98rem; color: #666; margin-bottom: 0.7rem; }
-    .news-card-content { font-size: 1.05rem; color: #222; margin-bottom: 1.2rem; line-height: 1.6; max-height: 5.5em; overflow: hidden; text-overflow: ellipsis; }
-    .news-card-date { font-size: 0.92rem; color: #aaa; position: absolute; right: 1.2rem; bottom: 1.1rem; }
-    .news-card-more { color: #3f51b5; font-size: 0.98rem; cursor: pointer; margin-top: -0.7rem; margin-bottom: 1rem; }
+    
+    .news-card-title { 
+      font-size: 1.2rem; 
+      font-weight: 700; 
+      margin-bottom: 0.3rem; 
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .news-card-meta { 
+      font-size: 0.98rem; 
+      color: #3f51b5; 
+      margin-bottom: 0.5rem; 
+      display: flex; 
+      gap: 0.7em; 
+      align-items: center; 
+    }
+    
+    .news-card-mission { 
+      font-size: 0.98rem; 
+      color: #666; 
+      margin-bottom: 0.7rem; 
+    }
+    
+    .news-card-content { 
+      font-size: 1.05rem; 
+      color: #222; 
+      margin-bottom: 1.2rem; 
+      line-height: 1.6; 
+      max-height: 5.5em; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    
+    .news-card-date { 
+      font-size: 0.92rem; 
+      color: #aaa; 
+      position: absolute; 
+      right: 1.2rem; 
+      bottom: 1.1rem; 
+    }
+    
+    .news-card-more { 
+      color: #3f51b5; 
+      font-size: 0.98rem; 
+      cursor: pointer; 
+      margin-top: -0.7rem; 
+      margin-bottom: 1rem; 
+    }
+    
+    /* 뉴스레터 원본보기 버튼 스타일 */
+    .news-card-original-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      margin-top: auto;
+    }
+    
+    .news-card-original-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* Swiper 페이징 스타일 */
+    .swiper-pagination-bullet {
+      background: rgba(255,255,255,0.6);
+      opacity: 0.7;
+    }
+    
+    .swiper-pagination-bullet-active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      opacity: 1;
+    }
+    
+    /* 사진 내부 페이징 스타일 */
+    .news-photo-swiper .swiper-pagination-bullet {
+      background: rgba(255,255,255,0.8);
+      opacity: 0.6;
+    }
+    
+    .news-photo-swiper .swiper-pagination-bullet-active {
+      background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+      opacity: 1;
+    }
   </style>
 </head>
 <body>

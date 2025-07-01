@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>관리자 대시보드</title>
+      <link rel="stylesheet" href="css/common/base.css">
+    <link rel="stylesheet" href="css/common/navigation.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* 로딩 중 스타일 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 대시보드 특화 스타일 */
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body data-page="dashboard">
+  <!-- 로딩 오버레이 -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- 네비게이션 -->
+  <div id="nav-container"></div>
+
+  <main class="admin-main">
+    <h1>📊 대시보드</h1>
+    
+    <!-- 통계 카드 섹션 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <h3>전체 선교사</h3>
+          <div class="stat-number" id="totalMissionaries">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🌍</div>
+        <div class="stat-content">
+          <h3>활동 국가</h3>
+          <div class="stat-number" id="activeCountries">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-content">
+          <h3>이번 달 뉴스레터</h3>
+          <div class="stat-number" id="monthlyNewsletters">0</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <h3>데이터 완성도</h3>
+          <div class="stat-number" id="dataCompleteness">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 섹션 -->
+    <div class="charts-section">
+      <div class="chart-container">
+        <h3>국가별 선교사 분포</h3>
+        <canvas id="countryChart"></canvas>
+      </div>
+      <div class="chart-container newsletter-chart">
+        <h3>월별 뉴스레터 등록 현황</h3>
+        <canvas id="newsletterChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 국가별 선교사 분포 테이블 -->
+    <div class="table-section">
+      <div class="table-container">
+        <div class="section-header">
+          <h3>🌍 국가별 선교사 상세 현황</h3>
+          <button class="btn btn-small" onclick="refreshCountryTable()">새로고침</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="country-table" id="countryTable">
+            <thead>
+              <tr>
+                <th>국가</th>
+                <th>선교사 수</th>
+                <th>비율</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="countryTableBody">
+              <tr>
+                <td colspan="4" class="loading-cell">
+                  <div class="loading-spinner"></div>
+                  <span>데이터를 불러오는 중...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 최근 활동 섹션 -->
+    <div class="recent-activities">
+      <div class="section-header">
+        <h3>📋 최근 활동</h3>
+        <button class="btn btn-small" onclick="refreshActivities()">새로고침</button>
+      </div>
+      <div class="activity-list" id="activityList">
+        <div class="loading-placeholder">
+          <div class="loading-spinner"></div>
+          <p>활동 내역을 불러오는 중...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+
+  <!-- 토스트 메시지 -->
+  <div id="toast" class="toast" style="display: none;">
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- 데이터 내보내기 모달 -->
+  <div id="dataExportModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>데이터 내보내기</h2>
+        <button type="button" class="close-btn" onclick="closeDataExportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>내보낼 데이터:</label>
+          <label><input type="checkbox" id="exportMissionaries" checked> 선교사 데이터</label>
+          <label><input type="checkbox" id="exportNewsletters" checked> 뉴스레터 데이터</label>
+          <label><input type="checkbox" id="exportStatistics" checked> 통계 데이터</label>
+        </div>
+        <div class="form-group">
+          <label for="exportFormat">파일 형식:</label>
+          <select id="exportFormat">
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="exportData()">내보내기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시스템 상태 모달 -->
+  <div id="systemStatusModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>시스템 상태</h2>
+        <button type="button" class="close-btn" onclick="closeSystemStatusModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Firebase 연결:</span>
+            <span id="firebaseStatus" class="status-value">확인 중...</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">데이터베이스:</span>
+            <span id="databaseStatus" class="status-value">확인 중...</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">스토리지:</span>
+            <span id="storageStatus" class="status-value">확인 중...</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">마지막 동기화:</span>
+            <span id="lastSync" class="status-value">확인 중...</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="refreshSystemStatus()">새로고침</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+  
+  <!-- Common Navigation -->
+  <script src="js/common/navigation.js"></script>
+
+  <!-- Firebase Service -->
+  <script src="js/firebaseService.js"></script>
+  
+  <!-- Missionary Data Service -->
+  <script src="js/missionaryData.js"></script>
+
+  <!-- Page Protection & Auth -->
+  <script src="js/auth.js"></script>
+  
+  <!-- Dashboard Initialization -->
+  <script>
+    let dashboard;
+    
+    // 페이지 초기화
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // 로딩 오버레이 표시
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // 네비게이션 로드
+        try {
+          const response = await fetch('nav.html');
+          const navData = await response.text();
+          document.getElementById('nav-container').innerHTML = navData;
+          
+          // 로그아웃 버튼 이벤트 리스너
+          const logoutButton = document.getElementById('logout-button');
+          if(logoutButton) {
+            logoutButton.addEventListener('click', () => firebase.auth().signOut());
+          }
+        } catch (error) {
+          console.warn('네비게이션 로드 실패:', error);
+        }
+        
+        // Firebase 인증 상태 확인
+        firebase.auth().onAuthStateChanged(user => {
+          if (user) {
+            // 사용자 이메일 표시
+            const userEmailSpan = document.getElementById('user-email');
+            if(userEmailSpan) {
+              userEmailSpan.textContent = user.email;
+            }
+            
+            // 대시보드 초기화
+            if (!dashboard) {
+              dashboard = new Dashboard();
+            }
+            
+            // 로딩 오버레이 숨기기
+            if (loadingOverlay) {
+              loadingOverlay.style.display = 'none';
+            }
+          } else {
+            // 로그인되지 않은 경우 로그인 페이지로 리디렉션
+            window.location.href = 'index.html';
+          }
+        });
+        
+      } catch (error) {
+        console.error('페이지 초기화 오류:', error);
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+          loadingOverlay.innerHTML = '<div style="color: red;">페이지 로드 중 오류가 발생했습니다.</div>';
+        }
+      }
+    });
+
+    // 글로벌 함수들
+    window.refreshCountryTable = async function() {
+      if (dashboard) {
+        const missionaries = await getAllMissionaries();
+        dashboard.renderCountryTable(missionaries);
+        dashboard.showToast('국가별 현황이 새로고침되었습니다.', 'success');
+      }
+    };
+
+    window.refreshActivities = function() {
+      if (dashboard) {
+        dashboard.loadActivities();
+      }
+    };
+  </script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html> 

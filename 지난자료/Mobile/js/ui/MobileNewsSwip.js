@@ -44,6 +44,16 @@ document.addEventListener('DOMContentLoaded', function() {
       mission: '어린이사역',
       content: '몽골의 아이들과 함께 복음을 나누고 있습니다. 계속적인 관심과 기도 부탁드립니다.',
       date: '2024.06.25'
+    },
+    {
+      photo: [
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80'
+      ],
+      name: '박단일',
+      country: '태국',
+      mission: '의료선교',
+      content: '태국에서 의료봉사를 통해 하나님의 사랑을 전하고 있습니다. 사진이 1장뿐인 경우 테스트입니다.',
+      date: '2024.06.20'
     }
   ];
 
@@ -91,26 +101,42 @@ document.addEventListener('DOMContentLoaded', function() {
       init: function() {
         // 각 카드별 내부(가로) Swiper 초기화
         newsList.forEach((news, i) => {
+          const photoCount = (news.photo || []).length;
+          
           new Swiper('.news-photo-swiper-' + i, {
             direction: 'horizontal',
             slidesPerView: 1,
             spaceBetween: 8,
-            pagination: {
+            pagination: photoCount > 1 ? {
               el: '.news-photo-swiper-' + i + ' .swiper-pagination',
               clickable: true,
-            },
-            navigation: {
+            } : false,
+            navigation: photoCount > 1 ? {
               nextEl: '.news-photo-swiper-' + i + ' .swiper-button-next',
               prevEl: '.news-photo-swiper-' + i + ' .swiper-button-prev',
-            },
+            } : false,
             effect: 'fade',
             fadeEffect: { crossFade: true },
-            autoplay: {
+            autoplay: photoCount > 1 ? {
               delay: 5000,
               disableOnInteraction: false,
-            },
-            loop: true,
+            } : false,
+            loop: photoCount > 1,
           });
+          
+          // 사진이 1장 이하일 때 네비게이션과 페이징 숨기기
+          if (photoCount <= 1) {
+            const swiperContainer = document.querySelector('.news-photo-swiper-' + i);
+            if (swiperContainer) {
+              const pagination = swiperContainer.querySelector('.swiper-pagination');
+              const prevBtn = swiperContainer.querySelector('.swiper-button-prev');
+              const nextBtn = swiperContainer.querySelector('.swiper-button-next');
+              
+              if (pagination) pagination.style.display = 'none';
+              if (prevBtn) prevBtn.style.display = 'none';
+              if (nextBtn) nextBtn.style.display = 'none';
+            }
+          }
         });
       }
     }

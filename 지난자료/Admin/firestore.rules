@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 임시 관리자 확인 함수
+    function isTempAdmin() {
+      // saintpbh@gmail.com 의 UID - 관리자로 인정
+      return request.auth != null && request.auth.uid == 'cRl9d4wXG0VXHzsRbLpoLhnCjiK2';
+    }
+    
+    // 관리자 확인 함수 (Custom Claims + UID 기반)
+    function isAdminUser() {
+      return isTempAdmin() || (request.auth != null && request.auth.token.admin == true);
+    }
+    
+    // 관리자 인증 확인 함수
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.admin == true;
+    }
+    
+    // 선교사 데이터 - 관리자만 허용 (UID 기반 + Custom Claims)
+    match /missionaries/{missionaryId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == 'cRl9d4wXG0VXHzsRbLpoLhnCjiK2' ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // 뉴스레터 데이터 - 관리자만 허용 (UID 기반 + Custom Claims)
+    match /newsletters/{newsletterId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == 'cRl9d4wXG0VXHzsRbLpoLhnCjiK2' ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == userId;
+    }
+    
+    // 파일 메타데이터 - 관리자만 허용
+    match /files/{fileId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == 'cRl9d4wXG0VXHzsRbLpoLhnCjiK2' ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // 기본적으로 모든 접근 거부 (이 규칙은 다른 모든 규칙보다 우선순위가 낮음)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

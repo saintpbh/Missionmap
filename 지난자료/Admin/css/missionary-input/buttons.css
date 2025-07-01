@@ -1,0 +1,201 @@
+/* missionary-input buttons: 버튼 스타일 (공통, 주요, 보조, 성공, 경고, 위험, 정보, 크기별, 가족/아코디언/카드 등) */
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px; /* 둥글게 */
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* 주요 액션 버튼 - 파란색 그라데이션 */
+.btn-primary {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1976D2, #1565C0);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+/* 보조 액션 버튼 - 회색 그라데이션 */
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #5a6268, #495057);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* 성공 버튼 - 녹색 그라데이션 */
+.btn-success {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* 경고 버튼 - 주황색 그라데이션 */
+.btn-warning {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  color: #333;
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+}
+
+/* 위험 버튼 - 빨간색 그라데이션 */
+.btn-danger {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #d32f2f, #c62828);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+}
+
+/* 정보 버튼 - 청록색 그라데이션 */
+.btn-info {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+}
+
+.btn-info:hover {
+  background: linear-gradient(135deg, #138496, #117a8b);
+  box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+/* 작은 버튼 */
+.btn-small {
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 20px;
+  gap: 4px;
+}
+
+/* 큰 버튼 */
+.btn-large {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: 30px;
+  gap: 10px;
+}
+
+/* 가족/카드/아코디언 특수 버튼 */
+.btn-add-family {
+  background: linear-gradient(135deg, #3742fa, #2f3542);
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(55, 66, 250, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 20px 0;
+}
+
+.btn-add-family:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(55, 66, 250, 0.4);
+  background: linear-gradient(135deg, #2f3542, #3742fa);
+}
+
+.btn-add-family:active {
+  transform: translateY(0);
+}
+
+.btn-remove-family {
+  background: linear-gradient(135deg, #ff4757, #ff3742);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.btn-remove-family:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+  background: linear-gradient(135deg, #ff3742, #ff2f3a);
+}
+
+.btn-remove-family:active {
+  transform: scale(0.95);
+}
+
+.btn-save-family {
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-top: 15px;
+}
+
+.btn-save-family:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+  background: linear-gradient(135deg, #1e90ff, #2ed573);
+}
+
+.btn-save-family:active {
+  transform: translateY(0);
+}
+
+.btn-save-family.saving {
+  background: linear-gradient(135deg, #ffa502, #ff6348);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+} 

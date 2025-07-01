@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스프레드시트 데이터 가져오기</title>
+    <link rel="stylesheet" href="css/common/base.css">
+    <link rel="stylesheet" href="css/common/navigation.css">
+    <link rel="stylesheet" href="css/admin.css">
+
+    <!-- Firebase SDK (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="js/firebase-config.js"></script>
+    
+    <!-- Common Navigation -->
+    <script src="js/common/navigation.js"></script>
+
+    <!-- SheetJS/xlsx -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Page Protection & Auth -->
+    <script src="js/auth.js"></script>
+</head>
+<body data-page="import-spreadsheet">
+    <!-- 로딩 오버레이 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>페이지를 로드하는 중...</p>
+    </div>
+
+    <div id="nav-container"></div>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>스프레드시트 데이터 가져오기</h1>
+            <div class="firebase-status">
+                <span id="firebaseStatus" class="firebase-status-icon">🔄</span>
+            </div>
+        </div>
+
+        <div class="import-description">
+            <p>Google Sheets 또는 Excel 파일(.xlsx, .csv)에서 선교사 데이터를 가져와 Firebase에 저장합니다.</p>
+            <div class="import-instructions">
+                <h3>📋 사용 방법</h3>
+                <ul>
+                    <li><strong>Google Sheets:</strong> 공유 설정을 "링크가 있는 모든 사용자"로 설정 후 URL 입력</li>
+                    <li><strong>Excel/CSV 파일:</strong> 첫 번째 행이 헤더(필드명)여야 합니다</li>
+                    <li><strong>필수 필드:</strong> name(이름), country(국가)는 반드시 포함되어야 합니다</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Google Sheets 가져오기 섹션 -->
+        <div class="import-section">
+            <h3>🌐 Google Sheets에서 가져오기</h3>
+            <div class="form-group">
+                <label for="googleSheetUrl">Google Sheets URL</label>
+                <input type="url" id="googleSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." class="form-control">
+            </div>
+            <button id="importFromSheetBtn" class="btn btn-primary">
+                <span class="btn-icon">📊</span>
+                Google Sheets에서 가져오기
+            </button>
+        </div>
+
+        <!-- 파일 업로드 섹션 -->
+        <div class="import-section">
+            <h3>📁 파일에서 가져오기</h3>
+            <div class="file-upload-area" id="fileUploadArea">
+                <div class="upload-placeholder">
+                    <span class="upload-icon">📄</span>
+                    <p>Excel 또는 CSV 파일을 드래그하거나 클릭하여 선택</p>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+                </div>
+                <div id="selectedFile" class="selected-file" style="display: none;">
+                    <div class="file-info">
+                        <span class="file-name"></span>
+                        <span class="file-size"></span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearSelectedFile()">제거</button>
+                </div>
+            </div>
+            <button id="importFromFileBtn" class="btn btn-primary" disabled>
+                <span class="btn-icon">📂</span>
+                파일에서 가져오기
+            </button>
+        </div>
+
+        <!-- 진행 상태 -->
+        <div id="progressSection" class="progress-section" style="display: none;">
+            <h3>⏳ 가져오기 진행 상태</h3>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div id="progressText" class="progress-text">준비 중...</div>
+        </div>
+
+        <!-- 필드 분석 결과 -->
+        <div id="fieldAnalysisSection" class="field-analysis-section" style="display: none;">
+            <h3>🔍 필드 분석 결과</h3>
+            <div id="fieldAnalysisContent"></div>
+        </div>
+        
+        <!-- 처리 로그 -->
+        <div class="output-section">
+            <h3>📋 처리 로그</h3>
+            <div id="logOutput" class="log-output">
+                시작하려면 위에서 데이터 소스를 선택하고 가져오기 버튼을 클릭하세요.
+            </div>
+            <div class="log-actions">
+                <button id="clearLogBtn" class="btn btn-secondary btn-sm">로그 지우기</button>
+                <button id="downloadLogBtn" class="btn btn-secondary btn-sm">로그 다운로드</button>
+            </div>
+        </div>
+
+        <!-- 결과 요약 -->
+        <div id="resultSummary" class="result-summary" style="display: none;">
+            <h3>✅ 가져오기 완료</h3>
+            <div id="resultContent"></div>
+        </div>
+    </main>
+
+    <!-- 알림 토스트 -->
+    <div id="toast" class="toast" style="display: none;">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- 확인 다이얼로그 -->
+    <div id="confirmDialog" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ 확인</h2>
+                <button type="button" class="close-btn" onclick="closeConfirmDialog()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">작업을 계속하시겠습니까?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmDialog()">취소</button>
+                <button type="button" id="confirmBtn" class="btn btn-primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Scripts -->
+    <script defer src="js/firebaseService.js"></script>
+    <script defer src="js/missionaryData.js"></script>
+    <script defer src="js/importSpreadsheetData.js"></script>
+
+    <!-- Nav Loader & Event Listeners -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 네비게이션 로드
+            fetch('nav.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('nav-container').innerHTML = data;
+                    
+                    // 로그아웃 버튼 이벤트
+                    const logoutButton = document.getElementById('logout-button');
+                    if(logoutButton) {
+                        logoutButton.addEventListener('click', () => firebase.auth().signOut());
+                    }
+
+                    // 사용자 이메일 표시
+                    const userEmailSpan = document.getElementById('user-email');
+                    firebase.auth().onAuthStateChanged(user => {
+                        if(user && userEmailSpan) {
+                            userEmailSpan.textContent = user.email;
+                        }
+                    });
+                });
+
+            // Firebase 인증 상태 확인 후 로딩 오버레이 제거
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    // 인증된 사용자 - 페이지 표시
+                    setTimeout(() => {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    }, 500);
+                } else {
+                    // 비인증 사용자 - 로그인 페이지로 리디렉션
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

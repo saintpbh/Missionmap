@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>뉴스레터 입력</title>
+  <link rel="stylesheet" href="css/common/base.css">
+  <link rel="stylesheet" href="css/common/navigation.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/newsletter-input.css">
+
+  <!-- Firebase SDK (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+  
+  <!-- Common Navigation -->
+  <script src="js/common/navigation.js"></script>
+
+  <!-- Page Protection & Auth -->
+  <script src="js/auth.js"></script>
+</head>
+<body data-page="newsletter-input">
+  <!-- 로딩 오버레이 -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>페이지를 로드하는 중...</p>
+  </div>
+
+  <div id="nav-container"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>뉴스레터 입력/수정</h1>
+      <div class="firebase-status">
+        <span id="firebaseStatus" class="firebase-status-icon">🔄</span>
+      </div>
+    </div>
+
+    <form id="newsletterForm">
+      <!-- 선교사 선택 섹션 -->
+      <div class="form-section">
+        <h3>선교사 선택</h3>
+        <div class="form-group">
+          <label for="missionarySearch">선교사 검색</label>
+          <div class="search-container">
+            <input type="text" id="missionarySearch" placeholder="선교사 이름으로 검색..." autocomplete="off">
+            <div id="autocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+          </div>
+        </div>
+        
+        <div id="selectedMissionary" class="selected-missionary" style="display: none;">
+          <div class="missionary-info">
+            <h4 id="selectedName"></h4>
+            <p><strong>파송국:</strong> <span id="selectedCountry"></span></p>
+            <p><strong>선교지:</strong> <span id="selectedMission"></span></p>
+          </div>
+          <button type="button" onclick="clearMissionarySelection()" class="btn btn-secondary btn-sm">선택 해제</button>
+        </div>
+      </div>
+
+      <!-- 뉴스레터 정보 섹션 -->
+      <div class="form-section">
+        <h3>뉴스레터 정보</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newsletterDate">발행일</label>
+            <input type="date" id="newsletterDate" required>
+          </div>
+          <div class="form-group">
+            <label for="isUrgent">
+              <input type="checkbox" id="isUrgent">
+              긴급 뉴스레터
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내용 입력 섹션 -->
+      <div class="form-section">
+        <h3>내용 입력</h3>
+        <div class="form-group">
+          <label for="newsletterSummary">요약 (선택사항)</label>
+          <textarea id="newsletterSummary" rows="3" placeholder="뉴스레터 요약을 입력하세요 (최대 200자)"></textarea>
+          <div class="char-count">
+            <span id="summaryCharCount">0</span>/200자
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="newsletterContent">본문 내용 *</label>
+          <textarea id="newsletterContent" rows="15" placeholder="뉴스레터 본문 내용을 입력하세요" required></textarea>
+          <div class="char-count">
+            <span id="contentCharCount">0</span>/5000자
+          </div>
+        </div>
+      </div>
+
+      <!-- 파일 업로드 섹션 -->
+      <div class="form-section">
+        <h3>파일 첨부</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>선교지 사진</label>
+            <div id="photoUploadArea" class="file-upload-area">
+              <div id="photoUploadPlaceholder" class="upload-placeholder">
+                <span class="upload-icon">📷</span>
+                <p>사진을 드래그하거나 클릭하여 업로드</p>
+                <input type="file" id="missionPhotos" multiple accept="image/*" style="display: none;">
+              </div>
+              <div id="photoUploadedFiles" class="uploaded-files" style="display: none;"></div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>문서 첨부</label>
+            <div id="documentUploadArea" class="file-upload-area">
+              <div id="documentUploadPlaceholder" class="upload-placeholder">
+                <span class="upload-icon">📄</span>
+                <p>문서를 드래그하거나 클릭하여 업로드</p>
+                <input type="file" id="newsletterDocuments" multiple accept=".pdf,.doc,.docx,.jpg,.png,.gif" style="display: none;">
+              </div>
+              <div id="documentUploadedFiles" class="uploaded-files" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 제출 버튼 -->
+      <div class="form-actions">
+        <button type="button" onclick="resetForm()" class="btn btn-secondary">초기화</button>
+        <button type="submit" class="btn btn-primary">뉴스레터 저장</button>
+      </div>
+    </form>
+  </main>
+
+  <!-- 알림 토스트 -->
+  <div id="toast" class="toast" style="display: none;">
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- 마이그레이션 다이얼로그 -->
+  <div id="migrationDialog" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🔄 데이터 동기화</h2>
+        <button type="button" class="close-btn" onclick="closeMigrationDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="migrationStatus">
+          <p>데이터 동기화 상태를 확인 중입니다...</p>
+        </div>
+        <div id="migrationActions" style="display: none;">
+          <button type="button" class="btn btn-primary" onclick="startMigration()">
+            🔄 LocalStorage → Firebase 마이그레이션 시작
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="clearLocalData()">
+            🗑️ LocalStorage 데이터 삭제
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="js/firebaseService.js"></script>
+  <script defer src="js/missionaryData.js"></script>
+  <script defer src="js/newsletterInput.js"></script>
+  
+  <!-- Nav Loader & Event Listeners -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 네비게이션 로드
+      fetch('nav.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('nav-container').innerHTML = data;
+          
+          // 로그아웃 버튼 이벤트
+          const logoutButton = document.getElementById('logout-button');
+          if(logoutButton) {
+            logoutButton.addEventListener('click', () => firebase.auth().signOut());
+          }
+
+          // 사용자 이메일 표시
+          const userEmailSpan = document.getElementById('user-email');
+          firebase.auth().onAuthStateChanged(user => {
+            if(user && userEmailSpan) {
+              userEmailSpan.textContent = user.email;
+            }
+          });
+        });
+
+      // Firebase 인증 상태 확인 후 로딩 오버레이 제거
+      firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+          // 인증된 사용자 - 페이지 표시
+          setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+          }, 500);
+        } else {
+          // 비인증 사용자 - 로그인 페이지로 리디렉션
+          window.location.href = 'index.html';
+        }
+      });
+    });
+  </script>
+</body>
+</html> 
