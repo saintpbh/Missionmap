@@ -4,6 +4,10 @@ let missionaries = [];
 let currentMissionary = null;
 let isEditMode = false;
 
+// 가상 탭 상태 변수
+let currentTab = 'management'; // 'management' | 'detail' | 'edit'
+let readOnlyMissionary = null;
+
 // 페이지 로드 시 초기화
 document.addEventListener("DOMContentLoaded", () => {
   // Firebase가 완전히 로드될 때까지 대기
@@ -121,14 +125,29 @@ async function performLogout() {
 async function initializePage() {
   try {
     showLoading();
+    
+    // 상세보기 모달 미리 생성
+    createMissionaryDetailModal();
+    
+    // 선교사 데이터 로드
     await loadMissionaries();
+    
+    // UI 렌더링
     renderMissionaryList();
-    updateFirebaseStatus();
+    
+    // 이벤트 바인딩
+    bindEvents();
+    
+    // 아카이브 체크박스 스타일 업데이트
     updateArchivedCheckboxStyle();
-  } catch (error) {
-    console.error("페이지 초기화 실패:", error);
-    showToast("페이지 로드 실패: " + error.message, "error");
+    
     hideLoading();
+    
+    console.log('선교사 관리 페이지 초기화 완료');
+  } catch (error) {
+    console.error('페이지 초기화 실패:', error);
+    hideLoading();
+    showToast('페이지 로드 실패: ' + error.message, 'error');
   }
 }
 
@@ -201,73 +220,47 @@ function renderMissionaryList() {
     return;
   }
   
+  // 검색어와 필터 적용
   const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
   const includeArchived = archivedCheckbox ? archivedCheckbox.checked : false;
   
-  // 필터링
+  // 필터링된 선교사 목록
   let filteredMissionaries = missionaries.filter(missionary => {
     const matchesSearch = !searchTerm || 
       missionary.name?.toLowerCase().includes(searchTerm) ||
       missionary.country?.toLowerCase().includes(searchTerm) ||
-      missionary.mission?.toLowerCase().includes(searchTerm);
+      missionary.organization?.toLowerCase().includes(searchTerm);
     
     const matchesArchive = includeArchived || !missionary.archived;
     
     return matchesSearch && matchesArchive;
   });
   
-  // 정렬 (최신순)
+  // 정렬 (최신 등록순)
   filteredMissionaries.sort((a, b) => {
-    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    const dateA = new Date(a.createdAt || a.timestamp || 0);
+    const dateB = new Date(b.createdAt || b.timestamp || 0);
     return dateB - dateA;
   });
   
   // 카운트 업데이트
-  const totalCount = filteredMissionaries.length;
-  const archivedCount = filteredMissionaries.filter(m => m.archived).length;
-  const activeCount = totalCount - archivedCount;
-  
-  let countText = `${totalCount}`;
-  if (archivedCount > 0) {
-    countText += ` (활성: ${activeCount}, 아카이브: ${archivedCount})`;
+  const countBadge = document.getElementById('missionaryCount');
+  if (countBadge) {
+    countBadge.textContent = filteredMissionaries.length;
   }
   
-  const countElement = document.getElementById('missionaryCount');
-  if (countElement) {
-    countElement.textContent = countText;
-  }
-  
+  // 목록 렌더링
   if (filteredMissionaries.length === 0) {
-    const searchTerm = document.getElementById('missionarySearch').value.toLowerCase();
-    const includeArchived = document.getElementById('includeArchived').checked;
-    
-    let message = '';
-    if (searchTerm) {
-      message = includeArchived ? 
-        `"${searchTerm}" 검색 결과가 없습니다. (아카이브 포함)` :
-        `"${searchTerm}" 검색 결과가 없습니다. 아카이브된 선교사도 확인해보세요.`;
-    } else {
-      message = includeArchived ? 
-        '등록된 선교사가 없습니다.' :
-        '활성 선교사가 없습니다. 아카이브된 선교사가 있을 수 있습니다.';
-    }
-    
     container.innerHTML = `
       <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.7);">
-        <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
-        <h3>선교사가 없습니다</h3>
-        <p>${message}</p>
+        <div style="font-size: 48px; margin-bottom: 20px;">🔍</div>
+        <h3>선교사를 찾을 수 없습니다</h3>
+        <p>${searchTerm ? `"${searchTerm}" 검색 결과가 없습니다.` : '등록된 선교사가 없습니다.'}</p>
         ${!searchTerm ? `
           <div style="margin-top: 20px;">
-            <button class="btn btn-primary" onclick="showAddMissionaryModal()">
-              ➕ 선교사 추가
+            <button class="btn btn-primary" onclick="window.location.href='missionary-input.html'">
+              ➕ 첫 번째 선교사 추가
             </button>
-            ${!includeArchived ? `
-              <button class="btn btn-secondary" onclick="document.getElementById('includeArchived').click()">
-                📂 아카이브 확인
-              </button>
-            ` : ''}
           </div>
         ` : ''}
       </div>
@@ -275,10 +268,62 @@ function renderMissionaryList() {
     return;
   }
   
-  // 카드 렌더링
-  container.innerHTML = filteredMissionaries.map(missionary => 
-    renderMissionaryCard(missionary)
-  ).join('');
+  // 그리드 레이아웃으로 카드 렌더링
+  container.innerHTML = `
+    <div class="missionary-grid">
+      ${filteredMissionaries.map(missionary => renderMissionaryCard(missionary)).join('')}
+    </div>
+  `;
+  
+  // 이벤트 위임 방식으로 카드 클릭 이벤트 바인딩 (100% 보장)
+  const missionaryGrid = container.querySelector('.missionary-grid');
+  if (missionaryGrid) {
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    missionaryGrid.removeEventListener('click', handleMissionaryCardClick);
+    
+    // 새로운 이벤트 리스너 등록
+    missionaryGrid.addEventListener('click', handleMissionaryCardClick);
+  }
+  
+  // 이름 클릭 시 상세보기 보강 (추가 안전장치)
+  const nameElements = container.querySelectorAll('.missionary-name');
+  nameElements.forEach(nameEl => {
+    nameEl.style.cursor = 'pointer';
+    // 기존 이벤트 리스너 제거 (중복 방지)
+    nameEl.removeEventListener('click', handleNameClick);
+    // 새로운 이벤트 리스너 등록
+    nameEl.addEventListener('click', handleNameClick);
+  });
+  
+  console.log(`[선교사 관리] ${filteredMissionaries.length}개 카드 렌더링 완료, 이벤트 바인딩 완료`);
+}
+
+// 카드 클릭 핸들러 (이벤트 위임)
+function handleMissionaryCardClick(e) {
+  // 버튼 클릭이 아닌 경우에만 상세보기(읽기 전용)
+  if (!e.target.closest('.missionary-actions') && !e.target.classList.contains('missionary-name')) {
+    const card = e.target.closest('.missionary-card');
+    if (card) {
+      const missionaryId = card.dataset.missionaryId;
+      const missionary = missionaries.find(m => m.id === missionaryId);
+      if (missionary) {
+        showMissionaryDetailTab(missionary);
+      }
+    }
+  }
+}
+
+// 이름 클릭 핸들러 (추가 안전장치)
+function handleNameClick(e) {
+  e.stopPropagation();
+  const card = e.target.closest('.missionary-card');
+  if (card) {
+    const missionaryId = card.dataset.missionaryId;
+    const missionary = missionaries.find(m => m.id === missionaryId);
+    if (missionary) {
+      showMissionaryDetailTab(missionary);
+    }
+  }
 }
 
 // 선교사 카드 렌더링
@@ -287,13 +332,13 @@ function renderMissionaryCard(missionary) {
   const archivedClass = missionary.archived ? 'archived' : '';
   
   return `
-    <div class="missionary-card ${archivedClass}" data-id="${missionary.id}">
+    <div class="missionary-card ${archivedClass}" data-missionary-id="${missionary.id}">
       <div class="missionary-header">
         <div class="missionary-avatar">${avatarText}</div>
         <div class="missionary-info">
-          <div class="missionary-name" onclick="showMissionaryDetail('${missionary.id}')" style="cursor: pointer; color: #007bff;">${missionary.name || '이름 없음'}</div>
+          <div class="missionary-name">${missionary.name || '이름 없음'}</div>
           <div class="missionary-country">${missionary.country || '국가 미지정'}</div>
-          <div class="missionary-mission">${missionary.mission || '사역 미지정'}</div>
+          <div class="missionary-organization">${missionary.organization || '소속 미지정'}</div>
         </div>
       </div>
       
@@ -309,7 +354,7 @@ function renderMissionaryCard(missionary) {
           `<button class="btn-archive" onclick="unarchiveMissionary('${missionary.id}')">
             📂 복원
           </button>
-          <button class="btn-delete-permanent" onclick="permanentDeleteConfirm('${missionary.id}')">
+          <button class="btn-delete" onclick="permanentDeleteConfirm('${missionary.id}')">
             🗑️ 완전삭제
           </button>` :
           `<button class="btn-archive" onclick="archiveMissionary('${missionary.id}')">
@@ -324,7 +369,209 @@ function renderMissionaryCard(missionary) {
   `;
 }
 
-// 선교사 상세 정보 렌더링
+// 선교사 상세보기 표시 (읽기 전용 폼/모달)
+function showMissionaryDetail(missionary) {
+  // 기존 입력페이지 이동 코드는 주석처리
+  /*
+  if (missionary && missionary.id) {
+    editMissionary(missionary.id);
+  }
+  */
+  // 읽기 전용 상세 모달 생성 및 표시
+  renderReadOnlyMissionaryModal(missionary);
+}
+
+// 선교사 상세보기 내용 렌더링
+function renderMissionaryDetailContent(missionary) {
+  const avatarText = missionary.name ? missionary.name.charAt(0) : '?';
+  const avatarUrl = missionary.image || '';
+  
+  return `
+    <div class="missionary-header-detail">
+      ${avatarUrl ? 
+        `<img src="${avatarUrl}" alt="${missionary.name}" class="missionary-avatar-large" onerror="this.style.display='none'">` :
+        `<div class="missionary-avatar-large" style="display: flex; align-items: center; justify-content: center; font-size: 48px; background: #4CAF50;">${avatarText}</div>`
+      }
+      <div class="missionary-name-large">${missionary.name || '이름 없음'}</div>
+      <div class="missionary-country-large">${missionary.country || '국가 미지정'}</div>
+      <div class="missionary-organization-large">${missionary.organization || '소속 미지정'}</div>
+    </div>
+    
+    <div class="missionary-detail-grid">
+      <!-- 기본정보 -->
+      <div class="detail-section">
+        <h3>📋 기본정보</h3>
+        <div class="detail-row">
+          <span class="detail-label">영문명</span>
+          <span class="detail-value ${!missionary.english_name ? 'empty' : ''}">${missionary.english_name || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">도시</span>
+          <span class="detail-value ${!missionary.city ? 'empty' : ''}">${missionary.city || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">파송일</span>
+          <span class="detail-value ${!missionary.sent_date ? 'empty' : ''}">${missionary.sent_date || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">기도제목</span>
+          <span class="detail-value ${!missionary.prayer ? 'empty' : ''}">${missionary.prayer || '미입력'}</span>
+        </div>
+      </div>
+      
+      <!-- 교회정보 -->
+      <div class="detail-section">
+        <h3>⛪ 교회정보</h3>
+        <div class="detail-row">
+          <span class="detail-label">소속노회</span>
+          <span class="detail-value ${!missionary.presbytery ? 'empty' : ''}">${missionary.presbytery || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">파송교회</span>
+          <span class="detail-value ${!missionary.sending_church ? 'empty' : ''}">${missionary.sending_church || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">후원교회</span>
+          <span class="detail-value ${!missionary.support_church ? 'empty' : ''}">${missionary.support_church || '미입력'}</span>
+        </div>
+      </div>
+      
+      <!-- 연락처 -->
+      <div class="detail-section">
+        <h3>📞 연락처</h3>
+        <div class="detail-row">
+          <span class="detail-label">이메일</span>
+          <span class="detail-value ${!missionary.email ? 'empty' : ''}">${missionary.email || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">현지 전화번호</span>
+          <span class="detail-value ${!missionary.local_phone ? 'empty' : ''}">${missionary.local_phone || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">현지 응급전화</span>
+          <span class="detail-value ${!missionary.local_emergency ? 'empty' : ''}">${missionary.local_emergency || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">귀국시 전화번호</span>
+          <span class="detail-value ${!missionary.korea_phone ? 'empty' : ''}">${missionary.korea_phone || '미입력'}</span>
+        </div>
+      </div>
+      
+      <!-- 주소 -->
+      <div class="detail-section">
+        <h3>📍 주소</h3>
+        <div class="detail-row">
+          <span class="detail-label">현지 주소</span>
+          <span class="detail-value ${!missionary.local_address ? 'empty' : ''}">${missionary.local_address || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">귀국시 주소</span>
+          <span class="detail-value ${!missionary.korea_address ? 'empty' : ''}">${missionary.korea_address || '미입력'}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 가족사항 -->
+    ${missionary.family && Object.keys(missionary.family).length > 0 ? `
+      <div class="detail-section">
+        <h3>👨‍👩‍👧‍👦 가족사항</h3>
+        ${renderFamilyDetail(missionary.family)}
+      </div>
+    ` : ''}
+    
+    <!-- 후원정보 -->
+    ${missionary.supporters && Object.keys(missionary.supporters).length > 0 ? `
+      <div class="detail-section">
+        <h3>💝 후원정보</h3>
+        ${renderSupportersDetail(missionary.supporters)}
+      </div>
+    ` : ''}
+  `;
+}
+
+// 가족사항 상세보기 렌더링
+function renderFamilyDetail(familyData) {
+  let html = '';
+  
+  if (familyData.spouse) {
+    html += `
+      <div class="family-member-detail">
+        <div class="family-member-title">💑 배우자</div>
+        <div class="detail-row">
+          <span class="detail-label">이름</span>
+          <span class="detail-value">${familyData.spouse.name || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">생년월일</span>
+          <span class="detail-value">${familyData.spouse.birthdate || '미입력'}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  if (familyData.children && familyData.children.length > 0) {
+    familyData.children.forEach((child, index) => {
+      html += `
+        <div class="family-member-detail">
+          <div class="family-member-title">👶 자녀 ${index + 1}</div>
+          <div class="detail-row">
+            <span class="detail-label">이름</span>
+            <span class="detail-value">${child.name || '미입력'}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">생년월일</span>
+            <span class="detail-value">${child.birthdate || '미입력'}</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  return html || '<p style="color: rgba(255,255,255,0.5); text-align: center;">가족 정보가 없습니다.</p>';
+}
+
+// 후원자 상세보기 렌더링
+function renderSupportersDetail(supportersData) {
+  let html = '';
+  
+  if (supportersData.chairman) {
+    html += `
+      <div class="supporter-detail">
+        <div class="supporter-title">👑 후원회장</div>
+        <div class="detail-row">
+          <span class="detail-label">이름</span>
+          <span class="detail-value">${supportersData.chairman.name || '미입력'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">연락처</span>
+          <span class="detail-value">${supportersData.chairman.contact || '미입력'}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  if (supportersData.members && supportersData.members.length > 0) {
+    supportersData.members.forEach((member, index) => {
+      html += `
+        <div class="supporter-detail">
+          <div class="supporter-title">💝 후원자 ${index + 1}</div>
+          <div class="detail-row">
+            <span class="detail-label">이름</span>
+            <span class="detail-value">${member.name || '미입력'}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">연락처</span>
+            <span class="detail-value">${member.contact || '미입력'}</span>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  return html || '<p style="color: rgba(255,255,255,0.5); text-align: center;">후원자 정보가 없습니다.</p>';
+}
+
+// 선교사 상세 정보 렌더링 (카드용)
 function renderMissionaryDetails(missionary) {
   const details = [];
   
@@ -554,14 +801,8 @@ window.showAddMissionaryModal = function() {
 
 // 선교사 수정
 window.editMissionary = function(missionaryId) {
-  const missionary = missionaries.find(m => m.id === missionaryId);
-  if (!missionary) {
-    showToast('선교사를 찾을 수 없습니다', 'error');
-    return;
-  }
-  
-  // 수정 모달 열기
-  showEditMissionaryModal(missionary);
+  // 새로운 입력 페이지로 이동하여 수정
+  window.location.href = `missionary-input.html?edit=${missionaryId}`;
 };
 
 // 수정 모달 표시
@@ -600,6 +841,34 @@ window.closeEditMissionaryModal = function() {
   document.getElementById('editMissionaryContainer').innerHTML = '';
   currentMissionary = null;
   isEditMode = false;
+};
+
+// 선교사 아카이브
+window.archiveMissionary = function(missionaryId) {
+  if (confirm('이 선교사를 아카이브하시겠습니까?')) {
+    archiveMissionaryAction(missionaryId);
+  }
+};
+
+// 선교사 복원
+window.unarchiveMissionary = function(missionaryId) {
+  if (confirm('이 선교사를 복원하시겠습니까?')) {
+    unarchiveMissionaryAction(missionaryId);
+  }
+};
+
+// 선교사 삭제 확인
+window.deleteMissionaryConfirm = function(missionaryId) {
+  if (confirm('이 선교사를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+    archiveMissionaryAction(missionaryId);
+  }
+};
+
+// 선교사 완전 삭제 확인
+window.permanentDeleteConfirm = function(missionaryId) {
+  if (confirm('이 선교사를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+    permanentDeleteAction(missionaryId);
+  }
 };
 
 // 선교사 변경사항 저장
@@ -1094,18 +1363,26 @@ function showToast(message, type = 'info') {
 
 // 선교사 상세 보기 모달 표시
 window.showMissionaryDetail = function(missionaryId) {
-  const missionary = missionaries.find(m => m.id === missionaryId);
-  if (!missionary) {
-    showToast('선교사 정보를 찾을 수 없습니다.', 'error');
-    return;
+  let missionary;
+  
+  // missionaryId가 문자열인 경우 (ID로 찾기)
+  if (typeof missionaryId === 'string') {
+    missionary = missionaries.find(m => m.id === missionaryId);
+  } 
+  // missionaryId가 객체인 경우 (직접 전달)
+  else if (typeof missionaryId === 'object') {
+    missionary = missionaryId;
   }
   
-  currentMissionary = missionary;
-  renderMissionaryDetailModal(missionary);
-  document.getElementById('missionaryDetailModal').style.display = 'flex';
+  if (missionary) {
+    console.log('[선교사 관리] 전역 함수 호출 → 상세보기:', missionary.name);
+    showMissionaryDetail(missionary);
+  } else {
+    console.error('[선교사 관리] 선교사를 찾을 수 없습니다:', missionaryId);
+  }
 };
 
-// 선교사 상세 보기 모달 렌더링
+// 선교사 상세보기 모달 렌더링
 function renderMissionaryDetailModal(missionary) {
   if (!missionary) return;
   
@@ -1582,7 +1859,446 @@ window.permanentDeleteConfirm = function(missionaryId) {
   }
 };
 
-// 페이지 로딩 완료 표시
+// 페이지 로딩 완료 표시 및 검증
 window.addEventListener('load', () => {
   document.body.style.display = 'block';
-}); 
+  
+  // 이벤트 바인딩 상태 검증
+  setTimeout(() => {
+    const missionaryGrid = document.querySelector('.missionary-grid');
+    const nameElements = document.querySelectorAll('.missionary-name');
+    
+    console.log('[선교사 관리] 검증 결과:');
+    console.log('- missionary-grid 존재:', !!missionaryGrid);
+    console.log('- missionary-name 요소 개수:', nameElements.length);
+    
+    if (missionaryGrid) {
+      console.log('- 이벤트 위임 설정 완료');
+    }
+    
+    nameElements.forEach((el, index) => {
+      console.log(`- 이름 요소 ${index + 1}:`, el.textContent, 'cursor:', el.style.cursor);
+    });
+  }, 1000);
+});
+
+// 읽기 전용 상세 모달 생성/표시 함수
+function renderReadOnlyMissionaryModal(missionary) {
+  // 기존 모달이 있으면 제거
+  const oldModal = document.getElementById('readOnlyMissionaryModal');
+  if (oldModal) oldModal.remove();
+
+  // 상세 정보 HTML
+  const html = `
+    <div id="readOnlyMissionaryModal" class="modal" style="display: flex; z-index: 99999; align-items: center; justify-content: center;">
+      <div class="modal-content large-modal" style="max-width:600px;width:90vw;position:relative;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <h2>선교사 정보</h2>
+          <button type="button" class="close-btn" onclick="document.getElementById('readOnlyMissionaryModal').remove()">✕</button>
+        </div>
+        <div class="modal-body" style="padding:24px 0;">
+          ${renderMissionaryDetailContent(missionary)}
+        </div>
+        <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" class="btn btn-primary" onclick="editMissionary('${missionary.id}')">수정</button>
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('readOnlyMissionaryModal').remove()">닫기</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// 선교사정보 가상 탭으로 이동 및 읽기 전용 폼 렌더링
+function showMissionaryDetailTab(missionary) {
+  currentTab = 'detail';
+  readOnlyMissionary = missionary;
+  renderMissionaryDetailTab();
+}
+
+// 선교사정보 가상 탭 렌더링
+function renderMissionaryDetailTab() {
+  // 메인 컨테이너를 비우고 읽기 전용 폼 삽입
+  const main = document.querySelector('main.admin-main') || document.body;
+  main.innerHTML = `
+    <div class="page-header">
+      <h1>👤 선교사정보</h1>
+      <button class="btn btn-secondary" style="float:right;" onclick="goToManagementTab()">닫기</button>
+    </div>
+    <div id="missionaryDetailFormContainer"></div>
+  `;
+  renderReadOnlyMissionaryForm('missionaryDetailFormContainer', readOnlyMissionary);
+}
+
+// 선교사정보 → 선교사 관리로 돌아가기
+window.goToManagementTab = function() {
+  currentTab = 'management';
+  readOnlyMissionary = null;
+  // 전체 페이지 새로 렌더링 (목록)
+  location.reload(); // 가장 간단하게 새로고침으로 복구
+}
+
+// 읽기 전용 폼 렌더링 (선교사 입력 폼과 동일, input/textarea/버튼 모두 disabled)
+function renderReadOnlyMissionaryForm(containerId, missionary) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  // 입력 폼과 거의 동일하게, 모든 필드를 disabled/readOnly로 출력 + 가족/후원/시스템 정보 등도 모두 표시
+  container.innerHTML = `
+    <form class="readonly-form" autocomplete="off" style="max-width:600px;margin:0 auto;">
+      <div class="form-group"><label>이름</label><input type="text" value="${missionary.name || ''}" readonly disabled /></div>
+      <div class="form-group"><label>영문명</label><input type="text" value="${missionary.english_name || ''}" readonly disabled /></div>
+      <div class="form-group"><label>국가</label><input type="text" value="${missionary.country || ''}" readonly disabled /></div>
+      <div class="form-group"><label>도시</label><input type="text" value="${missionary.city || ''}" readonly disabled /></div>
+      <div class="form-group"><label>사역 분야</label><input type="text" value="${missionary.mission || ''}" readonly disabled /></div>
+      <div class="form-group"><label>소속노회</label><input type="text" value="${missionary.presbytery || ''}" readonly disabled /></div>
+      <div class="form-group"><label>소속단체</label><input type="text" value="${missionary.organization || ''}" readonly disabled /></div>
+      <div class="form-group"><label>현지소속 기관</label><input type="text" value="${missionary.local_organization || ''}" readonly disabled /></div>
+      <div class="form-group"><label>파송일</label><input type="text" value="${missionary.sent_date || missionary.sending_date || ''}" readonly disabled /></div>
+      <div class="form-group"><label>파송교회</label><input type="text" value="${missionary.sending_church || ''}" readonly disabled /></div>
+      <div class="form-group"><label>후원교회</label><input type="text" value="${missionary.support_church || ''}" readonly disabled /></div>
+      <div class="form-group"><label>후원회장</label><input type="text" value="${missionary.support_chairman || ''}" readonly disabled /></div>
+      <div class="form-group"><label>후원총무</label><input type="text" value="${missionary.support_secretary || ''}" readonly disabled /></div>
+      <div class="form-group"><label>후원금현황</label><input type="text" value="${missionary.support_amount || ''}" readonly disabled /></div>
+      <div class="form-group"><label>이메일</label><input type="text" value="${missionary.email || ''}" readonly disabled /></div>
+      <div class="form-group"><label>현지 전화번호</label><input type="text" value="${missionary.local_phone || ''}" readonly disabled /></div>
+      <div class="form-group"><label>현지 응급전화</label><input type="text" value="${missionary.local_emergency || ''}" readonly disabled /></div>
+      <div class="form-group"><label>귀국시 전화번호</label><input type="text" value="${missionary.korea_phone || ''}" readonly disabled /></div>
+      <div class="form-group"><label>한국 응급전화</label><input type="text" value="${missionary.korea_emergency || ''}" readonly disabled /></div>
+      <div class="form-group"><label>현지 주소</label><input type="text" value="${missionary.local_address || ''}" readonly disabled /></div>
+      <div class="form-group"><label>귀국시 주소</label><input type="text" value="${missionary.korea_address || ''}" readonly disabled /></div>
+      <div class="form-group"><label>비고</label><textarea readonly disabled>${missionary.note || ''}</textarea></div>
+      <div class="form-group"><label>기도제목</label><textarea readonly disabled>${missionary.prayer || ''}</textarea></div>
+      <!-- 가족사항 -->
+      <div class="form-group"><label>가족사항</label><div style="background:#222;padding:12px 16px;border-radius:8px;">${missionary.family ? renderFamilyDetail(missionary.family) : '<span style=\"color:#aaa\">가족 정보 없음</span>'}</div></div>
+      <!-- 후원정보 -->
+      <div class="form-group"><label>후원정보</label><div style="background:#222;padding:12px 16px;border-radius:8px;">${missionary.supporters ? renderSupportersDetail(missionary.supporters) : '<span style=\"color:#aaa\">후원 정보 없음</span>'}</div></div>
+      <!-- 시스템 정보 -->
+      <div class="form-group"><label>시스템 정보</label><div style="background:#222;padding:12px 16px;border-radius:8px;">
+        <div>등록일: ${missionary.createdAt ? (new Date(missionary.createdAt).toLocaleString('ko-KR')) : '-'}</div>
+        <div>수정일: ${missionary.updatedAt ? (new Date(missionary.updatedAt).toLocaleString('ko-KR')) : '-'}</div>
+        <div>아카이브: ${missionary.archived ? '예' : '아니오'}</div>
+        <div>ID: ${missionary.id || '-'}</div>
+      </div></div>
+      <div class="form-actions" style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn btn-primary" onclick="editMissionary('${missionary.id}')">수정</button>
+        <button type="button" class="btn btn-secondary" onclick="goToManagementTab()">닫기</button>
+      </div>
+    </form>
+  `;
+}
+
+// summary-box 기능 버튼 모달 오픈/닫기
+function openModal(id) {
+  document.getElementById(id).style.display = 'block';
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const btnAllEmail = document.getElementById('btn-all-email');
+  const btnInactiveEmail = document.getElementById('btn-inactive-email');
+  const btnExportLocalInfo = document.getElementById('btn-export-local-info');
+  if (btnAllEmail) btnAllEmail.onclick = () => openModal('modal-all-email');
+  if (btnInactiveEmail) btnInactiveEmail.onclick = () => openModal('modal-inactive-email');
+  if (btnExportLocalInfo) btnExportLocalInfo.onclick = () => openModal('modal-export-local-info');
+});
+
+// 전체이메일 기능 구현
+function getAllMissionaryEmails() {
+  // missionaryList에서 이메일만 추출 (중복/빈값 제거)
+  if (!window.missionaryListData) return [];
+  const emails = window.missionaryListData
+    .map(m => m.email)
+    .filter(e => e && e.includes('@'));
+  // 중복 제거
+  return Array.from(new Set(emails));
+}
+
+function updateAllEmailTextarea() {
+  const autoEmails = getAllMissionaryEmails();
+  const manualEmails = (window.manualEmailList || []);
+  const all = [...autoEmails, ...manualEmails];
+  document.getElementById('all-email-list').value = all.join(', ');
+}
+
+// 수동 추가
+window.manualEmailList = [];
+document.addEventListener('DOMContentLoaded', function() {
+  // missionaryListData 준비: missionaryListData = [{name, email, ...}, ...]
+  // missionaryListData는 기존 목록 로딩 시 window에 저장하도록 별도 코드 필요
+
+  // 전체이메일 모달 오픈 시 자동 이메일 추출
+  const btnAllEmail = document.getElementById('btn-all-email');
+  if (btnAllEmail) btnAllEmail.onclick = function() {
+    window.manualEmailList = [];
+    updateAllEmailTextarea();
+    openModal('modal-all-email');
+  };
+
+  // 수동 이메일 추가
+  const addManualBtn = document.getElementById('add-manual-email');
+  if (addManualBtn) addManualBtn.onclick = function() {
+    const input = document.getElementById('manual-email-input');
+    const email = input.value.trim();
+    if (email && email.includes('@')) {
+      if (!window.manualEmailList.includes(email)) {
+        window.manualEmailList.push(email);
+        updateAllEmailTextarea();
+      }
+      input.value = '';
+    }
+  };
+
+  // 이메일 복사
+  const copyBtn = document.getElementById('copy-all-email-list');
+  if (copyBtn) copyBtn.onclick = function() {
+    const textarea = document.getElementById('all-email-list');
+    textarea.select();
+    document.execCommand('copy');
+    alert('이메일 리스트가 복사되었습니다!');
+  };
+
+  // TXT로 저장
+  const downloadBtn = document.getElementById('download-all-email-list');
+  if (downloadBtn) downloadBtn.onclick = function() {
+    const emails = document.getElementById('all-email-list').value;
+    const blob = new Blob([emails], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '전체이메일리스트.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+});
+
+// 뜸한분메일 기능 구현
+function getInactiveMissionaryEmails(months) {
+  if (!window.missionaryListData) return [];
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+  const emails = window.missionaryListData
+    .filter(m => {
+      if (!m.email || !m.lastNewsletterDate) return true; // 뉴스레터 기록 없으면 포함
+      const last = new Date(m.lastNewsletterDate);
+      return last < cutoff;
+    })
+    .map(m => m.email)
+    .filter(e => e && e.includes('@'));
+  return Array.from(new Set(emails));
+}
+
+function updateInactiveEmailTextarea() {
+  const months = parseInt(document.getElementById('inactive-months').value, 10) || 6;
+  const autoEmails = getInactiveMissionaryEmails(months);
+  const manualEmails = (window.manualInactiveEmailList || []);
+  const all = [...autoEmails, ...manualEmails];
+  document.getElementById('inactive-email-list').value = all.join(', ');
+}
+
+window.manualInactiveEmailList = [];
+document.addEventListener('DOMContentLoaded', function() {
+  // 뜸한분메일 모달 오픈 시 자동 이메일 추출
+  const btnInactiveEmail = document.getElementById('btn-inactive-email');
+  if (btnInactiveEmail) btnInactiveEmail.onclick = function() {
+    window.manualInactiveEmailList = [];
+    updateInactiveEmailTextarea();
+    openModal('modal-inactive-email');
+  };
+  // 개월수 변경/리스트 갱신
+  const monthsInput = document.getElementById('inactive-months');
+  const refreshBtn = document.getElementById('refresh-inactive-email-list');
+  if (monthsInput) monthsInput.onchange = updateInactiveEmailTextarea;
+  if (refreshBtn) refreshBtn.onclick = updateInactiveEmailTextarea;
+  // 수동 이메일 추가
+  const addManualBtn = document.getElementById('add-manual-inactive-email');
+  if (addManualBtn) addManualBtn.onclick = function() {
+    const input = document.getElementById('manual-inactive-email-input');
+    const email = input.value.trim();
+    if (email && email.includes('@')) {
+      if (!window.manualInactiveEmailList.includes(email)) {
+        window.manualInactiveEmailList.push(email);
+        updateInactiveEmailTextarea();
+      }
+      input.value = '';
+    }
+  };
+  // 이메일 복사
+  const copyBtn = document.getElementById('copy-inactive-email-list');
+  if (copyBtn) copyBtn.onclick = function() {
+    const textarea = document.getElementById('inactive-email-list');
+    textarea.select();
+    document.execCommand('copy');
+    alert('이메일 리스트가 복사되었습니다!');
+  };
+  // TXT로 저장
+  const downloadBtn = document.getElementById('download-inactive-email-list');
+  if (downloadBtn) downloadBtn.onclick = function() {
+    const emails = document.getElementById('inactive-email-list').value;
+    const blob = new Blob([emails], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '뜸한분이메일리스트.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+});
+
+// 증명서 발급 기능
+
+function getInactiveMissionaryEmails(months) {
+  if (!window.missionaryListData) return [];
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+  const emails = window.missionaryListData
+    .filter(m => {
+      if (!m.email || !m.lastNewsletterDate) return true; // 뉴스레터 기록 없으면 포함
+      const last = new Date(m.lastNewsletterDate);
+      return last < cutoff;
+    })
+    .map(m => m.email)
+    .filter(e => e && e.includes('@'));
+  return Array.from(new Set(emails));
+}
+
+function updateInactiveEmailTextarea() {
+  const months = parseInt(document.getElementById('inactive-months').value, 10) || 6;
+  const autoEmails = getInactiveMissionaryEmails(months);
+  const manualEmails = (window.manualInactiveEmailList || []);
+  const all = [...autoEmails, ...manualEmails];
+  document.getElementById('inactive-email-list').value = all.join(', ');
+}
+
+window.manualInactiveEmailList = [];
+document.addEventListener('DOMContentLoaded', function() {
+  // 뜸한분메일 모달 오픈 시 자동 이메일 추출
+  const btnInactiveEmail = document.getElementById('btn-inactive-email');
+  if (btnInactiveEmail) btnInactiveEmail.onclick = function() {
+    window.manualInactiveEmailList = [];
+    updateInactiveEmailTextarea();
+    openModal('modal-inactive-email');
+  };
+  // 개월수 변경/리스트 갱신
+  const monthsInput = document.getElementById('inactive-months');
+  const refreshBtn = document.getElementById('refresh-inactive-email-list');
+  if (monthsInput) monthsInput.onchange = updateInactiveEmailTextarea;
+  if (refreshBtn) refreshBtn.onclick = updateInactiveEmailTextarea;
+  // 수동 이메일 추가
+  const addManualBtn = document.getElementById('add-manual-inactive-email');
+  if (addManualBtn) addManualBtn.onclick = function() {
+    const input = document.getElementById('manual-inactive-email-input');
+    const email = input.value.trim();
+    if (email && email.includes('@')) {
+      if (!window.manualInactiveEmailList.includes(email)) {
+        window.manualInactiveEmailList.push(email);
+        updateInactiveEmailTextarea();
+      }
+      input.value = '';
+    }
+  };
+  // 이메일 복사
+  const copyBtn = document.getElementById('copy-inactive-email-list');
+  if (copyBtn) copyBtn.onclick = function() {
+    const textarea = document.getElementById('inactive-email-list');
+    textarea.select();
+    document.execCommand('copy');
+    alert('이메일 리스트가 복사되었습니다!');
+  };
+  // TXT로 저장
+  const downloadBtn = document.getElementById('download-inactive-email-list');
+  if (downloadBtn) downloadBtn.onclick = function() {
+    const emails = document.getElementById('inactive-email-list').value;
+    const blob = new Blob([emails], {type: 'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '뜸한분이메일리스트.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+});
+
+// 증명서 발급 기능
+const CERTIFICATE_TYPES = {
+  send: { title: '파송증명서', template: (m) => `<b>${m.name}</b> 선교사님의 파송증명서 미리보기입니다.<br>영문이름: ${m.englishName || ''}<br>국가: ${m.country || ''}` },
+  employ: { title: '재직증명서', template: (m) => `<b>${m.name}</b> 선교사님의 재직증명서 미리보기입니다.<br>영문이름: ${m.englishName || ''}<br>국가: ${m.country || ''}` },
+  career: { title: '경력증명서', template: (m) => `<b>${m.name}</b> 선교사님의 경력증명서 미리보기입니다.<br>영문이름: ${m.englishName || ''}<br>국가: ${m.country || ''}` },
+};
+let selectedCertificateType = null;
+let selectedMissionary = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 증명서 버튼 이벤트
+  document.getElementById('btn-certificate-send').onclick = function() { openCertificateModal('send'); };
+  document.getElementById('btn-certificate-employ').onclick = function() { openCertificateModal('employ'); };
+  document.getElementById('btn-certificate-career').onclick = function() { openCertificateModal('career'); };
+
+  // 이름 입력 자동완성
+  const nameInput = document.getElementById('certificate-name-input');
+  const autocomplete = document.getElementById('certificate-autocomplete');
+  nameInput.oninput = function() {
+    const val = nameInput.value.trim();
+    autocomplete.innerHTML = '';
+    if (!val || !window.missionaryListData) return;
+    const matches = window.missionaryListData.filter(m => m.name.includes(val));
+    if (matches.length === 0) return;
+    matches.slice(0, 5).forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-item';
+      div.textContent = m.name + (m.englishName ? ` (${m.englishName})` : '');
+      div.onclick = function() {
+        nameInput.value = m.name;
+        autocomplete.innerHTML = '';
+        showCertificateConfirm(m);
+      };
+      autocomplete.appendChild(div);
+    });
+  };
+
+  // 예/아니오 버튼
+  document.getElementById('certificate-confirm-yes').onclick = function() {
+    showCertificatePreview(selectedMissionary);
+  };
+  document.getElementById('certificate-confirm-no').onclick = function() {
+    document.getElementById('certificate-confirm-section').style.display = 'none';
+    document.getElementById('certificate-name-input').value = '';
+    selectedMissionary = null;
+  };
+
+  // 인쇄 버튼(임시)
+  document.getElementById('certificate-print-btn').onclick = function() {
+    window.print();
+  };
+});
+
+function openCertificateModal(type) {
+  selectedCertificateType = type;
+  selectedMissionary = null;
+  document.getElementById('certificate-modal-title').textContent = CERTIFICATE_TYPES[type].title + ' 발급';
+  document.getElementById('certificate-name-input').value = '';
+  document.getElementById('certificate-autocomplete').innerHTML = '';
+  document.getElementById('certificate-confirm-section').style.display = 'none';
+  document.getElementById('certificate-preview-section').style.display = 'none';
+  openModal('modal-certificate');
+}
+
+function showCertificateConfirm(m) {
+  selectedMissionary = m;
+  document.getElementById('certificate-confirm-section').style.display = '';
+  document.getElementById('certificate-confirm-text').textContent = `${m.name} (${m.englishName || ''}, ${m.country || ''}) 맞습니까?`;
+}
+
+function showCertificatePreview(m) {
+  document.getElementById('certificate-confirm-section').style.display = 'none';
+  document.getElementById('certificate-preview-section').style.display = '';
+  const type = selectedCertificateType;
+  document.getElementById('certificate-preview-content').innerHTML = CERTIFICATE_TYPES[type].template(m);
+}

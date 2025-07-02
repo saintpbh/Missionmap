@@ -31,6 +31,12 @@
 }
 
 .missionary-form-container {
+  background: transparent;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.form-container {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 15px;

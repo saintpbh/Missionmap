@@ -27,18 +27,35 @@
     const stats = (window.DataManager && window.DataManager.getCountryStats && Object.keys(window.DataManager.getCountryStats()).length > 0)
       ? window.DataManager.getCountryStats()
       : (window.cachedCountryStats || {});
-    const countries = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'ko'));
     // missionaryMap.js의 COUNTRY_FLAGS 우선 참조
     const flagMap = (window.CountryBackgrounds && window.CountryBackgrounds.COUNTRY_FLAGS) ? window.CountryBackgrounds.COUNTRY_FLAGS : (window.MissionaryMap?.constants?.COUNTRY_FLAGS || {});
-    tbody.innerHTML = countries.map(country => {
-      const flagCode = flagMap[country];
-      let flagImg = '';
-      if (flagCode) {
-        flagImg = `<img src='https://flagcdn.com/w40/${flagCode}.png' alt='' style='width:28px;height:20px;border-radius:3px;'>`;
-      } else {
-        flagImg = `<span style='font-size:1.3em;'>🌐</span>`;
-      }
-      return `<tr><td>${flagImg}</td><td>${country}</td><td style='text-align:right;'><b>${stats[country]}</b></td></tr>`;
+
+    // 대륙별로 국가 분류
+    const continents = ["아시아", "유럽", "아메리카", "아프리카", "오세아니아", "기타"];
+    const continentCountries = {};
+    Object.keys(stats).forEach(country => {
+      const continent = window.getContinentByCountry ? window.getContinentByCountry(country) : "기타";
+      if (!continentCountries[continent]) continentCountries[continent] = [];
+      continentCountries[continent].push(country);
+    });
+
+    // 대륙별로 섹션 렌더링
+    tbody.innerHTML = continents.map(continent => {
+      const countries = (continentCountries[continent] || []).sort((a,b)=>a.localeCompare(b,'ko'));
+      if (countries.length === 0) return '';
+      const rows = countries.map(country => {
+        const flagCode = flagMap[country];
+        let flagImg = '';
+        if (flagCode) {
+          flagImg = `<img src='https://flagcdn.com/w40/${flagCode}.png' alt='' style='width:28px;height:20px;border-radius:3px;'>`;
+        } else {
+          flagImg = `<span style='font-size:1.3em;'>🌐</span>`;
+        }
+        // stats[country]가 객체면 count, 숫자면 그대로
+        const count = typeof stats[country] === 'object' ? stats[country].count : stats[country];
+        return `<tr><td>${flagImg}</td><td>${country}</td><td style='text-align:right;'><b>${count}</b></td></tr>`;
+      }).join('');
+      return `<tr><td colspan="3" style="background:#f5f5fa;font-weight:bold;font-size:1.1em;text-align:left;padding:8px 6px 4px 6px;">${continent}</td></tr>` + rows;
     }).join('');
   }
   window.showCountryStatsDetail = showCountryStatsScreen;

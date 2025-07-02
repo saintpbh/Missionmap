@@ -33,6 +33,26 @@ const DEFAULT_CATEGORIES = [
   { id: 'contact', name: '연락처', order: 5 }
 ];
 
+// 필드 크기 분류 함수
+function getFieldSize(field) {
+  // 작은 필드들 (이름, 영문명, 국가, 도시, 날짜, 숫자 등)
+  const smallFields = ['name', 'english_name', 'country', 'city', 'sent_date', 'lat', 'lng', 'presbytery', 'support_chairman', 'support_secretary', 'support_amount', 'email', 'local_phone', 'local_emergency', 'korea_phone', 'korea_emergency'];
+  
+  // 중간 필드들 (소속기관, 파송교회, 후원교회 등)
+  const mediumFields = ['organization', 'sending_church', 'support_church'];
+  
+  // 큰 필드들 (기도제목, 주소, URL 등)
+  const largeFields = ['prayer', 'local_address', 'korea_address', 'image', 'NewsLetter'];
+  
+  if (smallFields.includes(field.id)) return 'small';
+  if (mediumFields.includes(field.id)) return 'medium';
+  if (largeFields.includes(field.id)) return 'large';
+  if (field.type === FIELD_TYPES.TEXTAREA) return 'large';
+  if (field.type === 'family_group' || field.type === 'supporter_group') return 'large';
+  
+  return 'medium'; // 기본값
+}
+
 // 기본 필드 정의
 const DEFAULT_FIELDS = [
   // 기본정보
@@ -190,8 +210,32 @@ function renderDynamicForm(containerId, settings = null, existingData = null) {
       .filter(field => field.category === category.id)
       .sort((a, b) => a.order - b.order);
     
-    categoryFields.forEach(field => {
-      html += renderField(field, existingData);
+    // 필드들을 크기별로 그룹화하여 렌더링
+    let currentRow = [];
+    categoryFields.forEach((field, index) => {
+      const fieldSize = getFieldSize(field);
+      
+      if (fieldSize === 'large' || field.type === 'family_group' || field.type === 'supporter_group') {
+        // 큰 필드나 특수 그룹은 현재 행을 먼저 처리하고 새 행 시작
+        if (currentRow.length > 0) {
+          html += '<div class="form-row">';
+          currentRow.forEach(fieldHtml => html += fieldHtml);
+          html += '</div>';
+          currentRow = [];
+        }
+        html += renderField(field, existingData);
+      } else {
+        // 작은/중간 필드는 행에 추가
+        currentRow.push(renderField(field, existingData));
+        
+        // 2개가 모이거나 마지막 필드면 행 완성
+        if (currentRow.length >= 2 || index === categoryFields.length - 1) {
+          html += '<div class="form-row">';
+          currentRow.forEach(fieldHtml => html += fieldHtml);
+          html += '</div>';
+          currentRow = [];
+        }
+      }
     });
     
     html += '</div>';
@@ -203,8 +247,9 @@ function renderDynamicForm(containerId, settings = null, existingData = null) {
   if (!isEditMode) {
     html += `
       <div class="form-actions">
-        <button type="button" id="btn-temp-save">임시저장</button>
-        <button type="button" id="btn-submit">등록</button>
+        <button type="button" id="btn-reset" class="btn btn-danger">초기화</button>
+        <button type="button" id="btn-temp-save" class="btn btn-warning">임시저장</button>
+        <button type="button" id="btn-submit" class="btn btn-primary">등록</button>
       </div>
     `;
   }
@@ -229,7 +274,11 @@ function renderField(field, existingData) {
   // 기존 데이터에서 값 가져오기
   const existingValue = existingData ? existingData[field.id] || '' : '';
   
-  let html = `<div class="form-group" data-field-id="${field.id}">`;
+  // 필드 크기 결정
+  const fieldSize = getFieldSize(field);
+  const sizeClass = fieldSize !== 'large' ? `form-col ${fieldSize}` : '';
+  
+  let html = `<div class="form-group ${sizeClass}" data-field-id="${field.id}">`;
   html += `<label>${field.name} ${required}</label>`;
   
   switch (field.type) {
@@ -435,6 +484,18 @@ function bindDynamicFormEvents() {
   //     form.reset();
   //   };
   // }
+  
+  // 초기화 버튼 (입력 모드에서만)
+  const resetBtn = document.getElementById('btn-reset');
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      if (confirm('모든 입력값이 초기화됩니다. 정말 초기화할까요?')) {
+        clearDynamicFormTemp();
+        clearFormFields();
+        showDynamicToast('입력값이 모두 초기화되었습니다', 'success');
+      }
+    };
+  }
   
   // 임시저장 (입력 모드에서만)
   const tempSaveBtn = document.getElementById('btn-temp-save');
@@ -662,6 +723,40 @@ function loadDynamicFormTemp() {
 
 function clearDynamicFormTemp() {
   localStorage.removeItem(DYNAMIC_TEMP_KEY);
+}
+
+// 폼 필드 초기화 함수
+function clearFormFields() {
+  // 폼의 모든 입력값을 빈 값으로 초기화
+  const form = document.getElementById('dynamic-missionary-form');
+  if (!form) return;
+  
+  Array.from(form.elements).forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = false;
+    } else if (el.tagName === 'SELECT') {
+      el.selectedIndex = 0;
+    } else {
+      el.value = '';
+    }
+  });
+  
+  // 가족/후원자 등 동적 그룹도 초기화
+  if (window.clearFamilyGroup) window.clearFamilyGroup();
+  if (window.clearSupporterGroup) window.clearSupporterGroup();
+  
+  // 가족사항 컨테이너 초기화
+  const spouseContainer = document.getElementById('spouse-container');
+  const parentsContainer = document.getElementById('parents-container');
+  const childrenContainer = document.getElementById('children-container');
+  
+  if (spouseContainer) spouseContainer.innerHTML = '';
+  if (parentsContainer) parentsContainer.innerHTML = '';
+  if (childrenContainer) childrenContainer.innerHTML = '';
+  
+  // 후원자 컨테이너 초기화
+  const supportersList = document.getElementById('supportersList');
+  if (supportersList) supportersList.innerHTML = '';
 }
 
 // 폼에 데이터 채우기
@@ -956,6 +1051,7 @@ window.updateSupporterNumbers = updateSupporterNumbers;
 window.renderFormSettingsUI = renderFormSettingsUI;
 window.saveFormSettings = saveFormSettings;
 window.loadFormSettings = loadFormSettings;
+window.clearFormFields = clearFormFields;
 
 // 가족 관련 함수들은 familyManager.js에서 관리됨
 // missionaryFormManager.js에서는 window 등록만 하고 실제 구현은 familyManager.js에서 담당

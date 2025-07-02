@@ -242,4 +242,70 @@ function showToast(message, type = 'info') {
       toast.remove();
     }
   }, 3000);
-} 
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    const navLogo = document.querySelector('.nav-logo');
+    const adminHomeLink = navLogo ? navLogo.querySelector('a') : null;
+    if (navLogo && adminHomeLink) {
+      // 기존 아이콘이 있으면 제거
+      const oldIcon = navLogo.querySelector('#firebase-status-icon');
+      if (oldIcon) oldIcon.remove();
+      // 새 아이콘 생성 및 정확한 위치에 삽입
+      const statusIcon = document.createElement('span');
+      statusIcon.id = 'firebase-status-icon';
+      statusIcon.style.marginRight = '8px';
+      statusIcon.style.fontSize = '1.5rem';
+      navLogo.insertBefore(statusIcon, adminHomeLink);
+      console.log('[연결상태 아이콘] .nav-logo > a 바로 앞에 삽입 완료');
+      async function updateFirebaseStatusIcon() {
+        let isOnline = navigator.onLine;
+        let isFirebaseConnected = false;
+        if (isOnline && window.firebase && firebase.firestore) {
+          try {
+            await firebase.firestore().collection('missionaries').limit(1).get({ source: 'server' });
+            isFirebaseConnected = true;
+          } catch (e) {
+            isFirebaseConnected = false;
+          }
+        }
+        if (isOnline && isFirebaseConnected) {
+          statusIcon.textContent = '🔥';
+          statusIcon.title = 'Firebase 연결됨';
+        } else {
+          statusIcon.textContent = '🪵';
+          statusIcon.title = 'Firebase 미연결';
+        }
+      }
+      updateFirebaseStatusIcon();
+      setInterval(updateFirebaseStatusIcon, 7000);
+      window.addEventListener('online', updateFirebaseStatusIcon);
+      window.addEventListener('offline', updateFirebaseStatusIcon);
+    } else {
+      // fallback: body 맨 앞에 강제 삽입
+      if (!document.getElementById('firebase-status-icon')) {
+        const fallbackIcon = document.createElement('span');
+        fallbackIcon.id = 'firebase-status-icon';
+        fallbackIcon.style.marginRight = '10px';
+        fallbackIcon.style.fontSize = '1.5rem';
+        fallbackIcon.textContent = '🪵';
+        document.body.insertBefore(fallbackIcon, document.body.firstChild);
+        console.log('[연결상태 아이콘] body 맨 앞에 fallback 삽입');
+      }
+    }
+  }, 500);
+
+  // 네비게이션 바의 모든 클릭(모든 태그 포함)에서 beforeunload 해제
+  const adminHeader = document.querySelector('.admin-header');
+  if (adminHeader) {
+    adminHeader.addEventListener('click', function(e) {
+      window.onbeforeunload = null;
+    }, true);
+  }
+  document.body.addEventListener('click', function(e) {
+    if (e.target.closest('.admin-header')) {
+      window.onbeforeunload = null;
+    }
+  }, true);
+}); 

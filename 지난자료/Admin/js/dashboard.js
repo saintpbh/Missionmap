@@ -42,6 +42,10 @@ class Dashboard {
       const completeness = this.calculateDataCompleteness(activeMissionaries);
       document.getElementById('dataCompleteness').textContent = `${completeness}%`;
       
+      // 등록된 후원자 수 계산 (아카이브 제외)
+      const totalSupporters = this.calculateTotalSupporters(activeMissionaries);
+      document.getElementById('totalSupporters').textContent = totalSupporters;
+      
       // 차트 데이터 준비 (아카이브 제외)
       await this.prepareChartData(activeMissionaries);
       
@@ -74,15 +78,48 @@ class Dashboard {
     return Math.round(totalCompleteness / missionaries.length);
   }
 
-  // 차트 데이터 준비
-  async prepareChartData(missionaries) {
-    // 국가별 분포 (이미 아카이브 제외된 데이터)
-    const countryData = {};
-    missionaries.forEach(m => {
-      const country = m.country || '미지정';
-      countryData[country] = (countryData[country] || 0) + 1;
+  // 등록된 후원자 수 계산
+  calculateTotalSupporters(missionaries) {
+    let totalSupporters = 0;
+    
+    missionaries.forEach(missionary => {
+      // supporters 배열이 있는 경우 (새로운 형식)
+      if (missionary.supporters && Array.isArray(missionary.supporters)) {
+        totalSupporters += missionary.supporters.length;
+      }
+      // supporters 객체가 있는 경우 (기존 형식)
+      else if (missionary.supporters && typeof missionary.supporters === 'object') {
+        if (missionary.supporters.members && Array.isArray(missionary.supporters.members)) {
+          totalSupporters += missionary.supporters.members.length;
+        }
+        if (missionary.supporters.chairman && missionary.supporters.chairman.name) {
+          totalSupporters += 1;
+        }
+      }
+      // 개별 후원자 필드가 있는 경우
+      else {
+        if (missionary.support_chairman && missionary.support_chairman.trim()) {
+          totalSupporters += 1;
+        }
+        if (missionary.support_secretary && missionary.support_secretary.trim()) {
+          totalSupporters += 1;
+        }
+      }
     });
     
+    return totalSupporters;
+  }
+
+  // 차트 데이터 준비
+  async prepareChartData(missionaries) {
+    // 대륙별 분포 (아카이브 제외된 데이터)
+    const continentData = {};
+    missionaries.forEach(m => {
+      let continent = this.getCountryContinent(m.country || '미지정');
+      // 북미/남미 → 아메리카로 통합
+      if (continent === '북미' || continent === '남미') continent = '아메리카';
+      continentData[continent] = (continentData[continent] || 0) + 1;
+    });
     // 월별 뉴스레터 등록 현황 (최근 12개월)
     const monthlyNewsletterData = {};
     const now = new Date();
@@ -91,7 +128,6 @@ class Dashboard {
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       monthlyNewsletterData[monthKey] = 0;
     }
-    
     // 뉴스레터 데이터로 월별 집계
     const newsletters = await getAllNewsletters();
     newsletters.forEach(n => {
@@ -103,43 +139,38 @@ class Dashboard {
         }
       }
     });
-    
     this.chartData = {
-      countries: countryData,
+      continents: continentData,
       monthly: monthlyNewsletterData
     };
   }
 
-  // 국가-대륙 매핑
+  // 국가-대륙 매핑 (아시아 세분화)
   getCountryContinent(country) {
     const continentMap = {
-      // 아시아
-      '한국': '아시아', '중국': '아시아', '일본': '아시아', '태국': '아시아', '베트남': '아시아',
-      '필리핀': '아시아', '인도네시아': '아시아', '말레이시아': '아시아', '싱가포르': '아시아',
-      '인도': '아시아', '방글라데시': '아시아', '파키스탄': '아시아', '아프가니스탄': '아시아',
-      '미얀마': '아시아', '캄보디아': '아시아', '라오스': '아시아', '몽골': '아시아',
-      
+      // 동북아시아
+      '한국': '동북아시아', '중국': '동북아시아', '일본': '동북아시아', '대만': '동북아시아', '몽골': '동북아시아',
+      // 동남아시아
+      '필리핀': '동남아시아', '태국': '동남아시아', '캄보디아': '동남아시아', '라오스': '동남아시아', '인도네시아': '동남아시아', '말레이시아': '동남아시아', '동티모르': '동남아시아', '베트남': '동남아시아', '싱가포르': '동남아시아',
+      // 서남아시아
+      '인도': '서남아시아', '파키스탄': '서남아시아', '네팔': '서남아시아', '이스라엘': '서남아시아', '방글라데시': '서남아시아', '스리랑카': '서남아시아', '아프가니스탄': '서남아시아',
       // 유럽
       '독일': '유럽', '프랑스': '유럽', '영국': '유럽', '이탈리아': '유럽', '스페인': '유럽',
       '네덜란드': '유럽', '벨기에': '유럽', '스위스': '유럽', '오스트리아': '유럽',
-      '러시아': '유럽', '폴란드': '유럽', '체코': '유럽', '헝가리': '유럽',
-      
+      '러시아': '유럽', '폴란드': '유럽', '체코': '유럽', '헝가리': '유럽', '불가리아': '유럽',
       // 북미
-      '미국': '북미', '캐나다': '북미', '멕시코': '북미',
-      
+      '미국': '북미', '캐나다': '북미', '멕시코': '북미', '쿠바': '아메리카',
       // 남미
       '브라질': '남미', '아르헨티나': '남미', '칠레': '남미', '페루': '남미', '콜롬비아': '남미',
       '베네수엘라': '남미', '에콰도르': '남미', '볼리비아': '남미', '우루과이': '남미',
-      
       // 아프리카
       '남아프리카공화국': '아프리카', '이집트': '아프리카', '나이지리아': '아프리카',
       '케냐': '아프리카', '에티오피아': '아프리카', '가나': '아프리카', '모로코': '아프리카',
       '탄자니아': '아프리카', '우간다': '아프리카', '짐바브웨': '아프리카',
-      
+      '부르키나파소': '아프리카', '말라위': '아프리카', '모리타니': '아프리카', '라이베리아': '아프리카',
       // 오세아니아
       '호주': '오세아니아', '뉴질랜드': '오세아니아', '파푸아뉴기니': '오세아니아'
     };
-    
     return continentMap[country] || '기타';
   }
 
@@ -183,7 +214,7 @@ class Dashboard {
 
     // 테이블 행 생성 (대륙별로)
     let rows = '';
-    const continentOrder = ['아시아', '유럽', '북미', '남미', '아프리카', '오세아니아', '기타'];
+    const continentOrder = ['동북아시아', '동남아시아', '서남아시아', '유럽', '아메리카', '오세아니아', '기타'];
     
     continentOrder.forEach(continent => {
       if (continentGroups[continent]) {
@@ -230,19 +261,24 @@ class Dashboard {
   // 차트 초기화
   initCharts() {
     if (!this.chartData) return;
-    
-    // 국가별 분포 차트
+    // 대륙별 분포 차트
     const countryCtx = document.getElementById('countryChart');
     if (countryCtx) {
       this.charts.country = new Chart(countryCtx, {
         type: 'doughnut',
         data: {
-          labels: Object.keys(this.chartData.countries),
+          labels: Object.keys(this.chartData.continents),
           datasets: [{
-            data: Object.values(this.chartData.countries),
+            data: Object.values(this.chartData.continents),
             backgroundColor: [
-              '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
-              '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+              '#3b82f6', // 동북아시아(진한 파랑)
+              '#38bdf8', // 동남아시아(밝은 청록)
+              '#06b6d4', // 서남아시아(청록)
+              '#8b5cf6', // 유럽(보라)
+              '#f59e0b', // 아메리카(주황)
+              '#10b981', // 아프리카(초록)
+              '#f97316', // 오세아니아(오렌지)
+              '#6366f1'  // 기타(보라)
             ]
           }]
         },

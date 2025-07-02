@@ -8,6 +8,13 @@
   <link rel="stylesheet" href="css/common/navigation.css">
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/missionary-input.css">
+  <link rel="stylesheet" href="css/missionary-input/base.css">
+  <link rel="stylesheet" href="css/missionary-input/forms.css">
+  <link rel="stylesheet" href="css/missionary-input/tabs.css">
+  <link rel="stylesheet" href="css/missionary-input/family.css">
+  <link rel="stylesheet" href="css/missionary-input/buttons.css">
+  <link rel="stylesheet" href="css/missionary-input/states.css">
+  <link rel="stylesheet" href="css/missionary-input/responsive.css">
   <style>
     body { display: none; }
   </style>
@@ -15,9 +22,22 @@
 <body data-page="missionary-input">
   <div id="nav-container"></div>
 
-  <main class="container">
-    <h1>선교사 정보 입력/수정</h1>
-    <form id="missionary-form" class="form-container"></form>
+  <main class="admin-main">
+    <div class="content-wrapper">
+      <div class="page-header">
+        <h1>👤 선교사 입력</h1>
+        <div class="page-info">
+          <h2>새로운 선교사 등록</h2>
+        </div>
+
+      </div>
+      
+      <div class="form-container">
+        <div id="missionaryFormContainer" class="missionary-form-container">
+          <!-- 동적 폼이 여기에 렌더링됩니다 -->
+        </div>
+      </div>
+    </div>
   </main>
   
       <!-- Firebase SDK (CDN) -->

@@ -8,6 +8,9 @@ let currentMissionaryId = null;
 let currentMissionary = null;
 let isSaving = false; // 저장 중 상태 추가
 
+// beforeunload 핸들러를 변수에 저장 (전역)
+let beforeUnloadHandler = null;
+
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', async () => {
   await initializePage();
@@ -41,8 +44,15 @@ async function initializePage() {
 // 선교사 데이터 로드 (수정 모드)
 async function loadMissionaryData(missionaryId) {
   try {
-    const missionaries = await window.getMissionaries();
-    currentMissionary = missionaries.find(m => m.id === missionaryId);
+    if (window.firebaseService) {
+      const missionary = await window.firebaseService.getMissionary(missionaryId);
+      currentMissionary = missionary;
+    } else if (window.getMissionaries) {
+      const missionaries = await window.getMissionaries();
+      currentMissionary = missionaries.find(m => m.id === missionaryId);
+    } else {
+      throw new Error('선교사 데이터 서비스를 찾을 수 없습니다.');
+    }
     
     if (!currentMissionary) {
       throw new Error('선교사를 찾을 수 없습니다');
@@ -55,45 +65,38 @@ async function loadMissionaryData(missionaryId) {
 
 // 페이지 제목 업데이트
 function updatePageTitle() {
-  const title = document.querySelector('.header-content h1');
+  const title = document.querySelector('.page-header h1');
   const pageInfo = document.querySelector('.page-info h2');
-  
+  if (!title || !pageInfo) return;
   if (isEditMode) {
     title.textContent = '👤 선교사 수정';
     pageInfo.textContent = '선교사 정보 수정';
-    updateSaveButtonText('✅ 수정하기');
   } else {
     title.textContent = '👤 선교사 입력';
     pageInfo.textContent = '새로운 선교사 등록';
-    updateSaveButtonText('✅ 등록하기');
   }
 }
 
 // 선교사 폼 렌더링
 async function renderMissionaryForm() {
   const container = document.getElementById('missionaryFormContainer');
-  if (!container) return;
+  if (!container) {
+    console.error('missionaryFormContainer를 찾을 수 없습니다.');
+    return;
+  }
   
   try {
     // 동적 폼 렌더링
-    window.renderDynamicForm('missionaryFormContainer');
-    
-    // 동적 폼 제출 버튼 이벤트 바인딩
-    const submitBtn = document.getElementById('btn-submit');
-    if (submitBtn) {
-      submitBtn.onclick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // 이미 저장 중이면 중복 실행 방지
-        if (isSaving) {
-          console.log('이미 저장 중입니다. 중복 실행을 방지합니다.');
-          return;
-        }
-        
-        await saveMissionary();
-      };
+    if (window.renderDynamicForm) {
+      window.renderDynamicForm('missionaryFormContainer');
+    } else {
+      throw new Error('renderDynamicForm 함수를 찾을 수 없습니다.');
     }
+    
+    // 폼 렌더링 완료 후 이벤트 바인딩
+    setTimeout(() => {
+      bindFormEvents();
+    }, 500);
     
     // 수정 모드인 경우 기존 데이터로 폼 채우기
     if (isEditMode && currentMissionary) {
@@ -115,23 +118,25 @@ async function renderMissionaryForm() {
       }, 5000);
     } else {
       // 임시저장 데이터 복원 (새 입력 모드에서만)
-      const tempData = window.loadDynamicFormTemp();
-      if (tempData) {
-        const waitForForm = setInterval(() => {
-          const form = document.getElementById('dynamic-missionary-form');
-          if (form) {
+      if (window.loadDynamicFormTemp) {
+        const tempData = window.loadDynamicFormTemp();
+        if (tempData) {
+          const waitForForm = setInterval(() => {
+            const form = document.getElementById('dynamic-missionary-form');
+            if (form) {
+              clearInterval(waitForForm);
+              setTimeout(() => {
+                fillFormWithMissionaryData(tempData);
+                showToast('임시저장된 데이터가 복원되었습니다', 'info');
+              }, 200);
+            }
+          }, 100);
+          
+          // 최대 5초 후 타임아웃
+          setTimeout(() => {
             clearInterval(waitForForm);
-            setTimeout(() => {
-              fillFormWithMissionaryData(tempData);
-              showToast('임시저장된 데이터가 복원되었습니다', 'info');
-            }, 200);
-          }
-        }, 100);
-        
-        // 최대 5초 후 타임아웃
-        setTimeout(() => {
-          clearInterval(waitForForm);
-        }, 5000);
+          }, 5000);
+        }
       }
     }
     
@@ -140,12 +145,58 @@ async function renderMissionaryForm() {
     container.innerHTML = `
       <div class="error-state">
         <h3>폼 로드 실패</h3>
-        <p>폼을 불러오는 중 오류가 발생했습니다.</p>
+        <p>폼을 불러오는 중 오류가 발생했습니다: ${error.message}</p>
         <button class="btn btn-primary" onclick="location.reload()">
           다시 시도
         </button>
       </div>
     `;
+  }
+}
+
+// 폼 이벤트 바인딩
+function bindFormEvents() {
+  // 동적 폼 제출 버튼 이벤트 바인딩
+  const submitBtn = document.getElementById('btn-submit');
+  if (submitBtn) {
+    submitBtn.onclick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 이미 저장 중이면 중복 실행 방지
+      if (isSaving) {
+        console.log('이미 저장 중입니다. 중복 실행을 방지합니다.');
+        return;
+      }
+      
+      await saveMissionary();
+    };
+  }
+  
+  // 임시저장 버튼 이벤트 바인딩
+  const tempSaveBtn = document.getElementById('btn-temp-save');
+  if (tempSaveBtn) {
+    tempSaveBtn.onclick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const formData = getFormData();
+      if (formData && window.saveDynamicFormTemp) {
+        window.saveDynamicFormTemp(formData);
+        showToast('임시저장되었습니다', 'success');
+      }
+    };
+  }
+  
+  // 취소 버튼 이벤트 바인딩
+  const cancelBtn = document.getElementById('btn-cancel');
+  if (cancelBtn) {
+    cancelBtn.onclick = (e) => {
+      e.preventDefault();
+      if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
+        window.location.href = 'missionary-management.html';
+      }
+    };
   }
 }
 
@@ -165,29 +216,39 @@ function showLoading() {
 // 폼에 데이터 채우기
 function fillFormWithMissionaryData(data) {
   // missionaryFormManager의 fillFormWithData 함수 사용
-  window.fillFormWithData(data);
+  if (window.fillFormWithData) {
+    window.fillFormWithData(data);
+  } else {
+    console.error('fillFormWithData 함수를 찾을 수 없습니다.');
+  }
 }
 
 // 폼 데이터 수집
 function getFormData() {
   // missionaryFormManager의 getDynamicFormValues 함수 사용
-  const data = window.getDynamicFormValues();
-  if (!data) {
-    console.error('폼 데이터를 가져올 수 없습니다');
+  if (window.getDynamicFormValues) {
+    const data = window.getDynamicFormValues();
+    if (!data) {
+      console.error('폼 데이터를 가져올 수 없습니다');
+      return null;
+    }
+    return data;
+  } else {
+    console.error('getDynamicFormValues 함수를 찾을 수 없습니다.');
     return null;
   }
-  
-  return data;
 }
 
 // 폼 검증
 function validateForm(data) {
-  const settings = window.loadFormSettings();
-  const requiredFields = settings.fields.filter(field => field.required);
-  
-  for (const field of requiredFields) {
-    if (!data[field.id] || data[field.id].toString().trim() === '') {
-      return `${field.name}을(를) 입력하세요.`;
+  if (window.loadFormSettings) {
+    const settings = window.loadFormSettings();
+    const requiredFields = settings.fields.filter(field => field.required);
+    
+    for (const field of requiredFields) {
+      if (!data[field.id] || data[field.id].toString().trim() === '') {
+        return `${field.name}을(를) 입력하세요.`;
+      }
     }
   }
   
@@ -198,6 +259,46 @@ function validateForm(data) {
 function bindEvents() {
   // Firebase 상태 업데이트
   setInterval(updateFirebaseStatus, 5000);
+  
+  // beforeunload 핸들러 정의 및 등록
+  beforeUnloadHandler = function(e) {
+    const form = document.getElementById('dynamic-missionary-form');
+    if (form) {
+      const formData = getFormData();
+      if (formData && Object.values(formData).some(value => value && value.toString().trim() !== '')) {
+        e.preventDefault();
+        e.returnValue = '입력 중인 데이터가 있습니다. 정말로 페이지를 떠나시겠습니까?';
+        return e.returnValue;
+      }
+    }
+  };
+  
+  // beforeunload 이벤트 등록
+  window.addEventListener('beforeunload', beforeUnloadHandler);
+  
+  // 내부 네비게이션(a, button, li, div 등 모든 클릭) 시 beforeunload 완전 해제
+  document.body.addEventListener('click', function(e) {
+    // 모든 메뉴/탭/버튼/a 등 클릭 시 완전 해제
+    if (beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+      beforeUnloadHandler = null;
+    }
+    window.onbeforeunload = null;
+    setTimeout(() => { window.onbeforeunload = null; }, 100);
+    setTimeout(() => { window.onbeforeunload = null; }, 300);
+    setTimeout(() => { window.onbeforeunload = null; }, 600);
+    setTimeout(() => { window.onbeforeunload = null; }, 1000);
+    console.log('[beforeunload] 내부 네비게이션 클릭 → 완전 해제');
+  }, true);
+  
+  // 폼 submit/cancel 등에서도 완전 해제
+  document.body.addEventListener('submit', function() {
+    if (beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+      beforeUnloadHandler = null;
+    }
+    window.onbeforeunload = null;
+  }, true);
 }
 
 // Firebase 상태 업데이트
@@ -209,16 +310,8 @@ function updateFirebaseStatus() {
   }
 }
 
-// 저장 버튼 텍스트 업데이트
-function updateSaveButtonText(text) {
-  const saveButton = document.querySelector('button[onclick="saveMissionary()"]');
-  if (saveButton) {
-    saveButton.textContent = text;
-  }
-}
-
-// 전역 함수들
-window.saveMissionary = async function() {
+// 선교사 저장
+async function saveMissionary() {
   // 이미 저장 중이면 중복 실행 방지
   if (isSaving) {
     console.log('이미 저장 중입니다. 중복 실행을 방지합니다.');
@@ -229,11 +322,11 @@ window.saveMissionary = async function() {
     isSaving = true; // 저장 시작
     
     // 저장 버튼 비활성화
-    const saveButton = document.querySelector('button[onclick="saveMissionary()"]');
-    if (saveButton) {
-      saveButton.disabled = true;
-      saveButton.textContent = '💾 저장 중...';
-      saveButton.style.opacity = '0.6';
+    const submitBtn = document.getElementById('btn-submit');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = '💾 저장 중...';
+      submitBtn.style.opacity = '0.6';
     }
     
     const data = getFormData();
@@ -251,15 +344,25 @@ window.saveMissionary = async function() {
     
     // 저장 (수정 모드 또는 새 입력 모드)
     if (isEditMode && currentMissionaryId) {
-      await window.updateMissionary(currentMissionaryId, data);
+      if (window.firebaseService) {
+        await window.firebaseService.updateMissionary(currentMissionaryId, data);
+      } else {
+        await window.updateMissionary(currentMissionaryId, data);
+      }
       showToast('선교사 정보가 성공적으로 수정되었습니다!', 'success');
     } else {
-      await window.addMissionary(data);
+      if (window.firebaseService) {
+        await window.firebaseService.addMissionary(data);
+      } else {
+        await window.addMissionary(data);
+      }
       showToast('선교사가 성공적으로 등록되었습니다!', 'success');
     }
     
     // 임시저장 데이터 삭제
-    window.clearDynamicFormTemp();
+    if (window.clearDynamicFormTemp) {
+      window.clearDynamicFormTemp();
+    }
     
     // 폼 초기화 (새 입력 모드에서만)
     if (!isEditMode) {
@@ -279,32 +382,14 @@ window.saveMissionary = async function() {
     isSaving = false; // 저장 완료
     
     // 저장 버튼 다시 활성화
-    const saveButton = document.querySelector('button[onclick="saveMissionary()"]');
-    if (saveButton) {
-      saveButton.disabled = false;
-      saveButton.style.opacity = '1';
-      // 적절한 텍스트로 복원
-      updateSaveButtonText(isEditMode ? '✅ 수정하기' : '✅ 등록하기');
+    const submitBtn = document.getElementById('btn-submit');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.textContent = isEditMode ? '✅ 수정하기' : '✅ 등록하기';
     }
   }
-};
-
-window.saveAsDraft = function() {
-  try {
-    const data = getFormData();
-    if (!data) {
-      showToast('저장할 데이터가 없습니다', 'error');
-      return;
-    }
-    
-    window.saveDynamicFormTemp(data);
-    showToast('임시저장되었습니다', 'success');
-    
-  } catch (error) {
-    console.error('임시저장 실패:', error);
-    showToast('임시저장 실패: ' + error.message, 'error');
-  }
-};
+}
 
 // 성공 메시지 표시
 function showSuccessMessage() {
@@ -339,19 +424,44 @@ function showSuccessMessage() {
 }
 
 // 다른 선교사 추가
-window.addAnotherMissionary = function() {
-  location.reload();
-};
+function addAnotherMissionary() {
+  window.location.href = 'missionary-input.html';
+}
 
 // 선교사 관리로 이동
-window.goToManagement = function() {
+function goToManagement() {
   window.location.href = 'missionary-management.html';
-};
+}
 
-// 창 닫기 (수정 모드에서 사용)
-window.closeWindow = function() {
+// 창 닫기
+function closeWindow() {
   window.close();
-};
+}
+
+// 토스트 메시지 표시
+function showToast(message, type = 'info') {
+  // 간단한 토스트 메시지 구현
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    z-index: 10000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
 
 // 마이그레이션 다이얼로그
 window.showMigrationDialog = function() {
@@ -412,45 +522,87 @@ window.clearLocalData = function() {
   }
 };
 
-// 토스트 알림
-function showToast(message, type = 'info') {
-  const toast = document.getElementById('toast');
-  const toastMessage = document.getElementById('toastMessage');
-  
-  if (!toast || !toastMessage) return;
-  
-  toastMessage.textContent = message;
-  toast.style.display = 'block';
-  
-  // 타입별 스타일
-  toast.style.background = type === 'error' ? '#f44336' : 
-                          type === 'success' ? '#4caf50' : '#333';
-  
-  setTimeout(() => {
-    toast.style.display = 'none';
-  }, 3000);
-}
-
-// 페이지 떠날 때 경고
-window.addEventListener('beforeunload', function(e) {
-  const form = document.getElementById('dynamic-missionary-form');
-  if (form) {
-    const formData = getFormData();
-    if (formData && Object.values(formData).some(value => value && value.toString().trim() !== '')) {
-      e.preventDefault();
-      e.returnValue = '입력 중인 데이터가 있습니다. 정말로 페이지를 떠나시겠습니까?';
-      return e.returnValue;
-    }
-  }
-});
-
 // 페이지 가시성 변경 시 자동 저장
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
     const data = getFormData();
     if (data && Object.values(data).some(value => value && value.toString().trim() !== '')) {
-      window.saveDynamicFormTemp(data);
-      console.log('페이지 숨김 시 자동 임시저장 완료');
+      if (window.saveDynamicFormTemp) {
+        window.saveDynamicFormTemp(data);
+        console.log('페이지 숨김 시 자동 임시저장 완료');
+      }
     }
   }
+});
+
+// beforeunload 완전 해제 전역 함수 (보강)
+window.forceRemoveBeforeUnload = function() {
+  if (beforeUnloadHandler) {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+    beforeUnloadHandler = null;
+  }
+  window.onbeforeunload = null;
+  setTimeout(() => { window.onbeforeunload = null; }, 100);
+  setTimeout(() => { window.onbeforeunload = null; }, 300);
+  setTimeout(() => { window.onbeforeunload = null; }, 600);
+  setTimeout(() => { window.onbeforeunload = null; }, 1000);
+  setTimeout(() => { window.onbeforeunload = null; }, 2000);
+  console.log('[beforeunload] 강제 완전 해제');
+};
+
+// 임시저장/불러오기/초기화 UX 개선
+function showTempLoadModal() {
+  const modal = document.createElement('div');
+  modal.className = 'temp-modal';
+  modal.innerHTML = `
+    <div class="temp-modal-box">
+      <div class="temp-modal-msg">
+        <span style="font-size:2em;vertical-align:middle;">💾</span><br>
+        <b>이전에 입력하다 만 임시 데이터가 있습니다.</b><br>
+        <span style="color:#555;">불러올까요?</span>
+      </div>
+      <button class="btn btn-primary temp-modal-btn" id="btn-temp-load-yes">예, 이어서 작성</button>
+      <button class="btn btn-secondary temp-modal-btn" id="btn-temp-load-no">아니요, 새로 시작</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('btn-temp-load-yes').onclick = function() {
+    modal.remove();
+    restoreTempFormData();
+  };
+  document.getElementById('btn-temp-load-no').onclick = function() {
+    modal.remove();
+    if (window.clearDynamicFormTemp) window.clearDynamicFormTemp();
+    if (window.clearFormFields) window.clearFormFields();
+  };
+}
+
+function restoreTempFormData() {
+  if (window.loadDynamicFormTemp) {
+    const tempData = window.loadDynamicFormTemp();
+    if (tempData) {
+      const waitForForm = setInterval(() => {
+        const form = document.getElementById('dynamic-missionary-form');
+        if (form) {
+          clearInterval(waitForForm);
+          setTimeout(() => {
+            fillFormWithMissionaryData(tempData);
+            showToast('임시저장된 데이터가 복원되었습니다', 'info');
+          }, 200);
+        }
+      }, 100);
+      setTimeout(() => { clearInterval(waitForForm); }, 5000);
+    }
+  }
+}
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ... 기존 코드 ...
+  // 폼 진입 시 임시저장 데이터 있으면 모달 표시
+  if (!isEditMode && window.loadDynamicFormTemp && window.loadDynamicFormTemp()) {
+    setTimeout(showTempLoadModal, 400);
+  }
+
 });
