@@ -19,6 +19,22 @@
     applyNewsSpeed();
   };
 
+  // 뉴스 체크 주기 설정 함수 추가
+  window.setNewsCheckInterval = function(minutes) {
+    const intervalMin = parseInt(minutes, 10) || 10;
+    localStorage.setItem('news-check-interval', intervalMin);
+    
+    // 기존 타이머 정리
+    if (updateTimer) {
+      clearTimeout(updateTimer);
+    }
+    
+    // 새 타이머 설정
+    updateTimer = setTimeout(fetchNewsFromSheet, intervalMin * 60000);
+    
+    console.log(`뉴스 체크 주기가 ${intervalMin}분으로 변경되었습니다.`);
+  };
+
   // 숨쉬기(글로우) 애니메이션용 CSS 추가
   function ensureGlowStyle() {
     if (!document.getElementById('news-glow-style')) {

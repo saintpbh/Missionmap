@@ -24,25 +24,49 @@ window.getLatLng = function(item, country, constants) {
 
 // Firebase에서 missionaries, news 데이터를 불러오는 fetchData 함수
 window.fetchData = function(callback) {
+  console.log('fetchData: Firebase 데이터 로딩 시작...');
+  
   if (!window.firebase || !window.firebase.database) {
+    console.error('fetchData: Firebase SDK가 로드되지 않았습니다.');
     callback(new Error('Firebase not initialized'));
     return;
   }
+  
   const db = window.firebase.database();
+  
+  // missionaries 데이터 가져오기
   db.ref('missionaries').once('value')
     .then(snapshot => {
+      console.log('fetchData: missionaries 데이터 로딩 완료');
       const missionaries = [];
       snapshot.forEach(child => {
-        missionaries.push(child.val());
+        const data = child.val();
+        if (data && data.name && data.name.trim() !== '') {
+          missionaries.push(data);
+        }
       });
-      db.ref('news').once('value')
-        .then(newsSnap => {
-          const news = [];
-          newsSnap.forEach(child => {
-            news.push(child.val());
-          });
-          callback(null, { missionaries, news });
+      console.log(`fetchData: ${missionaries.length}명의 선교사 데이터 로드됨`);
+      
+      // news 데이터 가져오기
+      return db.ref('news').once('value').then(newsSnap => {
+        console.log('fetchData: news 데이터 로딩 완료');
+        const news = [];
+        newsSnap.forEach(child => {
+          const data = child.val();
+          if (data) {
+            news.push(data);
+          }
         });
+        console.log(`fetchData: ${news.length}개의 뉴스 데이터 로드됨`);
+        return { missionaries, news };
+      });
     })
-    .catch(err => callback(err));
+    .then(data => {
+      console.log('fetchData: 모든 데이터 로딩 완료');
+      callback(null, data);
+    })
+    .catch(err => {
+      console.error('fetchData: Firebase 데이터 로딩 실패:', err);
+      callback(err);
+    });
 }; 

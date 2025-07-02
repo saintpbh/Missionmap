@@ -1,6 +1,6 @@
 // public/js/dataManager.js
 const DataManager = {
-    DATA_URL: 'https://docs.google.com/spreadsheets/d/1OXDGD7a30n5C--ReXdYRoKqiYNLt9aqY5ffxYN0bZF8/export?format=csv',
+    // Firebase Realtime Database 사용 (Google Sheets URL 제거)
     
     state: {
         missionaries: [],

@@ -81,6 +81,17 @@ document.addEventListener('DOMContentLoaded', function() {
         window.fetchNewsFromSheet?.();
     });
 
+    // 뉴스 체크 주기 설정
+    const newsIntervalInput = document.getElementById('news-interval-input');
+    if (newsIntervalInput) {
+        newsIntervalInput.addEventListener('sl-change', (e) => {
+            const interval = e.target.value;
+            if (window.setNewsCheckInterval) {
+                window.setNewsCheckInterval(interval);
+            }
+        });
+    }
+
     // 테이블 토글 (완전히 안전한 방식)
     const initTableToggles = () => {
         console.log('setup.js: 테이블 토글 초기화 시작');
@@ -200,42 +211,172 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     setupInput('news-interval-input', 'news-check-interval');
-    setupInput('news-speed-input', 'news-speed', val => {
-      const speedMs = parseInt(val, 10) * 1000;
-      window.setNewsSpeed?.(speedMs);
-    });
-    setupInput('news-fontsize-input', 'news-fontsize');
-    setupInput('news-width-input', 'news-width');
-    setupInput('news-height-input', 'news-height');
-
-    // 색상 적용 (안전하게)
-    const applyColors = () => {
-        try {
-            const textColorEl = document.getElementById('news-text-color');
-            const bgColorEl = document.getElementById('news-bg-color');
-            
-            if (textColorEl && bgColorEl) {
-                const textColor = textColorEl.value;
-                const bgColor = bgColorEl.value;
-                localStorage.setItem('news-text-color', textColor);
-                localStorage.setItem('news-bg-color', bgColor);
-                document.documentElement.style.setProperty('--news-bar-text', textColor);
-                document.documentElement.style.setProperty('--news-bar-bg', bgColor);
-            }
-        } catch (error) {
-            console.error('setup.js: 색상 적용 중 오류:', error);
+    setupInput('news-speed-input', 'news-speed', (value) => {
+        if (window.setNewsSpeed) {
+            window.setNewsSpeed(value);
         }
-    };
-    
-    // 색상 이벤트 리스너 추가 (안전하게)
-    const textColorEl = document.getElementById('news-text-color');
-    const bgColorEl = document.getElementById('news-bg-color');
-    
-    if (textColorEl) {
-        textColorEl.addEventListener('sl-change', applyColors);
+    });
+    setupInput('news-fontsize-input', 'news-fontsize', (value) => {
+        const newsBar = document.getElementById('news-bar');
+        if (newsBar) {
+            newsBar.style.fontSize = `${value}px`;
+        }
+    });
+    setupInput('news-width-input', 'news-width', (value) => {
+        const newsBar = document.getElementById('news-bar');
+        if (newsBar) {
+            newsBar.style.width = `${value}%`;
+        }
+    });
+    setupInput('news-height-input', 'news-height', (value) => {
+        const newsBar = document.getElementById('news-bar');
+        if (newsBar) {
+            newsBar.style.height = `${value}px`;
+        }
+    });
+
+    // 색상 설정 실시간 적용
+    const newsTextColor = document.getElementById('news-text-color');
+    if (newsTextColor) {
+        newsTextColor.value = localStorage.getItem('news-text-color') || '#ffffff';
+        newsTextColor.addEventListener('sl-change', (e) => {
+            const color = e.target.value;
+            localStorage.setItem('news-text-color', color);
+            const newsBar = document.getElementById('news-bar');
+            if (newsBar) {
+                newsBar.style.setProperty('--news-bar-text', color);
+            }
+        });
     }
-    if (bgColorEl) {
-        bgColorEl.addEventListener('sl-change', applyColors);
+    
+    const newsBgColor = document.getElementById('news-bg-color');
+    if (newsBgColor) {
+        newsBgColor.value = localStorage.getItem('news-bg-color') || '#1a73ff';
+        newsBgColor.addEventListener('sl-change', (e) => {
+            const color = e.target.value;
+            localStorage.setItem('news-bg-color', color);
+            const newsBar = document.getElementById('news-bar');
+            if (newsBar) {
+                newsBar.style.setProperty('--news-bar-bg', color);
+            }
+        });
     }
     
+    // 뉴스레터 업로드 기능
+    const newsletterUploadBtn = document.getElementById('newsletter-upload-btn');
+    const newsletterLinkBtn = document.getElementById('newsletter-link-btn');
+    const missionaryNameInput = document.getElementById('missionary-name-input');
+    const missionaryPrayerInput = document.getElementById('missionary-prayer-input');
+    const missionaryDateInput = document.getElementById('missionary-date-input');
+    
+    if (newsletterUploadBtn) {
+        newsletterUploadBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('newsletter-pdf');
+            const name = missionaryNameInput?.value?.trim();
+            const prayer = missionaryPrayerInput?.value?.trim();
+            const date = missionaryDateInput?.value;
+            
+            if (!name) {
+                alert('선교사 이름을 입력해주세요.');
+                return;
+            }
+            
+            if (!fileInput.files[0]) {
+                alert('PDF 파일을 선택해주세요.');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            if (file.type !== 'application/pdf') {
+                alert('PDF 파일만 업로드 가능합니다.');
+                return;
+            }
+            
+            try {
+                // 로딩 상태 표시
+                newsletterUploadBtn.disabled = true;
+                newsletterUploadBtn.textContent = '업로드 중...';
+                
+                // Firebase Storage에 업로드 (간단한 구현)
+                const storageRef = window.firebase?.storage?.ref();
+                if (!storageRef) {
+                    throw new Error('Firebase Storage가 초기화되지 않았습니다.');
+                }
+                
+                const fileName = `newsletters/${name}_${Date.now()}.pdf`;
+                const fileRef = storageRef.child(fileName);
+                const snapshot = await fileRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                
+                // Firebase Database에 정보 저장
+                const db = window.firebase?.database();
+                if (db) {
+                    await db.ref('newsletters').push({
+                        name: name,
+                        prayer: prayer || '현지 정착과 건강을 위해',
+                        date: date || new Date().toISOString().split('T')[0],
+                        url: downloadURL,
+                        uploadedAt: new Date().toISOString()
+                    });
+                }
+                
+                alert('뉴스레터가 성공적으로 업로드되었습니다.');
+                
+                // 입력 필드 초기화
+                if (fileInput) fileInput.value = '';
+                if (missionaryNameInput) missionaryNameInput.value = '';
+                if (missionaryPrayerInput) missionaryPrayerInput.value = '';
+                if (missionaryDateInput) missionaryDateInput.value = '';
+                
+            } catch (error) {
+                console.error('뉴스레터 업로드 실패:', error);
+                alert('업로드에 실패했습니다: ' + error.message);
+            } finally {
+                newsletterUploadBtn.disabled = false;
+                newsletterUploadBtn.textContent = '업로드';
+            }
+        });
+    }
+    
+    if (newsletterLinkBtn) {
+        newsletterLinkBtn.addEventListener('click', async () => {
+            const name = missionaryNameInput?.value?.trim();
+            const prayer = missionaryPrayerInput?.value?.trim();
+            const date = missionaryDateInput?.value;
+            
+            if (!name) {
+                alert('선교사 이름을 입력해주세요.');
+                return;
+            }
+            
+            const link = prompt('뉴스레터 외부 링크를 입력해주세요:');
+            if (!link) return;
+            
+            try {
+                // Firebase Database에 링크 정보 저장
+                const db = window.firebase?.database();
+                if (db) {
+                    await db.ref('newsletters').push({
+                        name: name,
+                        prayer: prayer || '현지 정착과 건강을 위해',
+                        date: date || new Date().toISOString().split('T')[0],
+                        url: link,
+                        uploadedAt: new Date().toISOString(),
+                        isExternalLink: true
+                    });
+                }
+                
+                alert('뉴스레터 링크가 성공적으로 저장되었습니다.');
+                
+                // 입력 필드 초기화
+                if (missionaryNameInput) missionaryNameInput.value = '';
+                if (missionaryPrayerInput) missionaryPrayerInput.value = '';
+                if (missionaryDateInput) missionaryDateInput.value = '';
+                
+            } catch (error) {
+                console.error('뉴스레터 링크 저장 실패:', error);
+                alert('저장에 실패했습니다: ' + error.message);
+            }
+        });
+    }
 }); 

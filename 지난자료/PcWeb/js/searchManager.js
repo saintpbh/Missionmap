@@ -415,7 +415,26 @@ const SearchManager = {
     }
 };
 
-// 전역 객체로 등록
+// SearchManager 자동 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('SearchManager: DOM 로드 완료, 초기화 대기 중...');
+    
+    // DataManager가 준비될 때까지 대기
+    const waitForDataManager = () => {
+        if (window.DataManager && window.DataManager.state.isDataReady) {
+            console.log('SearchManager: DataManager 준비됨, 초기화 시작');
+            SearchManager.init();
+        } else {
+            console.log('SearchManager: DataManager 대기 중...');
+            setTimeout(waitForDataManager, 500);
+        }
+    };
+    
+    // 1초 후 초기화 시도 시작
+    setTimeout(waitForDataManager, 1000);
+});
+
+// 전역에서 접근 가능하도록 등록
 window.SearchManager = SearchManager;
 
 // 즉시 타이틀 클릭 이벤트 등록 (데이터 로딩과 무관)

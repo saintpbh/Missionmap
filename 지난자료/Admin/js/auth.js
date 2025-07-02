@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const handleLogin = async (email, password) => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
+            // 로그인 성공 시 body 스타일 복구
+            document.body.style.display = 'flex';
+            document.body.style.justifyContent = 'center';
+            document.body.style.alignItems = 'center';
+            document.body.style.height = '100vh';
             window.location.href = 'dashboard.html';
         } catch (error) {
             console.error('Login failed:', error);

@@ -56,6 +56,16 @@ const UIManager = {
         }).join('');
         this.elements.countryTable.innerHTML = `<div style="font-weight:bold;font-size:1.15em;margin-bottom:6px;text-align:center;">국가별 파송현황</div>
             <table><thead><tr><th></th><th>국가</th><th>인원</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+        
+        // 국가 클릭 시 사이드바 열기 이벤트 추가
+        this.elements.countryTable.querySelectorAll('.country-click').forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const country = cell.dataset.country;
+                const missionaries = this.dataManager.state.missionaries.filter(m => m.country === country);
+                this.openSidebar(`${country} 선교사 목록`, missionaries);
+            });
+        });
     },
 
     renderPresbyteryTable() {
@@ -68,6 +78,16 @@ const UIManager = {
             </tr>`).join('');
         this.elements.presbyteryTable.innerHTML = `<div style="font-weight:bold;font-size:1.15em;margin-bottom:6px;text-align:center;">노회별 파송현황</div>
             <table><thead><tr><th>노회</th><th>인원</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+        
+        // 노회 클릭 시 사이드바 열기 이벤트 추가
+        this.elements.presbyteryTable.querySelectorAll('.presbytery-click').forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const presbytery = cell.dataset.presbytery;
+                const missionaries = this.dataManager.state.missionaries.filter(m => m.presbytery === presbytery);
+                this.openSidebar(`${presbytery} 선교사 목록`, missionaries);
+            });
+        });
     },
 
     renderGlobalMarkers() {
@@ -345,11 +365,16 @@ const UIManager = {
         this.elements.sidebarClose.addEventListener('click', () => this.closeSidebar());
         this.elements.sidebarOverlay.addEventListener('click', () => this.closeSidebar());
         
-        // 검색 기능
+        // 검색 기능 - Shoelace input 이벤트
         if (this.elements.sidebarSearch) {
-            this.elements.sidebarSearch.addEventListener('sl-input', (e) => {
+            // 기존 이벤트 리스너 제거
+            this.elements.sidebarSearch.removeEventListener('sl-input', this._searchHandler);
+            
+            // 새로운 이벤트 리스너 추가
+            this._searchHandler = (e) => {
                 this.filterSidebarList(e.target.value, missionaries);
-            });
+            };
+            this.elements.sidebarSearch.addEventListener('sl-input', this._searchHandler);
         }
     },
 
@@ -365,6 +390,12 @@ const UIManager = {
         // 검색 입력 초기화
         if (this.elements.sidebarSearch) {
             this.elements.sidebarSearch.value = '';
+        }
+        
+        // 이벤트 리스너 정리
+        if (this._searchHandler) {
+            this.elements.sidebarSearch.removeEventListener('sl-input', this._searchHandler);
+            this._searchHandler = null;
         }
     },
 
@@ -412,17 +443,37 @@ const UIManager = {
                 if (missionary) {
                     const latlng = this.mapController.getLatLng(missionary, missionary.country);
                     
-                    // 해당 선교사의 국가로 지도 이동
+                    // 해당 선교사의 국가로 지도 이동 (더 부드럽게)
                     this.mapController.map.flyTo(latlng, Math.max(this.mapController.map.getZoom(), 6), { 
                         animate: true, 
-                        duration: 1.2 
+                        duration: 1.5,
+                        easeLinearity: 0.25
                     });
                     
-                    // 지도 이동 후 상세 팝업 표시
+                    // 지도 이동 후 상세 팝업 표시 (약간의 지연)
                     setTimeout(() => {
                         console.log('[사이드바] 선교사 클릭 → 상세 팝업:', name, latlng);
                         this.showDetailPopup(name, latlng);
-                    }, 600);
+                        
+                        // 해당 마커에 포커스 효과 추가
+                        if (this.mapController.markerClusterGroup) {
+                            // 클러스터 내 마커들 중 해당 선교사 마커 찾기
+                            this.mapController.markerClusterGroup.eachLayer(marker => {
+                                if (marker.getPopup && marker.getPopup().getContent) {
+                                    const popupContent = marker.getPopup().getContent();
+                                    if (popupContent && popupContent.includes(name)) {
+                                        // 마커에 포커스 효과 추가
+                                        marker.getElement().classList.add('marker-focused');
+                                        setTimeout(() => {
+                                            if (marker.getElement()) {
+                                                marker.getElement().classList.remove('marker-focused');
+                                            }
+                                        }, 2000);
+                                    }
+                                }
+                            });
+                        }
+                    }, 800);
                 }
             });
         });
@@ -437,4 +488,7 @@ const UIManager = {
         );
         this.renderSidebarList(filtered);
     }
-}; 
+};
+
+// UIManager를 전역 객체로 등록
+window.UIManager = UIManager; 

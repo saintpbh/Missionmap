@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>후원자 관리</title>
+  <link rel="stylesheet" href="css/common/base.css">
+  <link rel="stylesheet" href="css/common/navigation.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/supporter-management.css">
+  <style>
+    body { display: none; }
+  </style>
+</head>
+<body data-page="supporter-management">
+  <div id="nav-container"></div>
+
+  <main class="admin-main">
+    <div class="content-wrapper">
+      <div class="page-header">
+        <h1>💝 후원자 관리</h1>
+        <div class="page-info">
+          <h2>후원자 정보 관리 및 검색</h2>
+        </div>
+      </div>
+      
+      <!-- 검색 섹션 -->
+      <div class="search-section">
+        <div class="search-container">
+          <div class="search-inputs">
+            <div class="search-group">
+              <label for="searchMissionary">선교사 이름</label>
+              <input type="text" id="searchMissionary" placeholder="선교사 이름으로 검색...">
+            </div>
+            <div class="search-group">
+              <label for="searchSupporter">후원자 이름</label>
+              <input type="text" id="searchSupporter" placeholder="후원자 이름으로 검색...">
+            </div>
+            <div class="search-group">
+              <label for="searchCountry">국가</label>
+              <input type="text" id="searchCountry" placeholder="국가로 검색...">
+            </div>
+          </div>
+          <div class="search-actions">
+            <button id="btn-search" class="btn btn-primary">🔍 검색</button>
+            <button id="btn-clear" class="btn btn-secondary">🗑️ 초기화</button>
+            <button id="btn-add-supporter" class="btn btn-success">➕ 후원자 추가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색 결과 통계 -->
+      <div class="search-stats">
+        <div class="stat-item">
+          <span class="stat-label">검색 결과:</span>
+          <span class="stat-value" id="searchResultCount">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">총 후원자:</span>
+          <span class="stat-value" id="totalSupporterCount">0</span>
+        </div>
+      </div>
+
+      <!-- 후원자 리스트 -->
+      <div class="supporter-list-section">
+        <div class="list-header">
+          <h3>후원자 목록</h3>
+          <div class="list-actions">
+            <button id="btn-export" class="btn btn-small">📊 내보내기</button>
+            <button id="btn-refresh" class="btn btn-small">🔄 새로고침</button>
+          </div>
+        </div>
+        
+        <div class="supporter-list-container">
+          <div id="supporterList" class="supporter-list">
+            <div class="loading-placeholder">
+              <div class="loading-spinner"></div>
+              <p>후원자 데이터를 불러오는 중...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 후원자 추가/수정 모달 -->
+  <div id="supporterModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">후원자 추가</h2>
+        <button type="button" class="close-btn" onclick="closeSupporterModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="supporterForm">
+          <div class="form-group">
+            <label for="missionarySearch">지원 선교사 *</label>
+            <input type="text" id="missionarySearch" name="missionarySearch" placeholder="선교사 이름을 입력하세요..." required>
+            <div id="missionarySearchResults" class="search-results" style="display: none;"></div>
+            <input type="hidden" id="missionaryId" name="missionaryId" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supporterName">후원자 이름 *</label>
+              <input type="text" id="supporterName" name="name" required>
+            </div>
+            <div class="form-group">
+              <label for="supporterRelation">관계</label>
+              <input type="text" id="supporterRelation" name="relation" placeholder="친구, 가족 등">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supporterContact">연락처</label>
+              <input type="text" id="supporterContact" name="contact" placeholder="전화번호 또는 이메일">
+            </div>
+            <div class="form-group">
+              <label for="supporterAmount">후원금액</label>
+              <input type="number" id="supporterAmount" name="amount" placeholder="월 후원금액">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="supporterNotes">비고</label>
+            <textarea id="supporterNotes" name="notes" placeholder="특이사항"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSupporterModal()">취소</button>
+        <button type="button" class="btn btn-primary" onclick="saveSupporter()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 모달 -->
+  <div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>후원자 삭제</h2>
+        <button type="button" class="close-btn" onclick="closeDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>정말로 이 후원자를 삭제하시겠습니까?</p>
+        <p><strong id="deleteSupporterName"></strong></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">취소</button>
+        <button type="button" class="btn btn-danger" onclick="confirmDeleteSupporter()">삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+
+  <!-- Firebase Config -->
+  <script src="js/firebase-config.js"></script>
+  
+  <!-- Common Navigation -->
+  <script src="js/common/navigation.js"></script>
+
+  <!-- Page Protection & Auth -->
+  <script src="js/auth.js"></script>
+
+  <!-- Supporter Management -->
+  <script src="js/supporterManagement.js"></script>
+
+  <!-- Nav Loader & Event Listeners -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('nav.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('nav-container').innerHTML = data;
+          
+          const logoutButton = document.getElementById('logout-button');
+          if(logoutButton) {
+            logoutButton.addEventListener('click', () => firebase.auth().signOut());
+          }
+
+          const userEmailSpan = document.getElementById('user-email');
+          firebase.auth().onAuthStateChanged(user => {
+            if(user && userEmailSpan) {
+              userEmailSpan.textContent = user.email;
+            }
+          });
+        });
+    });
+  </script>
+</body>
+</html> 

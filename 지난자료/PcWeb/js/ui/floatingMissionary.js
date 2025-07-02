@@ -1,11 +1,11 @@
-export function createFloatingElement(item, point, state, constants, extraClass = '') {
+function createFloatingElement(item, point, state, constants, extraClass = '') {
     const wrapper = document.createElement("div");
     wrapper.className = `floating-missionary-wrapper ${extraClass}`;
     wrapper.style.left = `${point.x - 50}px`;
     wrapper.style.top = `${point.y - 20}px`;
     let floatClass = "floating-missionary-content";
     if(state.isAnimOn) floatClass += " anim";
-    if(isRecent(item.lastUpdate)) floatClass += " recent";
+    if(window.isRecent && window.isRecent(item.lastUpdate)) floatClass += " recent";
     wrapper.innerHTML = `
       <div class="${floatClass}">
         <img src="https://cdn-icons-png.flaticon.com/128/149/149071.png" alt="icon">
@@ -17,7 +17,7 @@ export function createFloatingElement(item, point, state, constants, extraClass 
     return wrapper;
 }
 
-export function animateFloatingElement(element, state, constants, duration) {
+function animateFloatingElement(element, state, constants, duration) {
     const displayTime = duration || constants.FLOAT_DISPLAY_TIME;
     if(state.isAnimOn) {
         setTimeout(() => { element.style.opacity = "1"; }, 40);
@@ -29,4 +29,8 @@ export function animateFloatingElement(element, state, constants, duration) {
         element.style.opacity = "1";
         setTimeout(() => element.remove(), displayTime);
     }
-} 
+}
+
+// 전역 함수로 등록
+window.createFloatingElement = createFloatingElement;
+window.animateFloatingElement = animateFloatingElement; 

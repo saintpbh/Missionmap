@@ -202,37 +202,85 @@ class GlobalSearch {
     }
     
     createFloatingLabel(result, point, index, searchTerm) {
+        // 기존 라벨 제거
+        document.querySelectorAll('.search-floating-label').forEach(label => label.remove());
+        
         const label = document.createElement('div');
-        label.className = 'floating-search-label';
+        label.className = 'search-floating-label';
         label.style.cssText = `
             position: absolute;
             left: ${point.x}px;
-            top: ${point.y - 60}px;
-            background: rgba(255,255,255,0.95);
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 8px;
+            top: ${point.y - 60 - (index * 40)}px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
             padding: 8px 12px;
+            border-radius: 6px;
             font-size: 12px;
-            color: #333;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-weight: 500;
             z-index: 1000;
-            transform: translateX(-50%) scale(0);
-            animation: labelFadeIn 0.3s ease forwards;
-            animation-delay: ${index * 0.1}s;
-            cursor: pointer;
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            animation: searchLabelFadeIn 0.3s ease-out;
         `;
+        
+        // 검색어 하이라이트
+        const highlightedName = this.highlightSearchTerm(result.name, searchTerm);
+        const highlightedCountry = this.highlightSearchTerm(result.country, searchTerm);
         
         label.innerHTML = `
-            <div style="font-weight: 600;">${result.name}</div>
-            <div style="opacity: 0.7; font-size: 11px;">${result.country}</div>
+            <div style="font-weight: bold; margin-bottom: 2px;">${highlightedName}</div>
+            <div style="font-size: 11px; opacity: 0.8;">${highlightedCountry}</div>
         `;
         
-        document.body.appendChild(label);
-        this.activeLabels.push(label);
+        // 화살표 추가
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(0, 0, 0, 0.9);
+        `;
+        label.appendChild(arrow);
         
-        label.addEventListener('click', () => {
-            this.selectResult(result);
-        });
+        // 지도 컨테이너에 추가
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            mapContainer.appendChild(label);
+            this.activeLabels.push(label);
+        }
+        
+        // 자동 제거 타이머
+        setTimeout(() => {
+            if (label.parentNode) {
+                label.style.animation = 'searchLabelFadeOut 0.3s ease-in';
+                setTimeout(() => {
+                    if (label.parentNode) {
+                        label.remove();
+                        const index = this.activeLabels.indexOf(label);
+                        if (index > -1) {
+                            this.activeLabels.splice(index, 1);
+                        }
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+    
+    highlightSearchTerm(text, term) {
+        if (!term || !text) return text;
+        const regex = new RegExp(`(${term})`, 'gi');
+        return text.replace(regex, '<span style="background: #ffeb3b; color: #000; padding: 1px 2px; border-radius: 2px;">$1</span>');
     }
     
     showResultCounter(count) {
