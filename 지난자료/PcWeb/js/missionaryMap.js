@@ -19,6 +19,8 @@ window.MissionaryMap = class MissionaryMap {
             isByAutoRotate: false,
             fixedCountry: null,
             globalMarkerIndex: 0,
+            countryMarkerIndex: 0,
+            missionaryMarkerIndex: 0,
             missionaries: [],
             missionaryInfo: {},
             countryStats: {},
@@ -43,6 +45,7 @@ window.MissionaryMap = class MissionaryMap {
         this.globalMarkers = [];
         this.fixedCountryMarkers = [];
         this.fixedCountryPopups = [];
+        this.missionaryMarkers = [];
         this.timers = {};
         this.prayerRotationTimer = null;
 
@@ -76,6 +79,14 @@ window.MissionaryMap = class MissionaryMap {
         this.initMap();
         this.initEventListeners();
         this.fetchData();
+        
+        // UIManager 초기화
+        if (window.UIManager) {
+            window.UIManager.initialize(this, window.DataManager);
+        } else {
+            console.warn('UIManager를 찾을 수 없습니다.');
+        }
+        
         this.initPrayerCount();
     }
 
@@ -116,7 +127,7 @@ window.MissionaryMap = class MissionaryMap {
         }
         if (this.elements.detailPopup) {
             this.elements.detailPopup.addEventListener('click', (e) => {
-                if (e.target.classList.contains('close-btn')) this.closeDetailPopup();
+                // if (e.target.classList.contains('close-btn')) this.closeDetailPopup();
             });
         }
         if (this.map) {
@@ -156,11 +167,40 @@ window.MissionaryMap = class MissionaryMap {
                 snapshot.forEach(child => {
                     const data = child.val();
                     if (data && data.name && data.name.trim() !== '') {
-                        missionaries.push(data);
+                        // 모든 필드를 포함하여 데이터 추가
+                        missionaries.push({
+                            ...data,
+                            _id: child.key, // Firebase 키를 ID로 사용
+                            name: data.name.trim(),
+                            country: data.country || '',
+                            city: data.city || '',
+                            presbytery: data.presbytery || '',
+                            organization: data.organization || '',
+                            lastUpdate: data.lastUpdate || '',
+                            summary: data.summary || '', // 최근 뉴스레터 요약
+                            prayerTopic: data.prayerTopic || '', // 기도제목
+                            lat: data.lat || null,
+                            lng: data.lng || null
+                        });
                     }
                 });
                 
                 console.log(`missionaryMap: ${missionaries.length}명의 선교사 데이터 로드됨`);
+                console.log('로드된 선교사 목록:', missionaries.map(m => `${m.name} (${m.country})`));
+                
+                // 오은성 선교사가 있는지 확인
+                const ohEunSung = missionaries.find(m => m.name === '오은성' || m.name.includes('오은성'));
+                if (ohEunSung) {
+                    console.log('오은성 선교사 발견:', ohEunSung);
+                } else {
+                                    console.log('오은성 선교사를 찾을 수 없습니다.');
+                console.log('전체 선교사 목록 (이름만):');
+                missionaries.forEach(m => console.log(`- ${m.name}`));
+                console.log('일본 선교사들:');
+                missionaries.filter(m => m.country === '일본').forEach(m => console.log(`- ${m.name} (${m.country})`));
+                console.log('전체 선교사 데이터 (상세):');
+                missionaries.forEach(m => console.log(`- ${m.name} (${m.country}) - ID: ${m._id || m.id}`));
+                }
                 
                 // news 데이터 가져오기
                 return db.ref('news').once('value').then(newsSnap => {
@@ -188,7 +228,16 @@ window.MissionaryMap = class MissionaryMap {
     }
 
     processData(data) {
+        // 선교사 데이터를 최근 뉴스레터 날짜 순으로 정렬
         this.state.missionaries = data.filter(item => item.name && item.country);
+        
+        // 최근 뉴스레터 날짜 순으로 정렬 (최신이 먼저)
+        this.state.missionaries.sort((a, b) => {
+            const dateA = a.lastUpdate ? new Date(a.lastUpdate) : new Date(0);
+            const dateB = b.lastUpdate ? new Date(b.lastUpdate) : new Date(0);
+            return dateB - dateA;
+        });
+        
         this.state.missionaries.forEach(item => {
             this.state.missionaryInfo[item.name] = item;
             if(item.country) {
@@ -203,17 +252,67 @@ window.MissionaryMap = class MissionaryMap {
                 this.state.presbyteryMembers[item.presbytery].push(item);
             }
         });
+        
+        console.log('선교사 데이터 처리 완료:', this.state.missionaries.length, '명');
+        console.log('정렬된 선교사 목록:', this.state.missionaries.map(m => `${m.name} (${m.lastUpdate || '날짜 없음'})`));
+        
+        // 오은성 선교사 처리 확인
+        const ohEunSungProcessed = this.state.missionaries.find(m => m.name === '오은성' || m.name.includes('오은성'));
+        if (ohEunSungProcessed) {
+            console.log('처리된 오은성 선교사:', ohEunSungProcessed);
+            console.log('오은성 선교사 국가 통계:', this.state.countryStats[ohEunSungProcessed.country]);
+        } else {
+            console.log('처리된 데이터에서 오은성 선교사를 찾을 수 없습니다.');
+        }
     }
 
     renderAll() {
         this.renderCountryTable();
         this.renderPresbyteryTable();
         this.renderGlobalMarkers();
+        this.renderMissionaryMarkers();
     }
 
     startIntervals() {
-        this.timers.floating = setInterval(() => this.showFloatingMissionaries(), this.constants.FLOAT_INTERVAL);
-        this.timers.rotation = setInterval(() => this.rotateGlobalPopups(), this.constants.POPUP_ROTATE_INTERVAL);
+        // 기존 타이머 정리
+        if (this.timers.floating) {
+            clearInterval(this.timers.floating);
+        }
+        if (this.timers.rotation) {
+            clearInterval(this.timers.rotation);
+        }
+        if (this.timers.missionaryRotation) {
+            clearInterval(this.timers.missionaryRotation);
+        }
+        
+        // 국가별/노회별 보기 모드가 아닐 때만 순환팝업 시작
+        if (!this.state.fixedCountry) {
+            // 플로팅 선교사 표시
+            // this.timers.floating = setInterval(() => this.showFloatingMissionaries(), this.constants.FLOAT_INTERVAL);
+            
+            // 전체보기 팝업 순환 (8초마다) - 부드러운 타이밍
+            // this.timers.rotation = setInterval(() => this.rotateGlobalPopups(), 8000);
+            
+            // 선교사별 개별 팝업 순환 (15초마다) - 충분한 읽기 시간 제공
+            // this.timers.missionaryRotation = setInterval(() => this.rotateMissionaryPopups(), 15000);
+            
+            // 즉시 첫 번째 팝업 표시 (전체보기 먼저, 선교사별은 3초 후)
+            // setTimeout(() => {
+            //     if (this.globalMarkers.length > 0) {
+            //         this.rotateGlobalPopups();
+            //     }
+            // }, 1500);
+            
+            // setTimeout(() => {
+            //     if (this.missionaryMarkers.length > 0) {
+            //         this.rotateMissionaryPopups();
+            //     }
+            // }, 4500);
+            
+            console.log('전체보기 인터벌 시작됨 (순환팝업 활성화)');
+        } else {
+            console.log('국가별/노회별 보기 모드: 순환팝업 비활성화됨');
+        }
     }
 
     renderCountryTable() {
@@ -273,12 +372,36 @@ window.MissionaryMap = class MissionaryMap {
                 const boldClass = isRecent ? ' recent-bold' : '';
                 const entryClass = autoplayMode === 'fixed' ? `missionary-entry${boldClass}` : `popup-list ${boldClass}`;
                 
+                // 기도제목을 최근 뉴스레터의 요약 필드에서 가져오기
+                const prayerTopic = info.summary && info.summary.trim() !== '' 
+                    ? info.summary 
+                    : (info.prayerTopic && info.prayerTopic.trim() !== '' 
+                        ? info.prayerTopic 
+                        : '');
+                
                 // 선교사 ID를 data 속성에 추가 (마커 매핑용)
                 const missionaryId = info._id || `missionary_${name}`;
-                popupHTML += `<div class="${entryClass}" data-name="${name}" data-missionary-id="${missionaryId}" style="cursor: pointer;"><div class="missionary-name">${name}${recentIcon}</div></div>`;
+                popupHTML += `<div class="${entryClass}" data-name="${name}" data-missionary-id="${missionaryId}" style="cursor: pointer;">
+                    <div class="missionary-name">${name}${recentIcon}</div>
+                    ${prayerTopic ? `<div class="missionary-prayer-topic">${prayerTopic}</div>` : ''}
+                </div>`;
             });
 
-            const marker = L.marker(latlng).bindPopup(popupHTML);
+            // const marker = L.marker(latlng).bindPopup(popupHTML);
+            const marker = L.marker(latlng);
+
+            // 마커 클릭 이벤트 추가 - 플로팅 리스트 팝업 표시
+            marker.on('click', (e) => {
+                // 선교사 이름 배열을 객체 배열로 변환 (이름과 도시 정보 포함)
+                const missionaryList = stats.names.map(name => {
+                    const missionary = this.state.missionaryInfo[name];
+                    return {
+                        name: name,
+                        city: missionary ? missionary.city : '정보없음'
+                    };
+                });
+                this.showFloatingListPopup(country, missionaryList, e.latlng);
+            });
 
             // DataManager에 마커-데이터 매핑 등록
             stats.names.forEach(name => {
@@ -292,39 +415,51 @@ window.MissionaryMap = class MissionaryMap {
             });
 
             // 팝업 오픈 후 이벤트 리스너 추가
-            marker.on('popupopen', (e) => {
-                // 선교사 이름 클릭 이벤트 추가
-                const popup = e.popup;
-                const popupContent = popup.getElement();
-                if (popupContent) {
-                    const nameElements = popupContent.querySelectorAll('[data-name]');
-                    nameElements.forEach(el => {
-                        el.style.cursor = 'pointer';
-                        el.addEventListener('click', (clickEvent) => {
-                            clickEvent.preventDefault();
-                            clickEvent.stopPropagation();
-                            const name = el.dataset.name;
-                            console.log('선교사 이름 클릭:', name);
-                            const info = this.state.missionaryInfo[name] || {};
-                            const latlngForPopup = this.getLatLng(info, info.country);
-                            this.showDetailPopup(name, latlngForPopup);
-                        });
-                    });
-                }
+            // marker.on('popupopen', (e) => {
+            //     // 국가별 팝업 클래스 적용
+            //     const popup = e.popup;
+            //     const popupElement = popup.getElement();
+            //     if (popupElement) {
+            //         popupElement.classList.add('country-popup');
+            //     }
+            //     
+            //     // 선교사 이름 클릭 이벤트 추가
+            //     const popupContent = popup.getElement();
+            //     if (popupContent) {
+            //         const nameElements = popupContent.querySelectorAll('[data-name]');
+            //         nameElements.forEach(el => {
+            //             el.style.cursor = 'pointer';
+            //             el.addEventListener('click', (clickEvent) => {
+            //                 clickEvent.preventDefault();
+            //                 clickEvent.stopPropagation();
+            //                 const name = el.dataset.name;
+            //                 console.log('선교사 이름 클릭:', name);
+            //                 const info = this.state.missionaryInfo[name] || {};
+            //                 const latlngForPopup = this.getLatLng(info, info.country);
+            //                 this.showDetailPopup(name, latlngForPopup);
+            //             });
+            //         });
+            //     }
 
-                if (!this.state.isByAutoRotate) {
-                    this.state.isPaused = true;
-                }
-                this.state.isByAutoRotate = false;
-                
-                if (this.state.autoplayMode === 'fixed') {
-                    this.startPrayerTopicRotation(popup);
-                }
-            });
-            marker.on('popupclose', () => {
-                this.state.isPaused = false;
-                this.stopPrayerTopicRotation();
-            });
+            //     if (!this.state.isByAutoRotate) {
+            //         this.state.isPaused = true;
+            //     }
+            //     this.state.isByAutoRotate = false;
+            //     
+            //     if (this.state.autoplayMode === 'fixed') {
+            //         this.startPrayerTopicRotation(popup);
+            //     }
+            // });
+            // marker.on('popupclose', () => {
+            //     // 국가별 팝업 클래스 제거
+            //     const popupElement = marker.getPopup().getElement();
+            //     if (popupElement) {
+            //         popupElement.classList.remove('country-popup');
+            //     }
+            //     
+            //     this.state.isPaused = false;
+            //     this.stopPrayerTopicRotation();
+            // });
 
             // 개별 마커를 지도에 직접 추가 (클러스터 사용 안함)
             marker.addTo(this.map);
@@ -336,46 +471,69 @@ window.MissionaryMap = class MissionaryMap {
         console.log('MissionaryMap: renderGlobalMarkers 완료, 마커 수:', newMarkers.length);
     }
 
-    showDetailPopup(name, latlng) {
-        if (window.showDetailPopup) {
-            window.showDetailPopup(name, latlng, this.state.missionaryInfo, this.elements);
-        }
-        this.state.isPaused = true;
-    }
+    // showDetailPopup(name, latlng) {
+    //     if (window.showDetailPopup) {
+    //         window.showDetailPopup(name, latlng, this.state.missionaryInfo, this.elements);
+    //     }
+    //     this.state.isPaused = true;
+    // }
 
-    closeDetailPopup() {
-        if (window.closeDetailPopup) {
-            window.closeDetailPopup(this.elements);
-        }
-        this.state.isPaused = false;
-    }
+    // closeDetailPopup() {
+    //     if (window.closeDetailPopup) {
+    //         window.closeDetailPopup(this.elements);
+    //     }
+    //     this.state.isPaused = false;
+    // }
 
-    showFloatingMissionaries() {
-        if(this.state.isPaused || this.state.fixedCountry) return;
-        const missionaries = this.state.missionaries.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate));
-        if(missionaries.length === 0) return;
-        document.querySelectorAll('.floating-missionary-wrapper.auto').forEach(el => el.remove());
-        for(let c = 0; c < this.constants.FLOAT_COUNT; c++) {
-            const item = missionaries[(this.state.globalMarkerIndex + c) % missionaries.length];
-            const latlng = this.constants.LATLNGS[item.country];
-            if (!latlng) continue;
-            const point = this.map.latLngToContainerPoint([ latlng[0] + (Math.random()-0.5)*3, latlng[1] + (Math.random()-0.5)*3 ]);
-            const wrapper = window.createFloatingElement(item, point, this.state, this.constants, 'auto');
-            this.elements.mapContainer.appendChild(wrapper);
-            window.animateFloatingElement(wrapper, this.state, this.constants);
-        }
-    }
+    // showFloatingMissionaries() {
+    //     if(this.state.isPaused || this.state.fixedCountry) return;
+    //     const missionaries = this.state.missionaries.sort((a,b) => new Date(b.lastUpdate) - new Date(a.lastUpdate));
+    //     if(missionaries.length === 0) return;
+    //     document.querySelectorAll('.floating-missionary-wrapper.auto').forEach(el => el.remove());
+    //     for(let c = 0; c < this.constants.FLOAT_COUNT; c++) {
+    //         const item = missionaries[(this.state.globalMarkerIndex + c) % missionaries.length];
+    //         const latlng = this.constants.LATLNGS[item.country];
+    //         if (!latlng) continue;
+    //         const point = this.map.latLngToContainerPoint([ latlng[0] + (Math.random()-0.5)*3, latlng[1] + (Math.random()-0.5)*3 ]);
+    //         const wrapper = window.createFloatingElement(item, point, this.state, this.constants, 'auto');
+    //         this.elements.mapContainer.appendChild(wrapper);
+    //         window.animateFloatingElement(wrapper, this.state, this.constants);
+    //     }
+    // }
 
     showPresbyteryPopups(presbytery) {
         if(this.state.fixedCountry) return;
         this.state.isPaused = true;
         clearTimeout(this.timers.presbytery);
         
+        // 순환팝업 타이머들 정리
+        if (this.timers.floating) {
+            clearInterval(this.timers.floating);
+            this.timers.floating = null;
+        }
+        if (this.timers.rotation) {
+            clearInterval(this.timers.rotation);
+            this.timers.rotation = null;
+        }
+        if (this.timers.missionaryRotation) {
+            clearInterval(this.timers.missionaryRotation);
+            this.timers.missionaryRotation = null;
+        }
+        
         // 기존 플로팅 요소들 제거
         document.querySelectorAll('.floating-missionary-wrapper').forEach(div => div.remove());
         
         // 전체 보기 마커들 제거
         this.globalMarkers.forEach(m => this.map.removeLayer(m));
+        
+        // 선교사별 개별 마커들 숨기기
+        this.missionaryMarkers.forEach(marker => {
+            const element = marker.getElement();
+            if (element) {
+                element.style.display = 'none';
+            }
+            marker.closePopup();
+        });
         
         const members = this.state.presbyteryMembers[presbytery] || [];
         
@@ -386,24 +544,7 @@ window.MissionaryMap = class MissionaryMap {
                 maxClusterRadius: 60,
                 spiderfyOnMaxZoom: true,
                 showCoverageOnHover: false,
-                zoomToBoundsOnClick: true,
-                iconCreateFunction: function(cluster) {
-                    const count = cluster.getChildCount();
-                    let className = 'marker-cluster-';
-                    if (count < 5) {
-                        className += 'small';
-                    } else if (count < 10) {
-                        className += 'medium';
-                    } else {
-                        className += 'large';
-                    }
-                    
-                    return L.divIcon({
-                        html: `<div><span>${count}</span></div>`,
-                        className: className,
-                        iconSize: L.point(40, 40)
-                    });
-                }
+                zoomToBoundsOnClick: true
             });
             this.map.addLayer(this.markerClusterGroup);
         }
@@ -441,24 +582,24 @@ window.MissionaryMap = class MissionaryMap {
                     </div>
                 `;
                 
-                marker.bindPopup(popupHTML);
+                // marker.bindPopup(popupHTML);
                 
                 // 팝업 이벤트 리스너
-                marker.on('popupopen', (e) => {
-                    const popup = e.popup;
-                    const popupContent = popup.getElement();
-                    if (popupContent) {
-                        const nameElement = popupContent.querySelector('[data-name]');
-                        if (nameElement) {
-                            nameElement.addEventListener('click', (clickEvent) => {
-                                clickEvent.preventDefault();
-                                clickEvent.stopPropagation();
-                                const name = nameElement.dataset.name;
-                                this.showDetailPopup(name, latlng);
-                            });
-                        }
-                    }
-                });
+                // marker.on('popupopen', (e) => {
+                //     const popup = e.popup;
+                //     const popupContent = popup.getElement();
+                //     if (popupContent) {
+                //         const nameElement = popupContent.querySelector('[data-name]');
+                //         if (nameElement) {
+                //             nameElement.addEventListener('click', (clickEvent) => {
+                //                 clickEvent.preventDefault();
+                //                 clickEvent.stopPropagation();
+                //                 const name = nameElement.dataset.name;
+                //                 this.showDetailPopup(name, latlng);
+                //             });
+                //         }
+                //     }
+                // });
                 
                 // 클러스터에 마커 추가
                 this.markerClusterGroup.addLayer(marker);
@@ -480,25 +621,66 @@ window.MissionaryMap = class MissionaryMap {
         this.timers.presbytery = setTimeout(() => { this.state.isPaused = false; }, this.constants.PRESBYTERY_FLOAT_DURATION + this.constants.PRESBYTERY_PAUSE_EXTRA);
     }
 
-    rotateGlobalPopups() {
-        if (!this.state.isPaused && this.globalMarkers.length > 0 && !this.state.fixedCountry) {
-            if (this.map.getContainer().querySelector('.leaflet-popup-content')) {
-                this.globalMarkers.forEach(m => m.closePopup());
-            }
-            this.state.isByAutoRotate = true;
-            this.globalMarkers[this.state.globalMarkerIndex].openPopup();
-            this.state.globalMarkerIndex = (this.state.globalMarkerIndex + 1) % this.globalMarkers.length;
-        }
-    }
+    // rotateGlobalPopups() {
+    //     if (this.globalMarkers.length > 0 && !this.state.fixedCountry && !this.state.isPaused) {
+    //         // 현재 열린 팝업이 있다면 닫기 (부드러운 전환을 위해 지연)
+    //         const currentPopup = this.map.getContainer().querySelector('.leaflet-popup-content');
+    //         if (currentPopup) {
+    //             this.globalMarkers.forEach(m => m.closePopup());
+    //             // 팝업이 완전히 닫힌 후 다음 팝업 열기 (더 부드러운 전환)
+    //             setTimeout(() => {
+    //                 this.openNextGlobalPopup();
+    //             }, 600);
+    //         } else {
+    //             this.openNextGlobalPopup();
+    //         }
+    //     }
+    // }
+
+    // openNextGlobalPopup() {
+    //     this.state.isByAutoRotate = true;
+    //     const targetMarker = this.globalMarkers[this.state.globalMarkerIndex];
+    //     if (targetMarker) {
+    //         targetMarker.openPopup();
+    //         console.log('전체보기 팝업 순환:', this.state.globalMarkerIndex, '/', this.globalMarkers.length);
+    //     }
+    //     
+    //     this.state.globalMarkerIndex = (this.state.globalMarkerIndex + 1) % this.globalMarkers.length;
+    // }
 
     enterFixedCountryMode(country) {
         this.state.fixedCountry = country;
         this.state.isPaused = true;
+        
+        // 순환팝업 타이머들 정리
+        if (this.timers.floating) {
+            clearInterval(this.timers.floating);
+            this.timers.floating = null;
+        }
+        if (this.timers.rotation) {
+            clearInterval(this.timers.rotation);
+            this.timers.rotation = null;
+        }
+        if (this.timers.missionaryRotation) {
+            clearInterval(this.timers.missionaryRotation);
+            this.timers.missionaryRotation = null;
+        }
+        
         document.querySelectorAll('.floating-missionary-wrapper').forEach(div => div.remove());
         
         // 전체 보기 마커들 제거
         this.globalMarkers.forEach(m => this.map.removeLayer(m));
-        this.closeDetailPopup();
+        
+        // 선교사별 개별 마커들 숨기기
+        this.missionaryMarkers.forEach(marker => {
+            const element = marker.getElement();
+            if (element) {
+                element.style.display = 'none';
+            }
+            marker.closePopup();
+        });
+        
+        // this.closeDetailPopup();
         this.clearFixedCountryElements();
         
         const latlng = this.constants.LATLNGS[country] || [20,0];
@@ -514,24 +696,7 @@ window.MissionaryMap = class MissionaryMap {
                 maxClusterRadius: 60,
                 spiderfyOnMaxZoom: true,
                 showCoverageOnHover: false,
-                zoomToBoundsOnClick: true,
-                iconCreateFunction: function(cluster) {
-                    const count = cluster.getChildCount();
-                    let className = 'marker-cluster-';
-                    if (count < 5) {
-                        className += 'small';
-                    } else if (count < 10) {
-                        className += 'medium';
-                    } else {
-                        className += 'large';
-                    }
-                    
-                    return L.divIcon({
-                        html: `<div><span>${count}</span></div>`,
-                        className: className,
-                        iconSize: L.point(40, 40)
-                    });
-                }
+                zoomToBoundsOnClick: true
             });
             this.map.addLayer(this.markerClusterGroup);
         }
@@ -573,24 +738,38 @@ window.MissionaryMap = class MissionaryMap {
                 </div>
             `;
             
-            marker.bindPopup(popupHTML);
+            // marker.bindPopup(popupHTML);
             
             // 팝업 이벤트 리스너
-            marker.on('popupopen', (e) => {
-                const popup = e.popup;
-                const popupContent = popup.getElement();
-                if (popupContent) {
-                    const nameElement = popupContent.querySelector('[data-name]');
-                    if (nameElement) {
-                        nameElement.addEventListener('click', (clickEvent) => {
-                            clickEvent.preventDefault();
-                            clickEvent.stopPropagation();
-                            const name = nameElement.dataset.name;
-                            this.showDetailPopup(name, mLatLng);
-                        });
-                    }
-                }
-            });
+            // marker.on('popupopen', (e) => {
+            //     // 국가별 팝업 클래스 적용
+            //     const popup = e.popup;
+            //     const popupElement = popup.getElement();
+            //     if (popupElement) {
+            //         popupElement.classList.add('country-popup');
+            //     }
+            //     
+            //     const popupContent = popup.getElement();
+            //     if (popupContent) {
+            //         const nameElement = popupContent.querySelector('[data-name]');
+            //         if (nameElement) {
+            //             nameElement.addEventListener('click', (clickEvent) => {
+            //                 clickEvent.preventDefault();
+            //                 clickEvent.stopPropagation();
+                            // const name = nameElement.dataset.name;
+                            // this.showDetailPopup(name, mLatLng);
+                        // });
+                    // }
+                // }
+            // });
+            
+            // marker.on('popupclose', () => {
+            //     // 국가별 팝업 클래스 제거
+            //     const popupElement = marker.getPopup().getElement();
+            //     if (popupElement) {
+            //         popupElement.classList.remove('country-popup');
+            //     }
+            // });
             
             // 클러스터에 마커 추가
             this.markerClusterGroup.addLayer(marker);
@@ -606,6 +785,9 @@ window.MissionaryMap = class MissionaryMap {
         
         this.elements.countryExitBtn.classList.add('visible');
         this.elements.presbyteryExitBtn.classList.add('visible');
+        
+        // 국가별 팝업 순환 시작
+        // this.startCountryPopupRotation();
     }
 
     repositionFixedPopups() {
@@ -652,40 +834,53 @@ window.MissionaryMap = class MissionaryMap {
         </div>`;
         
         // 클릭 이벤트 추가
-        wrapper.querySelector('.name').addEventListener('click', () => {
-            this.showDetailPopupByName(item.name);
-        });
+        // wrapper.querySelector('.name').addEventListener('click', () => {
+        //     this.showDetailPopupByName(item.name);
+        // });
         
         return wrapper;
     }
 
     restoreGlobalMode() {
-        if(!this.state.fixedCountry) return;
-        this.clearFixedCountryElements();
+        console.log('전체 보기로 복원');
         
-        // 클러스터 그룹 제거
-        if (this.markerClusterGroup) {
-            this.map.removeLayer(this.markerClusterGroup);
-            this.markerClusterGroup = null;
+        // 모든 타이머 정리
+        if (this.timers.countryRotation) {
+            clearInterval(this.timers.countryRotation);
+            this.timers.countryRotation = null;
+        }
+        if (this.timers.missionaryRotation) {
+            clearInterval(this.timers.missionaryRotation);
+            this.timers.missionaryRotation = null;
         }
         
-        // 전체 보기 마커들 다시 표시
-        this.globalMarkers.forEach(m => m.addTo(this.map));
-        
-        this.state.isPaused = false;
+        this.clearFixedCountryElements();
+        this.clearMissionaryMarkers();
         this.state.fixedCountry = null;
-        this.elements.countryExitBtn.classList.remove('visible');
-        this.elements.presbyteryExitBtn.classList.remove('visible');
+        this.state.countryMarkerIndex = 0;
+        this.state.globalMarkerIndex = 0;
+        this.state.missionaryMarkerIndex = 0;
+        this.renderGlobalMarkers();
+        this.renderMissionaryMarkers();
+        this.startIntervals();
+        
+        // 종료 버튼 숨기기
+        if (this.elements.countryExitBtn) {
+            this.elements.countryExitBtn.classList.remove('visible');
+        }
+        if (this.elements.presbyteryExitBtn) {
+            this.elements.presbyteryExitBtn.classList.remove('visible');
+        }
         
         // 사이드바 닫기
         if (window.UIManager && window.UIManager.closeSidebar) {
             window.UIManager.closeSidebar();
-        } else {
-            console.warn('UIManager.closeSidebar를 찾을 수 없습니다.');
         }
         
-        const latlng = this.state.lastCountryLatLng || [20, 0];
-        this.map.setView(latlng, 3, {animate: true});
+        // 지도 뷰 복원
+        this.map.setView([20, 0], 2, {animate: true});
+        
+        console.log('전체 보기 모드로 완전히 복원됨');
     }
 
     clearFixedCountryElements() {
@@ -695,14 +890,53 @@ window.MissionaryMap = class MissionaryMap {
         this.fixedCountryPopups = [];
     }
 
-    showDetailPopupByName(name) {
-        const country = this.state.fixedCountry;
-        let latlng = [20, 0];
-        if (country) {
-            const item = this.state.missionaries.find(m => m.name === name && m.country === country);
-            if (item) latlng = this.getLatLng(item, country);
-        }
-        this.showDetailPopup(name, latlng);
+    clearMissionaryMarkers() {
+        this.missionaryMarkers.forEach(marker => this.map.removeLayer(marker));
+        this.missionaryMarkers = [];
+    }
+
+    // showDetailPopupByName(name) {
+    //     const country = this.state.fixedCountry;
+    //     let latlng = [20, 0];
+    //     if (country) {
+    //         const item = this.state.missionaries.find(m => m.name === name && m.country === country);
+    //         if (item) latlng = this.getLatLng(item, country);
+    //     }
+    //     this.showDetailPopup(name, latlng);
+    // }
+
+    // 플로팅 리스트 팝업 표시
+    showFloatingListPopup(country, missionaryNames, latlng) {
+        // 기존 플로팅 팝업 제거
+        document.querySelectorAll('.floating-popup').forEach(popup => popup.remove());
+        
+        // 국기 URL 생성
+        const flagCode = this.constants.COUNTRY_FLAGS[country];
+        const flagUrl = flagCode ? `https://flagcdn.com/w40/${flagCode}.png` : '';
+        
+        // 플로팅 리스트 팝업 생성
+        const popupElement = window.createFloatingListPopup({
+            flagUrl: flagUrl,
+            country: country,
+            missionaryList: missionaryNames
+        });
+        
+        // 팝업 위치 설정
+        const point = this.map.latLngToContainerPoint(latlng);
+        popupElement.style.position = 'absolute';
+        popupElement.style.left = (point.x - 150) + 'px'; // 팝업 너비의 절반만큼 왼쪽으로
+        popupElement.style.top = (point.y - 100) + 'px'; // 마커 위쪽에 표시
+        popupElement.style.zIndex = '1000';
+        
+        // 지도 컨테이너에 추가
+        this.elements.mapContainer.appendChild(popupElement);
+        
+        // 5초 후 자동 제거
+        setTimeout(() => {
+            if (popupElement.parentNode) {
+                popupElement.parentNode.removeChild(popupElement);
+            }
+        }, 5000);
     }
 
     toggleAnimation() {
@@ -839,7 +1073,196 @@ window.MissionaryMap = class MissionaryMap {
             console.warn('Firebase 또는 initPrayerCount 함수가 로드되지 않았습니다.');
         }
     }
+
+    // 노회별 보기 종료
+    exitPresbyteryView() {
+        console.log('노회별 보기 종료');
+        this.clearFixedCountryElements();
+        this.state.fixedCountry = null;
+        this.renderGlobalMarkers();
+        this.startIntervals();
+        
+        // 종료 버튼 숨기기
+        if (this.elements.presbyteryExitBtn) {
+            this.elements.presbyteryExitBtn.classList.remove('visible');
+        }
+    }
+
+    // 국가별 보기 종료
+    exitCountryView() {
+        console.log('국가별 보기 종료');
+        
+        // 국가별 팝업 순환 타이머 정리
+        if (this.timers.countryRotation) {
+            clearInterval(this.timers.countryRotation);
+            this.timers.countryRotation = null;
+        }
+        
+        this.clearFixedCountryElements();
+        this.state.fixedCountry = null;
+        this.state.countryMarkerIndex = 0; // 인덱스 리셋
+        this.renderGlobalMarkers();
+        this.startIntervals();
+        
+        // 종료 버튼 숨기기
+        if (this.elements.countryExitBtn) {
+            this.elements.countryExitBtn.classList.remove('visible');
+        }
+    }
+
+    // 국가별 팝업 순환 시작
+    // startCountryPopupRotation() {
+    //     // 기존 타이머 정리
+    //     if (this.timers.countryRotation) {
+    //         clearInterval(this.timers.countryRotation);
+    //     }
+    //     
+    //     // 5초마다 국가별 팝업 순환 (더 여유로운 타이밍)
+    //     // this.timers.countryRotation = setInterval(() => {
+    //     //     this.rotateCountryPopups();
+    //     // }, 5000);
+    //     
+    //     // 즉시 첫 번째 팝업 표시
+    //     // setTimeout(() => {
+    //     //     this.rotateCountryPopups();
+    //     // }, 100);
+    // }
+
+    // 국가별 팝업 순환
+    // rotateCountryPopups() {
+    //     if (!this.state.fixedCountry || this.fixedCountryMarkers.length === 0) return;
+    //     
+    //     // 현재 열린 팝업 닫기
+    //     this.fixedCountryMarkers.forEach(marker => marker.closePopup());
+    //     
+    //     // 다음 마커의 팝업 열기
+    //     this.fixedCountryMarkers[this.state.countryMarkerIndex].openPopup();
+    //     this.state.countryMarkerIndex = (this.state.countryMarkerIndex + 1) % this.fixedCountryMarkers.length;
+    //     
+    //     console.log('국가별 팝업 순환:', this.state.countryMarkerIndex, '/', this.fixedCountryMarkers.length);
+    // }
+
+    renderMissionaryMarkers() {
+        // 기존 선교사 마커들 제거
+        this.missionaryMarkers.forEach(marker => this.map.removeLayer(marker));
+        this.missionaryMarkers = [];
+        
+        // 모든 선교사에 대해 개별 마커 생성
+        this.state.missionaries.forEach(missionary => {
+            if (missionary.name && missionary.country) {
+                const latlng = this.getLatLng(missionary, missionary.country);
+                
+                // 선교사별 개별 마커 생성
+                const marker = L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'missionary-individual-marker',
+                        html: '<div class="missionary-marker-icon">👤</div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                });
+                
+                // 팝업 내용 생성
+                const flag = this.constants.COUNTRY_FLAGS[missionary.country] ? 
+                    `<img class='flag-icon' src='https://flagcdn.com/w40/${this.constants.COUNTRY_FLAGS[missionary.country]}.png'>` : "";
+                const isRecent = window.isRecent(missionary.lastUpdate);
+                const recentIcon = isRecent ? ' <span class="recent-badge" title="최근 소식">📰✨</span>' : '';
+                
+                // 기도제목을 최근 뉴스레터의 요약 필드에서 가져오기 (요약이 있으면 요약, 없으면 기도제목)
+                const prayerTopic = missionary.summary && missionary.summary.trim() !== '' 
+                    ? missionary.summary 
+                    : (missionary.prayerTopic && missionary.prayerTopic.trim() !== '' 
+                        ? missionary.prayerTopic 
+                        : '기도제목 정보 없음');
+                
+                const popupHTML = `
+                    <div class="missionary-popup-content">
+                        <div class="missionary-popup-header">
+                            ${flag}<b class="missionary-popup-name">${missionary.name}${recentIcon}</b> (${missionary.country})
+                        </div>
+                        <div class="missionary-popup-prayer">${prayerTopic}</div>
+                    </div>
+                `;
+                
+                // marker.bindPopup(popupHTML);
+                
+                // 팝업 이벤트 리스너
+                // marker.on('popupopen', (e) => {
+                //     // 선교사별 팝업 클래스 적용
+                //     const popup = e.popup;
+                //     const popupElement = popup.getElement();
+                //     if (popupElement) {
+                //         popupElement.classList.add('missionary-popup');
+                //         // 둥실둥실 애니메이션 시작
+                //         setTimeout(() => {
+                //         popupElement.classList.add('animate-float');
+                //         }, 800);
+                //     }
+                //     
+                //     const popupContent = popup.getElement();
+                //     if (popupContent) {
+                //         const nameElement = popupContent.querySelector('.missionary-popup-name');
+                //         if (nameElement) {
+                //             nameElement.addEventListener('click', (clickEvent) => {
+                //                 clickEvent.preventDefault();
+                //                 clickEvent.stopPropagation();
+                //                 this.showDetailPopup(missionary.name, latlng);
+                //             });
+                //         }
+                //     }
+                // });
+                
+                // marker.on('popupclose', () => {
+                //     // 선교사별 팝업 클래스 제거
+                //     const popupElement = marker.getPopup().getElement();
+                //     if (popupElement) {
+                //         popupElement.classList.remove('missionary-popup', 'animate-float');
+                //     }
+                // });
+                
+                // 마커를 지도에 추가 (숨김 상태로)
+                marker.addTo(this.map);
+                marker.getElement().style.display = 'none'; // 초기에는 숨김
+                this.missionaryMarkers.push(marker);
+            }
+        });
+        
+        console.log('선교사별 개별 마커 생성 완료:', this.missionaryMarkers.length, '개');
+    }
+
+    // rotateMissionaryPopups() {
+    //     if (this.missionaryMarkers.length === 0 || this.state.fixedCountry || this.state.isPaused) return;
+    //     
+    //     // 현재 표시된 마커 숨기기 (부드러운 전환을 위해 지연)
+    //     this.missionaryMarkers.forEach(marker => {
+    //         const element = marker.getElement();
+    //         if (element) {
+    //                 element.style.display = 'none';
+    //             }
+    //             marker.closePopup();
+    //         });
+    //         
+    //         // 팝업이 완전히 닫힌 후 다음 팝업 열기 (더 부드러운 전환)
+    //         setTimeout(() => {
+    //             this.openNextMissionaryPopup();
+    //         }, 600);
+    //     }
+
+    // openNextMissionaryPopup() {
+    //     const targetMarker = this.missionaryMarkers[this.state.missionaryMarkerIndex];
+    //     if (targetMarker) {
+    //         const element = targetMarker.getElement();
+    //         if (element) {
+    //                 element.style.display = 'block';
+    //             }
+    //             targetMarker.openPopup();
+    //             console.log('선교사별 팝업 순환:', this.state.missionaryMarkerIndex, '/', this.missionaryMarkers.length);
+    //         }
+    //         
+    //         this.state.missionaryMarkerIndex = (this.state.missionaryMarkerIndex + 1) % this.missionaryMarkers.length;
+    // }
 }
 
 // 인스턴스 생성 및 전역 객체에 할당
-const missionaryMap = new MissionaryMap(); 
+const missionaryMap = new MissionaryMap();
+window.missionaryMapInstance = missionaryMap; 

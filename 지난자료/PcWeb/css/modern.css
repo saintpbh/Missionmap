@@ -3,6 +3,210 @@
    Designed by Gemini AI for Mission Map
    ========================================================================== */
 
+/* 국가별 팝업 애니메이션 (페이드인-아웃) */
+@keyframes countryPopupFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(15px);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02) translateY(-2px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes countryPopupFadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateY(15px);
+    }
+}
+
+/* 선교사별 팝업 애니메이션 (둥실둥실) */
+@keyframes missionaryPopupFloat {
+    0%, 100% {
+        transform: translateY(0px) scale(1);
+    }
+    25% {
+        transform: translateY(-2px) scale(1.01);
+    }
+    50% {
+        transform: translateY(-4px) scale(1.03);
+    }
+    75% {
+        transform: translateY(-2px) scale(1.01);
+    }
+}
+
+@keyframes missionaryPopupBounce {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(30px);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1) translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 국가별 팝업 스타일 (가로로 딱 맞춰서 세로로 긴 형태) */
+.country-popup {
+    animation: countryPopupFadeIn 0.8s ease-out;
+    width: 200px !important;
+    max-width: 200px !important;
+    min-height: 160px;
+    max-height: 350px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+}
+
+.country-popup.fade-out {
+    animation: countryPopupFadeOut 0.4s ease-in forwards;
+}
+
+.country-popup .leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.country-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 10px;
+    width: 100% !important;
+    max-width: 200px !important;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.country-popup .leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+/* 국가별 팝업 내부 스타일 개선 */
+.country-popup .popup-list {
+    margin: 6px 0;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.country-popup .popup-list:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-radius: 6px;
+    padding: 6px;
+    margin: 6px -6px;
+}
+
+.country-popup .missionary-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 3px;
+    font-size: 12px;
+}
+
+.country-popup .missionary-prayer-topic {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.3;
+    margin-top: 3px;
+}
+
+/* 선교사별 팝업 스타일 (둥실둥실 애니메이션) */
+.missionary-popup {
+    animation: missionaryPopupBounce 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    width: 260px !important;
+    max-width: 260px !important;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border: 1px solid rgba(76, 175, 80, 0.25);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.missionary-popup.animate-float {
+    animation: missionaryPopupFloat 3s ease-in-out infinite;
+}
+
+.missionary-popup .leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.missionary-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 12px;
+    width: 100% !important;
+    max-width: 260px !important;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.missionary-popup .leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(76, 175, 80, 0.25);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+/* 선교사별 팝업 내부 스타일 개선 */
+.missionary-popup .missionary-popup-content {
+    text-align: center;
+}
+
+.missionary-popup .missionary-popup-header {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.missionary-popup .missionary-popup-name {
+    color: #27ae60;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.missionary-popup .missionary-popup-name:hover {
+    color: #229954;
+    text-decoration: underline;
+}
+
+.missionary-popup .missionary-popup-prayer {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+    margin-top: 6px;
+    padding: 8px;
+    background: rgba(76, 175, 80, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid rgba(76, 175, 80, 0.3);
+}
+
 body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
@@ -50,6 +254,7 @@ body {
     transform: translate(-50%, -50%);
     width: 380px;
     max-width: 90vw;
+    max-height: 80vh;
     background: rgba(20, 20, 20, 0.7);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -62,10 +267,18 @@ body {
     transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: auto;
     z-index: 100000 !important;
+    cursor: move;
+    user-select: none;
 }
 
 #detailPopup.visible .detail-popup-modern {
     transform: scale(1);
+}
+
+/* 드래그 중일 때 스타일 */
+.detail-popup-modern.dragging {
+    transition: none;
+    cursor: grabbing;
 }
 
 .close-btn-modern {
@@ -290,4 +503,194 @@ body {
 .country-table-overlay,
 .presbytery-table-overlay {
     z-index: 100 !important;
+}
+
+/* Newsletter Section */
+.newsletter-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.newsletter-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.newsletter-date,
+.newsletter-title,
+.newsletter-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: #c8c8c8;
+}
+
+.newsletter-date .info-icon,
+.newsletter-title .info-icon,
+.newsletter-content .info-icon {
+    font-size: 14px;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+.newsletter-title {
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.newsletter-content {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.content-preview {
+    margin-left: 22px;
+    line-height: 1.5;
+    color: #b0b0b0;
+    font-style: italic;
+}
+
+/* ==========================================================================
+   플로팅 팝업 스타일
+   ========================================================================== */
+
+.floating-popup {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    min-width: 120px;
+    max-width: 180px;
+    animation: floatingPopupFadeIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+@keyframes floatingPopupFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.floating-popup .popup-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+}
+
+.floating-popup .popup-flag {
+    width: 24px;
+    height: 16px;
+    border-radius: 2px;
+    object-fit: cover;
+}
+
+.floating-popup .popup-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    flex: 1;
+    min-width: 0;
+}
+
+.floating-popup .popup-country {
+    color: #666;
+    font-weight: 400;
+}
+
+.floating-popup .popup-city {
+    color: #666;
+    font-weight: 400;
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.floating-popup .popup-prayer {
+    font-size: 11px;
+    color: #555;
+    line-height: 1.3;
+    margin-top: 6px;
+}
+
+.floating-popup .popup-ministry {
+    font-size: 11px;
+    color: #555;
+    line-height: 1.3;
+    margin-top: 6px;
+}
+
+.floating-popup .popup-missionary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.floating-popup .popup-missionary-list li {
+    padding: 3px 0;
+    font-size: 11px;
+    color: #2c3e50;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.floating-popup .popup-missionary-list li:last-child {
+    border-bottom: none;
+}
+
+.floating-popup .popup-missionary-list li:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin: 0 -6px;
+}
+
+.floating-popup .missionary-item-clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+.floating-popup .missionary-item-clickable:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.floating-popup .missionary-name {
+    color: #007bff !important;
+    font-weight: 500;
+    font-size: 12px;
+    background: none !important;
+}
+
+.floating-popup .missionary-item-clickable:hover .missionary-name {
+    color: #007bff !important;
+    text-decoration: underline !important;
+    background: none !important;
 } 

@@ -752,12 +752,82 @@
         });
       }
     });
+
+    // SVG 아바타 생성 함수
+    function createAvatarSVG(name, size = 90) {
+      const initials = name ? name.charAt(0).toUpperCase() : '?';
+      const colors = ['#4a90e2', '#7ed321', '#f5a623', '#d0021b', '#9013fe', '#50e3c2'];
+      const color = colors[name ? name.charCodeAt(0) % colors.length : 0];
+      
+      // 안전한 base64 인코딩을 위한 함수
+      function safeBtoa(str) {
+        try {
+          return btoa(unescape(encodeURIComponent(str)));
+        } catch (e) {
+          // 실패 시 기본 이니셜 사용
+          const fallbackInitials = name ? name.charCodeAt(0).toString(16).toUpperCase() : '?';
+          const fallbackSvg = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+              <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+              <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                    fill="white" text-anchor="middle" dominant-baseline="middle">${fallbackInitials}</text>
+            </svg>
+          `;
+          return btoa(unescape(encodeURIComponent(fallbackSvg)));
+        }
+      }
+      
+      const svgString = `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+          <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+          <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+        </svg>
+      `;
+      
+      return `data:image/svg+xml;base64,${safeBtoa(svgString)}`;
+    }
   </script>
   <div id="country-stats-screen" class="glass-screen" style="display:none"></div>
   <div id="presbytery-stats-screen" class="glass-screen" style="display:none"></div>
   <!--
   <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // SVG 아바타 생성 함수
+    function createAvatarSVG(name, size = 90) {
+      const initials = name ? name.charAt(0).toUpperCase() : '?';
+      const colors = ['#4a90e2', '#7ed321', '#f5a623', '#d0021b', '#9013fe', '#50e3c2'];
+      const color = colors[name ? name.charCodeAt(0) % colors.length : 0];
+      
+      // 안전한 base64 인코딩을 위한 함수
+      function safeBtoa(str) {
+        try {
+          return btoa(unescape(encodeURIComponent(str)));
+        } catch (e) {
+          // 실패 시 기본 이니셜 사용
+          const fallbackInitials = name ? name.charCodeAt(0).toString(16).toUpperCase() : '?';
+          const fallbackSvg = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+              <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+              <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                    fill="white" text-anchor="middle" dominant-baseline="middle">${fallbackInitials}</text>
+            </svg>
+          `;
+          return btoa(unescape(encodeURIComponent(fallbackSvg)));
+        }
+      }
+      
+      const svgString = `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+          <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+          <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+        </svg>
+      `;
+      
+      return `data:image/svg+xml;base64,${safeBtoa(svgString)}`;
+    }
+
     // 지도 및 마커 표시 함수 (중복 map 생성 방지)
     function showMapWithMarkers() {
       if (window._leafletMap) {
@@ -785,7 +855,7 @@
             <div style='min-width:120px;text-align:center;'>
               <div style='font-weight:700;font-size:1.05em;'>${m.name}</div>
               <div style='color:#1976d2;font-size:0.95em;'>${m.city ? m.city+', ' : ''}${m.country}</div>
-              <img src='${m.image || 'https://via.placeholder.com/90'}' alt='${m.name}' style='width:60px;height:60px;border-radius:50%;margin:6px auto 0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.09);' />
+              <img src='${m.image || createAvatarSVG(m.name, 90)}' alt='${m.name}' style='width:60px;height:60px;border-radius:50%;margin:6px auto 0 auto;box-shadow:0 2px 8px rgba(0,0,0,0.09);' />
             </div>
           `;
           marker.bindPopup(popupHtml);

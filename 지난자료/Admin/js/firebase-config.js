@@ -23,6 +23,7 @@ if (!firebase.apps.length) {
 // Firebase 서비스 초기화
 const auth = firebase.auth();
 const db = firebase.firestore();
+const rtdb = firebase.database();
 const storage = firebase.storage();
 let analytics = null;
 
@@ -56,6 +57,7 @@ if (location.hostname === 'localhost') {
 window.firebaseServices = {
   auth,
   db,
+  rtdb,
   storage,
   analytics
 };

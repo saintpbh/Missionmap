@@ -13,28 +13,8 @@
     ],
     "rewrites": [
       {
-        "source": "/",
-        "destination": "/missionary-management.html"
-      },
-      {
-        "source": "/admin",
-        "destination": "/missionary-management.html"
-      },
-      {
-        "source": "/dashboard",
-        "destination": "/dashboard.html"
-      },
-      {
-        "source": "/missionary-input",
-        "destination": "/missionary-input.html"
-      },
-      {
-        "source": "/newsletter-input",
-        "destination": "/newsletter-input.html"
-      },
-      {
-        "source": "/supporter-management",
-        "destination": "/supporter-management.html"
+        "source": "**",
+        "destination": "/index.html"
       }
     ],
     "headers": [

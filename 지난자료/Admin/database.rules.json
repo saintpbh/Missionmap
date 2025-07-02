@@ -1,0 +1,27 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "missionaries": {
+      ".read": true,
+      ".write": true,
+      "$missionaryId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'country'])"
+      }
+    },
+    "news": {
+      ".read": true,
+      ".write": true
+    },
+    "newsletters": {
+      ".read": true,
+      ".write": true
+    },
+    "supporters": {
+      ".read": true,
+      ".write": true
+    }
+  }
+} 

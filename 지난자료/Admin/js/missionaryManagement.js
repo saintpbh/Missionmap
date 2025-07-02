@@ -194,16 +194,31 @@ function closeLoginModal() {
 // 선교사 목록 로드
 async function loadMissionaries() {
   try {
+    console.log('Admin: 선교사 목록 로드 시작...');
+    
     if (window.firebaseService) {
+      console.log('Admin: firebaseService 사용');
       missionaries = await window.firebaseService.getMissionaries();
     } else if (window.getAllMissionaries) {
+      console.log('Admin: getAllMissionaries 사용');
       missionaries = await window.getAllMissionaries();
     } else {
       throw new Error('선교사 데이터 서비스를 찾을 수 없습니다.');
     }
-    console.log('선교사 목록 로드 완료:', missionaries.length);
+    
+    console.log('Admin: 선교사 목록 로드 완료:', missionaries.length);
+    console.log('Admin: 선교사 목록 (이름만):', missionaries.map(m => m.name));
+    
+    // 오은성 선교사 확인
+    const ohEunSung = missionaries.find(m => m.name === '오은성' || m.name.includes('오은성'));
+    if (ohEunSung) {
+      console.log('Admin: 오은성 선교사 발견:', ohEunSung);
+    } else {
+      console.log('Admin: 오은성 선교사를 찾을 수 없습니다.');
+    }
+    
   } catch (error) {
-    console.error('선교사 목록 로드 실패:', error);
+    console.error('Admin: 선교사 목록 로드 실패:', error);
     showToast('선교사 목록 로드 실패: ' + error.message, 'error');
     missionaries = [];
   }

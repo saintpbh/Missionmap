@@ -360,9 +360,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Firebase에 저장
   async function saveNewsletterToFirebase(data) {
     try {
-      const db = firebase.firestore();
-      await db.collection('newsletters').doc(data.id).set(data);
-      console.log('✅ Firebase에 뉴스레터 저장 완료:', data.id);
+      if (window.firebaseService) {
+        // Firebase 서비스를 사용하여 저장 (선교사 정보 자동 업데이트 포함)
+        await window.firebaseService.addNewsletter(data);
+        console.log('✅ Firebase 서비스를 통해 뉴스레터 저장 완료:', data.id);
+      } else {
+        // 기존 방식으로 저장
+        const db = firebase.firestore();
+        await db.collection('newsletters').doc(data.id).set(data);
+        console.log('✅ Firebase에 뉴스레터 저장 완료:', data.id);
+      }
     } catch (error) {
       console.error('❌ Firebase 저장 실패:', error);
       throw error;

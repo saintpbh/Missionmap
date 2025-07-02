@@ -41,7 +41,7 @@ const DataManager = {
         this.state.presbyteryStats = {};
         this.state.presbyteryMembers = {};
 
-        // 빈 이름 필드를 엄격하게 필터링
+        // 빈 이름 필드를 엄격하게 필터링하고 Admin 상세 데이터 활용
         this.state.missionaries = data.filter(item => {
             // name이 존재하고, 공백이 아니고, 실제 값이 있는 경우만 포함
             return item.name && 
@@ -51,9 +51,24 @@ const DataManager = {
                    item.country.trim() !== '';
         }).map((item, index) => ({
             ...item,
-            newsletter: item.newsletter || item.NewsLetter, // 별칭 추가
-            sentDate: item.sentDate || item.sent_date,      // 별칭 추가
-            englishName: item.englishName || item.english_name, // 별칭 추가
+            // 기존 별칭 유지
+            newsletter: item.newsletter || item.NewsLetter,
+            sentDate: item.sentDate || item.sent_date,
+            englishName: item.englishName || item.english_name,
+            // Admin 상세 데이터 활용
+            prayerTitle: item.prayerTitle || item.prayer || '기도로 함께해 주세요',
+            latestNewsletter: item.latestNewsletter || null,
+            latestNewsletterDate: item.latestNewsletterDate || item.sentDate || null,
+            localPhone: item.localPhone || item.local_phone || '',
+            localAddress: item.localAddress || item.local_address || '',
+            organization: item.organization || item.organization_name || '',
+            family: item.family || [],
+            supporters: item.supporters || [],
+            status: item.status || 'active',
+            isActive: item.isActive !== false,
+            // 메타데이터
+            createdAt: item.createdAt || null,
+            updatedAt: item.updatedAt || null,
             _id: `missionary_${index}`,
             _searchText: this.buildSearchText(item)
         }));
@@ -79,14 +94,19 @@ const DataManager = {
         console.log('DataManager: 선교사 목록:', this.state.missionaries.map(m => m.name));
     },
 
-    // 검색용 텍스트 생성
+    // 검색용 텍스트 생성 (Admin 상세 데이터 포함)
     buildSearchText(missionary) {
         const fields = [
             missionary.name,
             missionary.country,
             missionary.city,
             missionary.organization,
-            missionary.presbytery
+            missionary.presbytery,
+            missionary.englishName,
+            missionary.localPhone,
+            missionary.localAddress,
+            missionary.prayerTitle,
+            missionary.latestNewsletter
         ];
         return fields.filter(Boolean).join(' ').toLowerCase();
     },
@@ -110,7 +130,7 @@ const DataManager = {
         console.log('DataManager: 검색 인덱스 구축 완료');
     },
 
-    // 통합 검색 함수
+    // 통합 검색 함수 (Admin 상세 데이터 포함)
     search(term) {
         if (!term || term.trim().length === 0) {
             return [];
@@ -118,18 +138,24 @@ const DataManager = {
 
         const searchTerm = term.toLowerCase().trim();
         
-        // 직접 필터링 방식 (인덱스 사용하지 않음 - 더 정확한 부분 매치를 위해)
+        // 직접 필터링 방식 (Admin 상세 데이터 포함)
         const results = this.state.missionaries.filter(missionary => {
             const nameMatch = missionary.name && missionary.name.toLowerCase().includes(searchTerm);
             const countryMatch = missionary.country && missionary.country.toLowerCase().includes(searchTerm);
             const cityMatch = missionary.city && missionary.city.toLowerCase().includes(searchTerm);
             const orgMatch = missionary.organization && missionary.organization.toLowerCase().includes(searchTerm);
             const presbyMatch = missionary.presbytery && missionary.presbytery.toLowerCase().includes(searchTerm);
+            const englishNameMatch = missionary.englishName && missionary.englishName.toLowerCase().includes(searchTerm);
+            const phoneMatch = missionary.localPhone && missionary.localPhone.toLowerCase().includes(searchTerm);
+            const addressMatch = missionary.localAddress && missionary.localAddress.toLowerCase().includes(searchTerm);
+            const prayerMatch = missionary.prayerTitle && missionary.prayerTitle.toLowerCase().includes(searchTerm);
+            const newsletterMatch = missionary.latestNewsletter && missionary.latestNewsletter.toLowerCase().includes(searchTerm);
             
-            return nameMatch || countryMatch || cityMatch || orgMatch || presbyMatch;
+            return nameMatch || countryMatch || cityMatch || orgMatch || presbyMatch || 
+                   englishNameMatch || phoneMatch || addressMatch || prayerMatch || newsletterMatch;
         });
 
-        console.log(`DataManager: "${term}" 검색 결과: ${results.length}명`);
+        console.log(`DataManager: "${term}" 검색 결과: ${results.length}명 (상세 데이터 포함)`);
         return results.slice(0, 12); // 최대 12개 결과
     },
 

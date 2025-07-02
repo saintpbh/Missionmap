@@ -23,6 +23,51 @@ const PRAYER_CONFIG = {
     }
 };
 
+// 팝업 위치 저장/복원을 위한 유틸리티 함수들
+const POPUP_POSITION_KEY = 'missionaryDetailPopupPosition';
+
+// 저장된 팝업 위치 가져오기
+function getSavedPopupPosition() {
+    try {
+        const saved = localStorage.getItem(POPUP_POSITION_KEY);
+        if (saved) {
+            const position = JSON.parse(saved);
+            // 유효한 위치인지 확인 (화면 크기 내에 있는지)
+            if (position && typeof position.x === 'number' && typeof position.y === 'number') {
+                return position;
+            }
+        }
+    } catch (error) {
+        console.warn('저장된 팝업 위치를 불러오는데 실패했습니다:', error);
+    }
+    return null;
+}
+
+// 팝업 위치 저장하기
+function savePopupPosition(x, y) {
+    try {
+        const position = { x, y, timestamp: Date.now() };
+        localStorage.setItem(POPUP_POSITION_KEY, JSON.stringify(position));
+    } catch (error) {
+        console.warn('팝업 위치를 저장하는데 실패했습니다:', error);
+    }
+}
+
+// 저장된 위치가 유효한지 확인 (화면 크기 변경 시 대응)
+function isValidSavedPosition(position) {
+    if (!position) return false;
+    
+    const popup = document.querySelector('.detail-popup-modern');
+    if (!popup) return true; // 팝업이 없으면 일단 유효하다고 가정
+    
+    const popupRect = popup.getBoundingClientRect();
+    const maxX = window.innerWidth - popupRect.width;
+    const maxY = window.innerHeight - popupRect.height;
+    
+    return position.x >= 0 && position.x <= maxX && 
+           position.y >= 0 && position.y <= maxY;
+}
+
 // 토스트 메시지 생성 및 표시
 function showPrayerToast(name, location) {
     const existingToast = document.querySelector('.prayer-toast');
@@ -91,16 +136,118 @@ function handlePrayerClick(button, name, location) {
     }, 1000);
 }
 
+// SVG 아바타 생성 함수
+function createAvatarSVG(name, size = 80) {
+    const initials = name ? name.charAt(0).toUpperCase() : '?';
+    const colors = ['#4a90e2', '#7ed321', '#f5a623', '#d0021b', '#9013fe', '#50e3c2'];
+    const color = colors[name ? name.charCodeAt(0) % colors.length : 0];
+    
+    // 안전한 base64 인코딩을 위한 함수
+    function safeBtoa(str) {
+        try {
+            return btoa(unescape(encodeURIComponent(str)));
+        } catch (e) {
+            // 실패 시 기본 이니셜 사용
+            const fallbackInitials = name ? name.charCodeAt(0).toString(16).toUpperCase() : '?';
+            const fallbackSvg = `
+                <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+                    <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                          fill="white" text-anchor="middle" dominant-baseline="middle">${fallbackInitials}</text>
+                </svg>
+            `;
+            return btoa(unescape(encodeURIComponent(fallbackSvg)));
+        }
+    }
+    
+    const svgString = `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+            <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+            <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                  fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+        </svg>
+    `;
+    
+    return `data:image/svg+xml;base64,${safeBtoa(svgString)}`;
+}
+
+// Firestore에서 선교사 상세 정보 가져오기
+async function fetchMissionaryDetails(name) {
+    try {
+        if (!window.firebase || !window.firebase.database) {
+            console.warn('Firebase Database가 로드되지 않았습니다. 기존 데이터를 사용합니다.');
+            return null;
+        }
+
+        // Realtime Database에서 선교사 기본 정보 가져오기
+        const db = window.firebase.database();
+        const missionarySnapshot = await db.ref('missionaries').orderByChild('name').equalTo(name).once('value');
+        const missionaryData = missionarySnapshot.val();
+        
+        if (!missionaryData) {
+            console.warn('선교사 데이터를 찾을 수 없습니다:', name);
+            return null;
+        }
+        
+        const missionaryId = Object.keys(missionaryData)[0];
+        const missionary = missionaryData[missionaryId];
+        
+        // Realtime Database에서 최신 뉴스레터 가져오기 (있는 경우)
+        let latestNewsletter = null;
+        try {
+            const newsletterSnapshot = await db.ref('newsletters').orderByChild('missionaryId').equalTo(missionaryId).once('value');
+            const newsletterData = newsletterSnapshot.val();
+            
+            if (newsletterData) {
+                // 가장 최신 뉴스레터 찾기
+                const newsletters = Object.values(newsletterData);
+                const sortedNewsletters = newsletters.sort((a, b) => {
+                    const dateA = new Date(a.date || 0);
+                    const dateB = new Date(b.date || 0);
+                    return dateB - dateA;
+                });
+                
+                if (sortedNewsletters.length > 0) {
+                    latestNewsletter = sortedNewsletters[0];
+                }
+            }
+        } catch (error) {
+            console.warn('뉴스레터 데이터 가져오기 실패:', error);
+        }
+        
+        return {
+            ...missionary,
+            id: missionaryId,
+            latestNewsletter
+        };
+    } catch (error) {
+        console.error('선교사 상세 정보 가져오기 실패:', error);
+        return null;
+    }
+}
+
 // 메인 상세보기 팝업 함수
-window.showDetailPopup = function(name, latlng, missionaryInfo, elements) {
-    const info = missionaryInfo[name] || {};
+window.showDetailPopup = async function(name, latlng, missionaryInfo, elements) {
+    // Firestore에서 최신 데이터 가져오기
+    const freshData = await fetchMissionaryDetails(name);
+    const info = freshData || missionaryInfo[name] || {};
+    
     const sentDate = info.sent_date ? new Date(info.sent_date) : null;
     const sentYear = sentDate ? sentDate.getFullYear() : '정보 없음';
-    const imgSrc = info.image && info.image.trim() ? info.image.trim() : "https://via.placeholder.com/320x180.png?text=No+Photo";
+    const imgSrc = info.image && info.image.trim() ? info.image.trim() : createAvatarSVG(name, 320);
     const newsUrl = info.NewsLetter ? info.NewsLetter.trim() : '';
     const location = `${info.country || '정보없음'}, ${info.city || ''}`.replace(/, $/, '');
     
-    let prayerHtml = info.prayer || '현지 정착과 건강을 위해';
+    // 기도제목: 최신 뉴스레터 요약 우선, 없으면 기존 기도제목 사용
+    let prayerHtml = '현지 정착과 건강을 위해';
+    if (info.latestNewsletter && info.latestNewsletter.summary && info.latestNewsletter.summary.trim()) {
+        prayerHtml = info.latestNewsletter.summary.trim();
+    } else if (info.prayer && info.prayer.trim()) {
+        prayerHtml = info.prayer.trim();
+    } else if (info.latestNewsletterSummary && info.latestNewsletterSummary.trim()) {
+        prayerHtml = info.latestNewsletterSummary.trim();
+    }
+    
     if (newsUrl) {
         prayerHtml = `<span class="prayer-link" data-newsletter="${encodeURIComponent(newsUrl)}">${prayerHtml}</span>`;
     }
@@ -114,7 +261,7 @@ window.showDetailPopup = function(name, latlng, missionaryInfo, elements) {
             <div class="popup-header">
                 <div class="missionary-avatar">
                     <img src="${imgSrc}" alt="${name}" loading="lazy" 
-                         onerror="this.src='https://via.placeholder.com/80x80/e8f5e8/4a90e2?text=👤';">
+                         onerror="this.src='${createAvatarSVG(name, 80)}';">
                 </div>
                 <div class="missionary-info">
                     <h2 class="missionary-name">${name}</h2>
@@ -158,6 +305,31 @@ window.showDetailPopup = function(name, latlng, missionaryInfo, elements) {
                     <h3 class="section-title">🙏 기도제목</h3>
                     <p class="prayer-content">${prayerHtml}</p>
                 </div>
+
+                <!-- 최신 뉴스레터 섹션 -->
+                ${info.latestNewsletter ? `
+                <div class="newsletter-section">
+                    <h3 class="section-title">📰 최신 뉴스레터</h3>
+                    <div class="newsletter-info">
+                        <div class="newsletter-date">
+                            <span class="info-icon">📅</span>
+                            ${info.latestNewsletter.date ? new Date(info.latestNewsletter.date).toLocaleDateString('ko-KR') : '날짜 정보 없음'}
+                        </div>
+                        ${info.latestNewsletter.title ? `
+                        <div class="newsletter-title">
+                            <span class="info-icon">📋</span>
+                            ${info.latestNewsletter.title}
+                        </div>
+                        ` : ''}
+                        ${info.latestNewsletter.content ? `
+                        <div class="newsletter-content">
+                            <span class="info-icon">📝</span>
+                            <div class="content-preview">${info.latestNewsletter.content.substring(0, 100)}${info.latestNewsletter.content.length > 100 ? '...' : ''}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -172,6 +344,7 @@ window.showDetailPopup = function(name, latlng, missionaryInfo, elements) {
 // 이벤트 리스너 설정 함수
 function setupPopupEventListeners(elements, name, location, newsUrl) {
     const popup = elements.detailPopup;
+    const popupContent = popup.querySelector('.detail-popup-modern');
 
     // 닫기 버튼
     const closeBtn = popup.querySelector('.close-btn-modern');
@@ -200,6 +373,63 @@ function setupPopupEventListeners(elements, name, location, newsUrl) {
         });
     }
 
+    // 드래그 기능 추가
+    if (popupContent) {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+
+        popupContent.addEventListener('mousedown', (e) => {
+            // 닫기 버튼이나 기도 버튼 클릭 시 드래그 방지
+            if (e.target.closest('.close-btn-modern') || e.target.closest('.prayer-btn')) {
+                return;
+            }
+            
+            isDragging = true;
+            popupContent.classList.add('dragging');
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            const rect = popupContent.getBoundingClientRect();
+            startLeft = rect.left;
+            startTop = rect.top;
+            
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            const newLeft = startLeft + deltaX;
+            const newTop = startTop + deltaY;
+            
+            // 화면 경계 체크
+            const maxX = window.innerWidth - popupContent.offsetWidth;
+            const maxY = window.innerHeight - popupContent.offsetHeight;
+            
+            const clampedLeft = Math.max(0, Math.min(newLeft, maxX));
+            const clampedTop = Math.max(0, Math.min(newTop, maxY));
+            
+            popupContent.style.left = `${clampedLeft}px`;
+            popupContent.style.top = `${clampedTop}px`;
+            popupContent.style.transform = 'none';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                popupContent.classList.remove('dragging');
+                
+                // 드래그가 끝나면 현재 위치를 저장
+                const rect = popupContent.getBoundingClientRect();
+                savePopupPosition(rect.left, rect.top);
+            }
+        });
+    }
+
     // ESC 키로 닫기
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
@@ -213,6 +443,8 @@ function setupPopupEventListeners(elements, name, location, newsUrl) {
 // 팝업 표시 함수
 function showPopup(elements) {
     const popup = elements.detailPopup;
+    
+    // 팝업을 먼저 숨김 상태로 표시
     popup.style.display = "block";
     popup.classList.add('visible');
     
@@ -221,33 +453,53 @@ function showPopup(elements) {
         popup.classList.add('animate-in');
     });
 
-    // 위치 조정
+    // 위치 조정 (저장된 위치 우선)
     setTimeout(() => {
         positionPopup(elements);
     }, 16);
 }
 
-// 팝업 위치 조정 함수
+// 팝업 위치 조정 함수 (저장된 위치 우선)
 function positionPopup(elements) {
     const popup = elements.detailPopup;
+    const popupContent = popup.querySelector('.detail-popup-modern');
     const mapRect = elements.mapContainer.getBoundingClientRect();
     const popupRect = popup.getBoundingClientRect();
     
-    let x = mapRect.left + (mapRect.width - popupRect.width) / 2;
-    let y = mapRect.top + (mapRect.height - popupRect.height) / 2;
+    // 저장된 위치가 있는지 확인
+    const savedPosition = getSavedPopupPosition();
+    let x, y;
     
-    // 모바일 최적화
-    if (window.innerWidth < 700) {
-        x = (window.innerWidth - popupRect.width) / 2;
-        y = (window.innerHeight - popupRect.height) / 2;
+    if (savedPosition && isValidSavedPosition(savedPosition)) {
+        // 저장된 위치 사용
+        x = savedPosition.x;
+        y = savedPosition.y;
+        console.log('저장된 팝업 위치 사용:', { x, y });
+    } else {
+        // 기본 위치 계산 (중앙)
+        x = mapRect.left + (mapRect.width - popupRect.width) / 2;
+        y = mapRect.top + (mapRect.height - popupRect.height) / 2;
+
+        // 모바일 최적화
+        if (window.innerWidth < 700) {
+            x = (window.innerWidth - popupRect.width) / 2;
+            y = (window.innerHeight - popupRect.height) / 2;
+        }
+
+        // 화면 경계 체크
+        x = Math.max(20, Math.min(x, window.innerWidth - popupRect.width - 20));
+        y = Math.max(20, Math.min(y, window.innerHeight - popupRect.height - 20));
     }
     
-    // 화면 경계 체크
-    x = Math.max(20, Math.min(x, window.innerWidth - popupRect.width - 20));
-    y = Math.max(20, Math.min(y, window.innerHeight - popupRect.height - 20));
-    
-    popup.style.left = `${x}px`;
-    popup.style.top = `${y}px`;
+    // 팝업 위치 설정
+    if (popupContent) {
+        popupContent.style.left = `${x}px`;
+        popupContent.style.top = `${y}px`;
+        popupContent.style.transform = 'none';
+    } else {
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+    }
 }
 
 // 팝업 닫기 함수
@@ -260,6 +512,23 @@ window.closeDetailPopup = function(elements) {
         popup.classList.remove('visible', 'animate-out');
         popup.style.display = "none";
     }, 300);
+}
+
+// 저장된 팝업 위치 초기화 함수
+window.resetPopupPosition = function() {
+    try {
+        localStorage.removeItem(POPUP_POSITION_KEY);
+        console.log('팝업 위치가 초기화되었습니다.');
+        return true;
+    } catch (error) {
+        console.warn('팝업 위치 초기화에 실패했습니다:', error);
+        return false;
+    }
+}
+
+// 현재 저장된 팝업 위치 가져오기 함수
+window.getCurrentPopupPosition = function() {
+    return getSavedPopupPosition();
 }
 
 // 설정 변경 함수 (외부에서 호출 가능)

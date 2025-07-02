@@ -1,5 +1,40 @@
 // MobileMissionarySwiper.js
 (function() {
+    // SVG 아바타 생성 함수
+    function createAvatarSVG(name, size = 90) {
+        const initials = name ? name.charAt(0).toUpperCase() : '?';
+        const colors = ['#4a90e2', '#7ed321', '#f5a623', '#d0021b', '#9013fe', '#50e3c2'];
+        const color = colors[name ? name.charCodeAt(0) % colors.length : 0];
+        
+        // 안전한 base64 인코딩을 위한 함수
+        function safeBtoa(str) {
+            try {
+                return btoa(unescape(encodeURIComponent(str)));
+            } catch (e) {
+                // 실패 시 기본 이니셜 사용
+                const fallbackInitials = name ? name.charCodeAt(0).toString(16).toUpperCase() : '?';
+                const fallbackSvg = `
+                    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+                        <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                              fill="white" text-anchor="middle" dominant-baseline="middle">${fallbackInitials}</text>
+                    </svg>
+                `;
+                return btoa(unescape(encodeURIComponent(fallbackSvg)));
+            }
+        }
+        
+        const svgString = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+                <rect width="${size}" height="${size}" fill="${color}" rx="${size/2}"/>
+                <text x="${size/2}" y="${size/2 + size/8}" font-family="Arial, sans-serif" font-size="${size/3}" 
+                      fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+            </svg>
+        `;
+        
+        return `data:image/svg+xml;base64,${safeBtoa(svgString)}`;
+    }
+
     // 모바일 감지
     function isMobile() {
         return window.innerWidth <= 900;
@@ -129,7 +164,7 @@
                                         <span class="update-date">${formatMissionaryDate(m.lastUpdate)}</span>
                                     </div>
                                 </div>
-                                <div class="missionary-avatar"><img src="${m.image || 'https://via.placeholder.com/90'}" alt="${m.name}"></div>
+                                <div class="missionary-avatar"><img src="${m.image || createAvatarSVG(m.name, 90)}" alt="${m.name}"></div>
                                 <div class="missionary-name">${m.name}</div>
                                 <div class="missionary-location"><span class="emoji">📍</span> ${m.country}${m.city ? ', ' + m.city : ''}</div>
                                 <div class="missionary-info-row vertical">

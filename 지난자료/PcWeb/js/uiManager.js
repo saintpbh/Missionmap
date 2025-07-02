@@ -4,6 +4,12 @@ const UIManager = {
     
     // DOM 요소들을 지연 로딩으로 초기화
     initElements() {
+        // DOM이 완전히 로드될 때까지 대기
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initElements());
+            return;
+        }
+        
         this.elements = {
             mapContainer: document.getElementById('map'),
             detailPopup: document.getElementById('detailPopup'),
@@ -26,20 +32,100 @@ const UIManager = {
         console.log('UIManager 요소 초기화 완료:', this.elements);
         
         // 중요한 요소들의 존재 여부 확인
-        const criticalElements = ['mapContainer', 'detailPopup'];
+        const criticalElements = ['mapContainer', 'detailPopup', 'sidebarPanel', 'sidebarTitle', 'sidebarList'];
         criticalElements.forEach(elementName => {
             if (!this.elements[elementName]) {
                 console.error(`중요한 요소를 찾을 수 없습니다: ${elementName}`);
             }
         });
+        
+        // 사이드바 관련 요소들이 모두 있는지 확인
+        if (!this.elements.sidebarPanel || !this.elements.sidebarTitle || !this.elements.sidebarList) {
+            console.error('사이드바 요소들이 초기화되지 않았습니다. DOM을 다시 확인합니다.');
+            // 1초 후 다시 시도
+            setTimeout(() => this.initElements(), 1000);
+            return;
+        }
+        
+        console.log('UIManager 사이드바 요소 초기화 성공');
     },
     
     // 이 UI 매니저를 초기화하고 필요한 참조를 설정합니다.
     initialize(mapController, dataManager) {
-        this.initElements(); // DOM 요소 초기화
+        console.log('UIManager 초기화 시작...');
+        
+        // 참조 설정
         this.mapController = mapController;
         this.dataManager = dataManager;
-        console.log('UIManager 초기화 완료');
+        
+        // DOM이 완전히 로드된 후 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.initElements();
+                this.setupEventListeners();
+                console.log('UIManager 초기화 완료 (DOMContentLoaded 후)');
+            });
+        } else {
+            // DOM이 이미 로드된 경우
+            this.initElements();
+            this.setupEventListeners();
+            console.log('UIManager 초기화 완료 (DOM 이미 로드됨)');
+        }
+    },
+
+    // 이벤트 리스너 설정
+    setupEventListeners() {
+        // 노회별 보기 종료 버튼
+        if (this.elements.presbyteryExitBtn) {
+            this.elements.presbyteryExitBtn.addEventListener('click', () => {
+                console.log('노회별 보기 종료 버튼 클릭');
+                this.exitPresbyteryView();
+            });
+        }
+
+        // 국가별 보기 종료 버튼
+        if (this.elements.countryExitBtn) {
+            this.elements.countryExitBtn.addEventListener('click', () => {
+                console.log('국가별 보기 종료 버튼 클릭');
+                this.exitCountryView();
+            });
+        }
+    },
+
+    // 노회별 보기 종료
+    exitPresbyteryView() {
+        // 노회별 테이블 다시 표시 (숨기지 않음)
+        if (this.elements.presbyteryTable) {
+            this.elements.presbyteryTable.style.display = 'block';
+        }
+        
+        // 종료 버튼 숨기기
+        if (this.elements.presbyteryExitBtn) {
+            this.elements.presbyteryExitBtn.classList.remove('visible');
+        }
+        
+        // 전체 보기로 복원
+        this.mapController.exitPresbyteryView();
+        
+        console.log('노회별 보기 종료 완료');
+    },
+
+    // 국가별 보기 종료
+    exitCountryView() {
+        // 국가별 테이블 다시 표시 (숨기지 않음)
+        if (this.elements.countryTable) {
+            this.elements.countryTable.style.display = 'block';
+        }
+        
+        // 종료 버튼 숨기기
+        if (this.elements.countryExitBtn) {
+            this.elements.countryExitBtn.classList.remove('visible');
+        }
+        
+        // 전체 보기로 복원
+        this.mapController.exitCountryView();
+        
+        console.log('국가별 보기 종료 완료');
     },
 
     renderCountryTable() {
@@ -222,37 +308,62 @@ const UIManager = {
     },
 
     showLegacyDetailPopup(name, latlngArray) {
-        this.closeDetailPopup();
+        const info = this.dataManager.getMissionaryInfo(name);
+        if (!info) return;
 
-        const info = this.dataManager.getMissionaryInfo(name) || {};
-        const card = document.createElement('sl-card');
-        card.className = 'detail-popup-card fancy';
-        
-        // 사이드바가 열려있으면 위치 조정
-        const isSidebarOpen = this.elements.sidebarPanel.classList.contains('open');
-        if (isSidebarOpen) {
-            this.elements.detailPopupContainer.classList.add('sidebar-positioned');
-        } else {
-            this.elements.detailPopupContainer.classList.remove('sidebar-positioned');
+        // SVG 아바타 생성 함수
+        function createAvatarSVG(name, size = 600) {
+            const initials = name ? name.charAt(0).toUpperCase() : '?';
+            const colors = ['#4a90e2', '#7ed321', '#f5a623', '#d0021b', '#9013fe', '#50e3c2'];
+            const color = colors[name ? name.charCodeAt(0) % colors.length : 0];
+            
+            // 안전한 base64 인코딩을 위한 함수
+            function safeBtoa(str) {
+                try {
+                    return btoa(unescape(encodeURIComponent(str)));
+                } catch (e) {
+                    // 실패 시 기본 이니셜 사용
+                    const fallbackInitials = name ? name.charCodeAt(0).toString(16).toUpperCase() : '?';
+                    const fallbackSvg = `
+                        <svg width="${size}" height="${size/2}" viewBox="0 0 ${size} ${size/2}" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="${size}" height="${size/2}" fill="${color}"/>
+                            <text x="${size/2}" y="${size/4 + size/16}" font-family="Arial, sans-serif" font-size="${size/8}" 
+                                  fill="white" text-anchor="middle" dominant-baseline="middle">${fallbackInitials}</text>
+                        </svg>
+                    `;
+                    return btoa(unescape(encodeURIComponent(fallbackSvg)));
+                }
+            }
+            
+            const svgString = `
+                <svg width="${size}" height="${size/2}" viewBox="0 0 ${size} ${size/2}" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="${size}" height="${size/2}" fill="${color}"/>
+                    <text x="${size/2}" y="${size/4 + size/16}" font-family="Arial, sans-serif" font-size="${size/8}" 
+                          fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text>
+                </svg>
+            `;
+            
+            return `data:image/svg+xml;base64,${safeBtoa(svgString)}`;
         }
 
+        const card = document.createElement('div');
+        card.className = 'detail-popup-card';
+        
         let pdfButton = '';
-        if (info.NewsLetter && info.NewsLetter.trim() !== '') {
-            let newsUrl = info.NewsLetter.trim();
-            if (!/^https?:\/\//.test(newsUrl)) newsUrl = `pdfs/${newsUrl}`;
-            const encodedUrl = encodeURIComponent(newsUrl);
-            pdfButton = `<sl-button size="small" variant="primary" pill class="newsletter-button" data-newsurl="${encodedUrl}">
-                            <sl-icon slot="prefix" name="box-arrow-up-right"></sl-icon>소식지 보기
+        if (info.NewsLetter && info.NewsLetter.trim()) {
+            pdfButton = `<sl-button variant="primary" size="small" class="newsletter-button" data-newsurl="${info.NewsLetter.trim()}">
+                            <sl-icon slot="prefix" name="file-earmark-text"></sl-icon>
+                            뉴스레터 보기
                          </sl-button>`;
         }
 
         const city = info.city && info.city.trim() ? info.city.trim() : '';
         const location = city ? `${info.country} · ${city}` : info.country;
-        const imgSrc = info.image && info.image.trim() ? info.image.trim() : 'https://via.placeholder.com/600x280?text=Missionary';
+        const imgSrc = info.image && info.image.trim() ? info.image.trim() : createAvatarSVG(name, 600);
 
         card.innerHTML = `
             <div class="detail-cover">
-                <img src="${imgSrc}" alt="${name}" onerror="this.src='https://via.placeholder.com/600x280?text=Missionary';">
+                <img src="${imgSrc}" alt="${name}" onerror="this.src='${createAvatarSVG(name, 600)}';">
                 <div class="cover-overlay">
                     <h2>${name}</h2>
                 </div>
@@ -356,6 +467,22 @@ const UIManager = {
 
     // 사이드바 관련 메서드들
     openSidebar(title, missionaries) {
+        // DOM 요소들이 초기화되었는지 확인
+        if (!this.elements.sidebarTitle || !this.elements.sidebarPanel || !this.elements.sidebarList) {
+            console.error('사이드바 요소들이 초기화되지 않았습니다. 다시 초기화를 시도합니다.');
+            this.initElements();
+            
+            // 재시도
+            setTimeout(() => {
+                if (this.elements.sidebarTitle && this.elements.sidebarPanel && this.elements.sidebarList) {
+                    this.openSidebar(title, missionaries);
+                } else {
+                    console.error('사이드바를 열 수 없습니다. DOM 요소를 찾을 수 없습니다.');
+                }
+            }, 100);
+            return;
+        }
+        
         this.elements.sidebarTitle.textContent = title;
         this.renderSidebarList(missionaries);
         this.elements.sidebarPanel.classList.add('open');
@@ -376,6 +503,8 @@ const UIManager = {
             };
             this.elements.sidebarSearch.addEventListener('sl-input', this._searchHandler);
         }
+        
+        console.log('사이드바 열기 완료:', title, missionaries.length, '명의 선교사');
     },
 
     closeSidebar() {
@@ -441,7 +570,25 @@ const UIManager = {
                 const name = item.dataset.name;
                 const missionary = missionaries.find(m => m.name === name);
                 if (missionary) {
+                    // mapController가 있는지 확인
+                    if (!this.mapController) {
+                        console.error('mapController가 초기화되지 않았습니다.');
+                        return;
+                    }
+                    
+                    // getLatLng 메서드가 있는지 확인
+                    if (typeof this.mapController.getLatLng !== 'function') {
+                        console.error('mapController.getLatLng 메서드가 없습니다.');
+                        return;
+                    }
+                    
                     const latlng = this.mapController.getLatLng(missionary, missionary.country);
+                    
+                    // 지도가 있는지 확인
+                    if (!this.mapController.map) {
+                        console.error('mapController.map이 초기화되지 않았습니다.');
+                        return;
+                    }
                     
                     // 해당 선교사의 국가로 지도 이동 (더 부드럽게)
                     this.mapController.map.flyTo(latlng, Math.max(this.mapController.map.getZoom(), 6), { 
@@ -462,13 +609,17 @@ const UIManager = {
                                 if (marker.getPopup && marker.getPopup().getContent) {
                                     const popupContent = marker.getPopup().getContent();
                                     if (popupContent && popupContent.includes(name)) {
-                                        // 마커에 포커스 효과 추가
-                                        marker.getElement().classList.add('marker-focused');
-                                        setTimeout(() => {
-                                            if (marker.getElement()) {
-                                                marker.getElement().classList.remove('marker-focused');
-                                            }
-                                        }, 2000);
+                                        // 마커에 포커스 효과 추가 (null 체크 추가)
+                                        const markerElement = marker.getElement();
+                                        if (markerElement) {
+                                            markerElement.classList.add('marker-focused');
+                                            setTimeout(() => {
+                                                const element = marker.getElement();
+                                                if (element) {
+                                                    element.classList.remove('marker-focused');
+                                                }
+                                            }, 2000);
+                                        }
                                     }
                                 }
                             });

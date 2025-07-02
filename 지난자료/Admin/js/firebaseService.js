@@ -65,10 +65,20 @@ class FirebaseService {
   // 모든 선교사 가져오기
   async getMissionaries() {
     try {
-      const snapshot = await this.db.collection('missionaries').get();
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      // Realtime Database에서 데이터 가져오기
+      const rtdb = firebase.database();
+      const snapshot = await rtdb.ref('missionaries').once('value');
+      const data = snapshot.val();
+      
+      if (!data) {
+        return [];
+      }
+      
+      // Firebase 키를 id로 변환하여 반환
+      return Object.keys(data).map(key => ({
+        id: key,
+        _id: key, // PcWeb과 호환성을 위해 _id도 추가
+        ...data[key]
       }));
     } catch (error) {
       console.error('선교사 데이터 가져오기 에러:', error);
@@ -80,19 +90,40 @@ class FirebaseService {
   async addMissionary(missionaryData) {
     try {
       const now = new Date();
-      const docRef = await this.db.collection('missionaries').add({
+      const timestamp = now.getTime();
+      
+      // Realtime Database에 저장
+      const rtdb = firebase.database();
+      const newMissionaryRef = rtdb.ref('missionaries').push();
+      
+      const missionaryWithMetadata = {
         ...missionaryData,
-        createdAt: now,
-        updatedAt: now,
+        _id: newMissionaryRef.key, // Firebase 키를 _id로 저장
+        createdAt: timestamp,
+        updatedAt: timestamp,
         createdBy: this.getCurrentUser()?.uid || 'system',
         updateHistory: [{
-          timestamp: now,
+          timestamp: timestamp,
           action: '생성',
           updatedBy: this.getCurrentUser()?.uid || 'system',
           changes: Object.keys(missionaryData)
         }]
-      });
-      return docRef.id;
+      };
+      
+      await newMissionaryRef.set(missionaryWithMetadata);
+      
+      // Firestore에도 동기화 (기존 호환성 유지)
+      try {
+        await this.db.collection('missionaries').doc(newMissionaryRef.key).set({
+          ...missionaryWithMetadata,
+          createdAt: now,
+          updatedAt: now
+        });
+      } catch (firestoreError) {
+        console.warn('Firestore 동기화 실패 (무시됨):', firestoreError);
+      }
+      
+      return newMissionaryRef.key;
     } catch (error) {
       console.error('선교사 추가 에러:', error);
       throw error;
@@ -103,8 +134,16 @@ class FirebaseService {
   async updateMissionary(id, missionaryData) {
     try {
       const now = new Date();
-      const currentDoc = await this.db.collection('missionaries').doc(id).get();
-      const currentData = currentDoc.data();
+      const timestamp = now.getTime();
+      
+      // Realtime Database에서 현재 데이터 가져오기
+      const rtdb = firebase.database();
+      const currentSnapshot = await rtdb.ref(`missionaries/${id}`).once('value');
+      const currentData = currentSnapshot.val();
+      
+      if (!currentData) {
+        throw new Error('선교사를 찾을 수 없습니다.');
+      }
       
       // 변경된 필드 찾기
       const changes = [];
@@ -119,17 +158,29 @@ class FirebaseService {
       
       // 새로운 수정 이력 추가
       updateHistory.push({
-        timestamp: now,
+        timestamp: timestamp,
         action: '수정',
         updatedBy: this.getCurrentUser()?.uid || 'system',
         changes: changes
       });
       
-      await this.db.collection('missionaries').doc(id).update({
+      // Realtime Database에 업데이트
+      await rtdb.ref(`missionaries/${id}`).update({
         ...missionaryData,
-        updatedAt: now,
+        updatedAt: timestamp,
         updateHistory: updateHistory
       });
+      
+      // Firestore에도 동기화 (기존 호환성 유지)
+      try {
+        await this.db.collection('missionaries').doc(id).update({
+          ...missionaryData,
+          updatedAt: now,
+          updateHistory: updateHistory
+        });
+      } catch (firestoreError) {
+        console.warn('Firestore 동기화 실패 (무시됨):', firestoreError);
+      }
     } catch (error) {
       console.error('선교사 업데이트 에러:', error);
       throw error;
@@ -139,7 +190,16 @@ class FirebaseService {
   // 선교사 삭제
   async deleteMissionary(id) {
     try {
-      await this.db.collection('missionaries').doc(id).delete();
+      // Realtime Database에서 삭제
+      const rtdb = firebase.database();
+      await rtdb.ref(`missionaries/${id}`).remove();
+      
+      // Firestore에서도 삭제 (기존 호환성 유지)
+      try {
+        await this.db.collection('missionaries').doc(id).delete();
+      } catch (firestoreError) {
+        console.warn('Firestore 삭제 실패 (무시됨):', firestoreError);
+      }
     } catch (error) {
       console.error('선교사 삭제 에러:', error);
       throw error;
@@ -149,17 +209,44 @@ class FirebaseService {
   // 특정 선교사 가져오기
   async getMissionary(id) {
     try {
-      const doc = await this.db.collection('missionaries').doc(id).get();
-      if (doc.exists) {
+      // Realtime Database에서 데이터 가져오기
+      const rtdb = firebase.database();
+      const snapshot = await rtdb.ref(`missionaries/${id}`).once('value');
+      const data = snapshot.val();
+      
+      if (data) {
         return {
-          id: doc.id,
-          ...doc.data()
+          id: id,
+          _id: id, // PcWeb과 호환성을 위해 _id도 추가
+          ...data
         };
       } else {
         throw new Error('선교사를 찾을 수 없습니다.');
       }
     } catch (error) {
       console.error('선교사 데이터 가져오기 에러:', error);
+      throw error;
+    }
+  }
+
+  // 선교사의 최신 뉴스레터 정보 업데이트
+  async updateMissionaryLatestNewsletter(missionaryId, newsletterInfo) {
+    try {
+      const rtdb = firebase.database();
+      const now = new Date();
+      const timestamp = now.getTime();
+      
+      // Realtime Database에서 선교사 데이터 업데이트
+      await rtdb.ref(`missionaries/${missionaryId}`).update({
+        latestNewsletterSummary: newsletterInfo.summary || '',
+        latestNewsletterDate: newsletterInfo.date || timestamp,
+        latestNewsletterIsUrgent: newsletterInfo.isUrgent || false,
+        updatedAt: timestamp
+      });
+      
+      console.log(`선교사 ${missionaryId}의 최신 뉴스레터 정보 업데이트 완료`);
+    } catch (error) {
+      console.error('선교사 최신 뉴스레터 정보 업데이트 에러:', error);
       throw error;
     }
   }
@@ -174,6 +261,16 @@ class FirebaseService {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      
+      // 뉴스레터 추가 후 해당 선교사의 최신 뉴스레터 정보 업데이트
+      if (newsletterData.missionaryId) {
+        await this.updateMissionaryLatestNewsletter(newsletterData.missionaryId, {
+          summary: newsletterData.summary,
+          date: newsletterData.date,
+          isUrgent: newsletterData.isUrgent
+        });
+      }
+      
       return docRef.id;
     } catch (error) {
       console.error('뉴스레터 추가 에러:', error);
@@ -188,6 +285,15 @@ class FirebaseService {
         ...newsletterData,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      
+      // 뉴스레터 업데이트 후 해당 선교사의 최신 뉴스레터 정보 업데이트
+      if (newsletterData.missionaryId) {
+        await this.updateMissionaryLatestNewsletter(newsletterData.missionaryId, {
+          summary: newsletterData.summary,
+          date: newsletterData.date,
+          isUrgent: newsletterData.isUrgent
+        });
+      }
     } catch (error) {
       console.error('뉴스레터 업데이트 에러:', error);
       throw error;

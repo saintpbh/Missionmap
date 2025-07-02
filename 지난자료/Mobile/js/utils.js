@@ -33,7 +33,35 @@ window.fetchData = function(callback) {
     .then(snapshot => {
       const missionaries = [];
       snapshot.forEach(child => {
-        missionaries.push(child.val());
+        const data = child.val();
+        if (data && data.name && data.name.trim() !== '') {
+          // Admin에서 관리하는 상세 정보 포함
+          const enhancedMissionary = {
+            ...data,
+            // 기도제목 (최신 뉴스레터 요약 또는 기본 기도제목)
+            prayerTitle: data.latestNewsletterSummary || data.prayerTitle || data.prayer || '기도로 함께해 주세요',
+            // 최신 뉴스레터 정보
+            latestNewsletter: data.latestNewsletter || null,
+            latestNewsletterDate: data.latestNewsletterDate || data.sentDate || null,
+            // 상세 정보
+            englishName: data.englishName || data.english_name || '',
+            localPhone: data.localPhone || data.local_phone || '',
+            localAddress: data.localAddress || data.local_address || '',
+            organization: data.organization || data.organization_name || '',
+            presbytery: data.presbytery || '',
+            // 가족 정보
+            family: data.family || [],
+            // 후원자 정보
+            supporters: data.supporters || [],
+            // 상태 정보
+            status: data.status || 'active',
+            isActive: data.isActive !== false, // 기본값은 true
+            // 메타데이터
+            createdAt: data.createdAt || null,
+            updatedAt: data.updatedAt || null
+          };
+          missionaries.push(enhancedMissionary);
+        }
       });
       db.ref('news').once('value')
         .then(newsSnap => {
