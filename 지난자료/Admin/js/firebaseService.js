@@ -195,8 +195,8 @@ class FirebaseService {
       await rtdb.ref(`missionaries/${id}`).remove();
       
       // Firestore에서도 삭제 (기존 호환성 유지)
-      try {
-        await this.db.collection('missionaries').doc(id).delete();
+    try {
+      await this.db.collection('missionaries').doc(id).delete();
       } catch (firestoreError) {
         console.warn('Firestore 삭제 실패 (무시됨):', firestoreError);
       }

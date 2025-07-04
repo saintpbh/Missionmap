@@ -31,6 +31,26 @@ function animateFloatingElement(element, state, constants, duration) {
     }
 }
 
+function createCountryMissionaryPopup(country, missionaries, flagUrl) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'country-missionary-popup';
+    wrapper.innerHTML = `
+        <div class="country-header">
+            <img src="${flagUrl}" alt="국기" class="country-flag">
+            <span class="country-name">${country}</span>
+        </div>
+        <div class="missionary-list">
+            ${missionaries.map(m => `
+                <div class="missionary-list-item">
+                    <span class="missionary-name">${m.name}</span>
+                    ${m.city ? `<span class="missionary-city">(${m.city})</span>` : ''}
+                </div>
+            `).join('')}
+        </div>
+    `;
+    return wrapper;
+}
+
 // 전역 함수로 등록
 window.createFloatingElement = createFloatingElement;
 window.animateFloatingElement = animateFloatingElement; 

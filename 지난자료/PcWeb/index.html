@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>한국기독교장로회 선교사 파송지도</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
@@ -12,11 +13,25 @@
     <link rel="stylesheet" href="css/styles.css?v=1.0.1">
     <!-- 모던 팝업 등 신규 디자인을 위한 스타일시트 -->
     <link rel="stylesheet" href="css/modern.css?v=1.0.1">
+    <link rel="stylesheet" href="css/sidebar.css?v=1.1.2" />
+    <link rel="stylesheet" href="css/table.css?v=1.0.1" />
+    <link rel="stylesheet" href="css/popup.css?v=1.0.3" />
+    <link rel="stylesheet" href="css/modern.css?v=1.2.3" />
+    <link rel="stylesheet" href="css/minimal-prayer-popup.css">
+    <link rel="stylesheet" href="css/country-missionary-popup.css">
+    <!-- 새로운 기도 팝업 모듈 v2.0 -->
+    <link rel="stylesheet" href="css/prayerPopup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link rel="stylesheet" href="css/mobile.css?v=1.0.0">
     <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.15.0/cdn/shoelace.js"></script>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase App (필수) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <!-- Firestore (필수) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 </head>
 <body>
     <div id="map"></div>
@@ -39,6 +54,14 @@
             </div>
         </div>
     </div>
+    <!-- 기도 안내 팝업 -->
+    <div id="prayer-notification" class="prayer-notification hidden">
+        <div class="prayer-notification-content">
+            <span class="prayer-icon">🙏</span>
+            <span class="prayer-message"></span>
+        </div>
+    </div>
+    
     <div id="mapGuide">
       이 지도는 전세계에 흩어져 선교사역을 감당하고 있는 총회파송 해외선교동역자님들의 현황을 시각적으로 보여줍니다.<br>
       귀한 선교사역을 위해 기도로 함께 하여 주시기를 부탁드립니다.
@@ -56,11 +79,11 @@
     
     <sl-button id="country-exit-btn" variant="danger" size="large" pill>
         <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-        국가별 보기 종료
+        자세히 보기 종료
     </sl-button>
     <sl-button id="presbytery-exit-btn" variant="danger" size="large" pill>
         <sl-icon slot="prefix" name="arrow-left"></sl-icon>
-        노회별 보기 종료
+        자세히 보기 종료
     </sl-button>
     
     <!-- 사이드바 패널 -->
@@ -110,6 +133,10 @@
     <script src="js/ui/detailPopup.js?v=1.0.1"></script>
     <script src="js/ui/floatingMissionary.js?v=1.0.1"></script>
     <script src="js/ui/floatingPopups.js?v=1.0.1"></script>
+    <!-- 새로운 기도 팝업 모듈 v2.0 -->
+    <script src="js/ui/prayerPopup.js"></script>
+    <script src="js/ui/prayerPopupAdapter.js"></script>
+    <script src="js/prayerclick.js?v=1.0.0"></script>
     
     <script src="js/news.js?v=1.0.1"></script>
     <script src="js/prayercount.js?v=1.0.1"></script>

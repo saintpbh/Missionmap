@@ -68,37 +68,6 @@ function isValidSavedPosition(position) {
            position.y >= 0 && position.y <= maxY;
 }
 
-// 토스트 메시지 생성 및 표시
-function showPrayerToast(name, location) {
-    const existingToast = document.querySelector('.prayer-toast');
-    if (existingToast) existingToast.remove();
-
-    const toast = document.createElement('div');
-    toast.className = 'prayer-toast';
-    toast.innerHTML = `
-        <div class="toast-content">
-            <span class="toast-icon">🙏</span>
-            <div class="toast-text">
-                <div class="toast-main">${name}님을 위해 기도합니다</div>
-                <div class="toast-sub">${location} 사역을 축복해 주세요</div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(toast);
-    
-    // 애니메이션 실행
-    requestAnimationFrame(() => {
-        toast.classList.add('show');
-    });
-
-    // 자동 제거
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, PRAYER_CONFIG.toast.duration);
-}
-
 // 펄스 링 애니메이션
 function createPulseRing(button) {
     const ring = document.createElement('div');
@@ -117,16 +86,12 @@ function createPulseRing(button) {
     }, PRAYER_CONFIG.pulseRing.duration);
 }
 
-// 기도 버튼 클릭 핸들러
-function handlePrayerClick(button, name, location) {
+// 기도 버튼 클릭 핸들러 (이름 충돌 방지를 위해 함수명 변경)
+async function handleDetailPopupPrayerClick(button, name, location) {
+    
     // 펄스 링 애니메이션
     if (PRAYER_CONFIG.pulseRing.enabled) {
         createPulseRing(button);
-    }
-
-    // 토스트 메시지 표시
-    if (PRAYER_CONFIG.toast.enabled) {
-        showPrayerToast(name, location);
     }
 
     // 버튼 상태 변경 (짧은 피드백)
@@ -134,6 +99,109 @@ function handlePrayerClick(button, name, location) {
     setTimeout(() => {
         button.classList.remove('prayed');
     }, 1000);
+
+    // PrayerClick 모듈과 연동하여 Firebase에 기도 기록 및 지도에 기도손 표시
+    if (window.handlePrayerClick) {
+        try {
+            // 선교사 데이터 생성 (PrayerClick 모듈에서 요구하는 형식)
+            // location이 undefined이거나 빈 문자열인 경우 처리
+            const safeLocation = location || '';
+            const locationParts = safeLocation.split(',');
+            
+            // 실제 전달받은 매개변수 사용 (기본값 대신)
+            const missionaryData = {
+                name: name, // 매개변수 그대로 사용
+                country: locationParts[0]?.trim() || '', // 위치에서 국가 추출
+                city: locationParts[1]?.trim() || '', // 위치에서 도시 추출
+                flagUrl: '' // 국기 URL은 handlePrayerClick에서 생성
+            };
+            
+
+            
+            // 데이터 유효성 사전 검증
+            if (!missionaryData.name || !missionaryData.country) {
+                console.error('상세 팝업에서 필수 데이터 누락:', {
+                    name: missionaryData.name,
+                    country: missionaryData.country,
+                    originalLocation: location
+                });
+                return;
+            }
+            
+            // 로딩 상태 표시
+            const originalText = button.innerHTML;
+            button.style.opacity = '0.7';
+            button.style.pointerEvents = 'none';
+            
+            const success = await window.handlePrayerClick(missionaryData);
+            
+            if (success) {
+                // 기도 안내 팝업 표시
+                if (window.showPrayerNotification) {
+                    window.showPrayerNotification(name);
+                } else {
+                    console.warn('showPrayerNotification 함수를 찾을 수 없습니다.');
+                    // 직접 팝업 표시 시도
+                    const notification = document.getElementById('prayer-notification');
+                    const messageElement = notification?.querySelector('.prayer-message');
+                    if (notification && messageElement) {
+                        messageElement.textContent = `${name} 선교사님을 위해 기도합니다!`;
+                        notification.classList.remove('hidden');
+                        notification.classList.add('show');
+                        
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                            notification.classList.add('hidden');
+                        }, 2000);
+                    } else {
+                        console.error('기도 안내 팝업 요소를 찾을 수 없습니다.');
+                    }
+                }
+                
+                // 성공 피드백 - 버튼 색상 변경
+                button.style.background = 'rgba(34, 197, 94, 0.2)';
+                button.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+                button.style.color = 'rgba(34, 197, 94, 1)';
+                
+                setTimeout(() => {
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                    button.style.color = '';
+                }, 2000);
+            } else {
+                // 실패 피드백
+                button.style.background = 'rgba(239, 68, 68, 0.2)';
+                button.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                
+                setTimeout(() => {
+                    button.style.background = '';
+                    button.style.borderColor = '';
+                }, 2000);
+            }
+            
+            // 로딩 상태 해제
+            button.style.opacity = '1';
+            button.style.pointerEvents = 'auto';
+            
+        } catch (error) {
+            console.error('기도 클릭 처리 중 오류:', error);
+            
+            // 오류 피드백
+            button.style.background = 'rgba(239, 68, 68, 0.2)';
+            button.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            
+            setTimeout(() => {
+                button.style.background = '';
+                button.style.borderColor = '';
+            }, 2000);
+            
+            // 로딩 상태 해제
+            button.style.opacity = '1';
+            button.style.pointerEvents = 'auto';
+        }
+    } else {
+        console.warn('PrayerClick 모듈이 로드되지 않았습니다.');
+    }
 }
 
 // SVG 아바타 생성 함수
@@ -357,7 +425,12 @@ function setupPopupEventListeners(elements, name, location, newsUrl) {
     if (prayerBtn) {
         prayerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            handlePrayerClick(prayerBtn, name, location);
+            
+            // 버튼의 data 속성에서 정보 가져오기 (더 안전함)
+            const missionaryName = prayerBtn.dataset.name || name;
+            const missionaryLocation = prayerBtn.dataset.location || location;
+            
+            handleDetailPopupPrayerClick(prayerBtn, missionaryName, missionaryLocation);
         });
     }
 
@@ -474,21 +547,20 @@ function positionPopup(elements) {
         // 저장된 위치 사용
         x = savedPosition.x;
         y = savedPosition.y;
-        console.log('저장된 팝업 위치 사용:', { x, y });
     } else {
         // 기본 위치 계산 (중앙)
         x = mapRect.left + (mapRect.width - popupRect.width) / 2;
         y = mapRect.top + (mapRect.height - popupRect.height) / 2;
-
-        // 모바일 최적화
-        if (window.innerWidth < 700) {
-            x = (window.innerWidth - popupRect.width) / 2;
-            y = (window.innerHeight - popupRect.height) / 2;
-        }
-
-        // 화면 경계 체크
-        x = Math.max(20, Math.min(x, window.innerWidth - popupRect.width - 20));
-        y = Math.max(20, Math.min(y, window.innerHeight - popupRect.height - 20));
+    
+    // 모바일 최적화
+    if (window.innerWidth < 700) {
+        x = (window.innerWidth - popupRect.width) / 2;
+        y = (window.innerHeight - popupRect.height) / 2;
+    }
+    
+    // 화면 경계 체크
+    x = Math.max(20, Math.min(x, window.innerWidth - popupRect.width - 20));
+    y = Math.max(20, Math.min(y, window.innerHeight - popupRect.height - 20));
     }
     
     // 팝업 위치 설정
@@ -497,8 +569,8 @@ function positionPopup(elements) {
         popupContent.style.top = `${y}px`;
         popupContent.style.transform = 'none';
     } else {
-        popup.style.left = `${x}px`;
-        popup.style.top = `${y}px`;
+    popup.style.left = `${x}px`;
+    popup.style.top = `${y}px`;
     }
 }
 
@@ -518,7 +590,6 @@ window.closeDetailPopup = function(elements) {
 window.resetPopupPosition = function() {
     try {
         localStorage.removeItem(POPUP_POSITION_KEY);
-        console.log('팝업 위치가 초기화되었습니다.');
         return true;
     } catch (error) {
         console.warn('팝업 위치 초기화에 실패했습니다:', error);

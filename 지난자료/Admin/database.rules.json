@@ -22,6 +22,15 @@
     "supporters": {
       ".read": true,
       ".write": true
+    },
+    "prayer_animations": {
+      ".read": true,
+      ".write": true,
+      "$animationId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['country', 'missionary_name', 'lat', 'lng', 'timestamp', 'ttl'])"
+      }
     }
   }
 } 

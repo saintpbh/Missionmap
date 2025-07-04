@@ -68,4 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
     .catch(err => {
       console.error('Firebase 연결 실패:', err);
     });
-}); 
+});
+
+// Firestore 연동 (v9 호환, window.db로 전역 등록)
+if (window.firebase && firebase.firestore) {
+  window.db = firebase.firestore();
+} 

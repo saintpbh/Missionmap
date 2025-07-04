@@ -205,7 +205,7 @@
     }
 
     // 모바일 기도 버튼 클릭 핸들러
-    function handleMobilePrayerClick(button, name, location) {
+    async function handleMobilePrayerClick(button, name, location) {
         // 펄스 애니메이션
         button.classList.add('prayed');
         setTimeout(() => {
@@ -218,6 +218,71 @@
         // 햅틱 피드백 (지원하는 경우)
         if (navigator.vibrate) {
             navigator.vibrate(100);
+        }
+
+        // PrayerClick 모듈과 연동하여 Firebase에 기도 기록 및 지도에 기도손 표시
+        if (window.handlePrayerClick) {
+            try {
+                // 선교사 데이터 생성 (PrayerClick 모듈에서 요구하는 형식)
+                const missionaryData = {
+                    name: name,
+                    country: location.split(',')[0].trim(), // 위치에서 국가 추출
+                    city: location.split(',')[1]?.trim() || '', // 위치에서 도시 추출
+                    flagUrl: '' // 국기 URL은 handlePrayerClick에서 생성
+                };
+                
+                // 로딩 상태 표시
+                button.style.opacity = '0.7';
+                button.style.pointerEvents = 'none';
+                
+                const success = await window.handlePrayerClick(missionaryData);
+                
+                if (success) {
+                    console.log(`${name} 선교사를 위한 기도 요청이 Firebase에 기록되었습니다.`);
+                    
+                    // 성공 피드백 - 버튼 색상 변경
+                    button.style.background = 'rgba(34, 197, 94, 0.8)';
+                    button.style.color = 'white';
+                    
+                    setTimeout(() => {
+                        button.style.background = '';
+                        button.style.color = '';
+                    }, 2000);
+                } else {
+                    console.log('기도 요청 Firebase 기록에 실패했습니다.');
+                    
+                    // 실패 피드백
+                    button.style.background = 'rgba(239, 68, 68, 0.8)';
+                    button.style.color = 'white';
+                    
+                    setTimeout(() => {
+                        button.style.background = '';
+                        button.style.color = '';
+                    }, 2000);
+                }
+                
+                // 로딩 상태 해제
+                button.style.opacity = '1';
+                button.style.pointerEvents = 'auto';
+                
+            } catch (error) {
+                console.error('기도 클릭 처리 중 오류:', error);
+                
+                // 오류 피드백
+                button.style.background = 'rgba(239, 68, 68, 0.8)';
+                button.style.color = 'white';
+                
+                setTimeout(() => {
+                    button.style.background = '';
+                    button.style.color = '';
+                }, 2000);
+                
+                // 로딩 상태 해제
+                button.style.opacity = '1';
+                button.style.pointerEvents = 'auto';
+            }
+        } else {
+            console.warn('PrayerClick 모듈이 로드되지 않았습니다.');
         }
     }
 

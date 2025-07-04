@@ -1,0 +1,9 @@
+{
+  "mcp.servers": [
+    {
+      "name": "playwright-browser",
+      "command": "npx",
+      "args": ["@executeautomation/playwright-mcp-server"]
+    }
+  ]
+} 

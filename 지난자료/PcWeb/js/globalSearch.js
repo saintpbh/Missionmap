@@ -14,7 +14,7 @@ class GlobalSearch {
     init() {
         this.setupDOM();
         this.setupEvents();
-        console.log('GlobalSearch: 초기화 완료');
+
     }
     
     setupDOM() {

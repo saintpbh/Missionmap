@@ -29,31 +29,58 @@ const UIManager = {
             sidebarSearch: document.querySelector('.sidebar-search sl-input'),
         };
         
-        console.log('UIManager 요소 초기화 완료:', this.elements);
+
         
-        // 중요한 요소들의 존재 여부 확인
+        // 중요한 요소들의 존재 여부 확인 및 폴백 처리
         const criticalElements = ['mapContainer', 'detailPopup', 'sidebarPanel', 'sidebarTitle', 'sidebarList'];
-        criticalElements.forEach(elementName => {
-            if (!this.elements[elementName]) {
-                console.error(`중요한 요소를 찾을 수 없습니다: ${elementName}`);
-            }
-        });
+        const missingElements = criticalElements.filter(elementName => !this.elements[elementName]);
         
-        // 사이드바 관련 요소들이 모두 있는지 확인
-        if (!this.elements.sidebarPanel || !this.elements.sidebarTitle || !this.elements.sidebarList) {
-            console.error('사이드바 요소들이 초기화되지 않았습니다. DOM을 다시 확인합니다.');
-            // 1초 후 다시 시도
-            setTimeout(() => this.initElements(), 1000);
-            return;
+        if (missingElements.length > 0) {
+            console.warn(`중요한 요소들이 누락되었습니다: ${missingElements.join(', ')}`);
+            
+            // 누락된 요소들을 생성하거나 폴백 처리
+            if (!this.elements.detailPopup) {
+                console.log('detailPopup 요소를 생성합니다.');
+                const detailPopup = document.createElement('div');
+                detailPopup.id = 'detailPopup';
+                detailPopup.style.display = 'none';
+                document.body.appendChild(detailPopup);
+                this.elements.detailPopup = detailPopup;
+            }
+            
+            if (!this.elements.sidebarPanel) {
+                console.log('sidebar-panel 요소를 생성합니다.');
+                const sidebarPanel = document.createElement('div');
+                sidebarPanel.id = 'sidebar-panel';
+                sidebarPanel.className = 'sidebar-panel';
+                sidebarPanel.style.display = 'none';
+                sidebarPanel.innerHTML = `
+                    <div class="sidebar-header">
+                        <h3 id="sidebar-title">선교사 목록</h3>
+                        <sl-icon-button name="x-lg" label="닫기" class="sidebar-close"></sl-icon-button>
+                    </div>
+                    <div class="sidebar-content">
+                        <div class="sidebar-search">
+                            <sl-input placeholder="선교사 이름 검색..." clearable>
+                                <sl-icon slot="prefix" name="search"></sl-icon>
+                            </sl-input>
+                        </div>
+                        <div id="sidebar-list" class="sidebar-list">
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(sidebarPanel);
+                this.elements.sidebarPanel = sidebarPanel;
+                this.elements.sidebarTitle = document.getElementById('sidebar-title');
+                this.elements.sidebarList = document.getElementById('sidebar-list');
+                this.elements.sidebarClose = document.querySelector('.sidebar-close');
+            }
         }
         
-        console.log('UIManager 사이드바 요소 초기화 성공');
     },
     
     // 이 UI 매니저를 초기화하고 필요한 참조를 설정합니다.
     initialize(mapController, dataManager) {
-        console.log('UIManager 초기화 시작...');
-        
         // 참조 설정
         this.mapController = mapController;
         this.dataManager = dataManager;
@@ -63,13 +90,11 @@ const UIManager = {
             document.addEventListener('DOMContentLoaded', () => {
                 this.initElements();
                 this.setupEventListeners();
-                console.log('UIManager 초기화 완료 (DOMContentLoaded 후)');
             });
         } else {
             // DOM이 이미 로드된 경우
             this.initElements();
             this.setupEventListeners();
-            console.log('UIManager 초기화 완료 (DOM 이미 로드됨)');
         }
     },
 
@@ -78,7 +103,6 @@ const UIManager = {
         // 노회별 보기 종료 버튼
         if (this.elements.presbyteryExitBtn) {
             this.elements.presbyteryExitBtn.addEventListener('click', () => {
-                console.log('노회별 보기 종료 버튼 클릭');
                 this.exitPresbyteryView();
             });
         }
@@ -86,7 +110,6 @@ const UIManager = {
         // 국가별 보기 종료 버튼
         if (this.elements.countryExitBtn) {
             this.elements.countryExitBtn.addEventListener('click', () => {
-                console.log('국가별 보기 종료 버튼 클릭');
                 this.exitCountryView();
             });
         }
@@ -107,7 +130,7 @@ const UIManager = {
         // 전체 보기로 복원
         this.mapController.exitPresbyteryView();
         
-        console.log('노회별 보기 종료 완료');
+
     },
 
     // 국가별 보기 종료
@@ -125,7 +148,7 @@ const UIManager = {
         // 전체 보기로 복원
         this.mapController.exitCountryView();
         
-        console.log('국가별 보기 종료 완료');
+
     },
 
     renderCountryTable() {
@@ -177,12 +200,9 @@ const UIManager = {
     },
 
     renderGlobalMarkers() {
-        console.log('UIManager: renderGlobalMarkers 시작');
         this.mapController.clearMarkers('global');
         const countryStats = this.dataManager.getCountryStats();
         const autoplayMode = this.mapController.state.autoplayMode;
-
-        console.log('UIManager: 국가 통계:', Object.keys(countryStats).length, '개국');
 
         const newMarkers = Object.entries(countryStats).map(([country, stats]) => {
             const latlng = this.mapController.constants.LATLNGS[country] || [0, 0];
@@ -227,7 +247,7 @@ const UIManager = {
                             clickEvent.preventDefault();
                             clickEvent.stopPropagation();
                             const name = el.dataset.name;
-                            console.log('선교사 이름 클릭:', name);
+
                             const info = this.dataManager.getMissionaryInfo(name) || {};
                             const latlngForPopup = this.mapController.getLatLng(info, info.country);
                             this.mapController.showDetailPopup(name, latlngForPopup);
@@ -348,7 +368,7 @@ const UIManager = {
 
         const card = document.createElement('div');
         card.className = 'detail-popup-card';
-        
+
         let pdfButton = '';
         if (info.NewsLetter && info.NewsLetter.trim()) {
             pdfButton = `<sl-button variant="primary" size="small" class="newsletter-button" data-newsurl="${info.NewsLetter.trim()}">
@@ -483,6 +503,11 @@ const UIManager = {
             return;
         }
         
+        // 사이드바 열기 시 기도 팝업 순회 일시정지
+        if (this.mapController && this.mapController.pausePrayerRotation) {
+            this.mapController.pausePrayerRotation();
+        }
+        
         this.elements.sidebarTitle.textContent = title;
         this.renderSidebarList(missionaries);
         this.elements.sidebarPanel.classList.add('open');
@@ -525,6 +550,11 @@ const UIManager = {
         if (this._searchHandler) {
             this.elements.sidebarSearch.removeEventListener('sl-input', this._searchHandler);
             this._searchHandler = null;
+        }
+        
+        // 사이드바 닫기 시 전체보기 모드일 때만 기도 팝업 순회 재개
+        if (this.mapController && this.mapController.resumePrayerRotation && !this.mapController.state.fixedCountry) {
+            this.mapController.resumePrayerRotation();
         }
     },
 
@@ -613,12 +643,12 @@ const UIManager = {
                                         const markerElement = marker.getElement();
                                         if (markerElement) {
                                             markerElement.classList.add('marker-focused');
-                                            setTimeout(() => {
+                                        setTimeout(() => {
                                                 const element = marker.getElement();
                                                 if (element) {
                                                     element.classList.remove('marker-focused');
-                                                }
-                                            }, 2000);
+                                            }
+                                        }, 2000);
                                         }
                                     }
                                 }

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기도 팝업 모듈 v2.0 테스트</title>
+    <link rel="stylesheet" href="css/prayerPopup.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .test-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .test-btn:active {
+            transform: translateY(0);
+        }
+        
+        .demo-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .demo-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-marker:hover {
+            transform: scale(1.2);
+        }
+        
+        .demo-marker:nth-child(1) { top: 50px; left: 100px; }
+        .demo-marker:nth-child(2) { top: 150px; left: 300px; }
+        .demo-marker:nth-child(3) { top: 250px; left: 200px; }
+        
+        .status {
+            color: white;
+            font-size: 14px;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">기도 팝업 모듈 v2.0 테스트</h1>
+        
+        <div class="test-buttons">
+            <button class="test-btn" onclick="startPrayerRotation()">순회 시작</button>
+            <button class="test-btn" onclick="stopPrayerRotation()">순회 중지</button>
+            <button class="test-btn" onclick="pausePrayerRotation()">일시정지</button>
+            <button class="test-btn" onclick="resumePrayerRotation()">재개</button>
+            <button class="test-btn" onclick="showSinglePopup()">단일 팝업</button>
+            <button class="test-btn" onclick="clearAllPopups()">모든 팝업 제거</button>
+        </div>
+        
+        <div class="status" id="status">대기 중...</div>
+    </div>
+    
+    <div class="demo-area" id="demoArea">
+        <div class="demo-marker" onclick="showPopupAtMarker(this)"></div>
+        <div class="demo-marker" onclick="showPopupAtMarker(this)"></div>
+        <div class="demo-marker" onclick="showPopupAtMarker(this)"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- 기도 팝업 모듈 -->
+    <script src="js/ui/prayerPopup.js"></script>
+    
+    <script>
+        // 테스트용 선교사 데이터
+        const testMissionaries = [
+            {
+                name: "김선교",
+                country: "일본",
+                city: "도쿄",
+                flagUrl: "https://flagcdn.com/w40/jp.png"
+            },
+            {
+                name: "이복음",
+                country: "태국",
+                city: "방콕",
+                flagUrl: "https://flagcdn.com/w40/th.png"
+            },
+            {
+                name: "박사랑",
+                country: "캄보디아",
+                city: "프놈펜",
+                flagUrl: "https://flagcdn.com/w40/kh.png"
+            }
+        ];
+
+        // 전역 변수 설정 (기존 시스템과 호환)
+        window.MissionaryMap = {
+            state: {
+                missionaries: testMissionaries
+            },
+            constants: {
+                COUNTRY_FLAGS: {
+                    "일본": "jp",
+                    "태국": "th",
+                    "캄보디아": "kh"
+                }
+            },
+            getLatLng: (missionary, country) => {
+                // 테스트용 좌표
+                const coordinates = {
+                    "김선교": [100, 50],
+                    "이복음": [300, 150],
+                    "박사랑": [200, 250]
+                };
+                return coordinates[missionary.name] || [100, 100];
+            }
+        };
+
+        // 기도 클릭 핸들러 (테스트용)
+        window.handlePrayerClick = async (missionaryData) => {
+            console.log('기도 클릭:', missionaryData);
+            updateStatus(`기도 처리 중: ${missionaryData.name}`);
+            
+            // 시뮬레이션된 지연
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 랜덤 성공/실패
+            const success = Math.random() > 0.3;
+            updateStatus(success ? `기도 완료: ${missionaryData.name}` : `기도 실패: ${missionaryData.name}`);
+            
+            return success;
+        };
+
+        // 기도 알림 (테스트용)
+        window.showPrayerNotification = (missionaryName) => {
+            updateStatus(`기도 알림: ${missionaryName}님을 위해 기도했습니다!`);
+        };
+
+        // 상태 업데이트
+        function updateStatus(message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            console.log(message);
+        }
+
+        // 순회 시작
+        function startPrayerRotation() {
+            if (!window.prayerPopupManager) {
+                window.prayerPopupManager = new PrayerPopupManager();
+            }
+            window.prayerPopupManager.startRotation();
+            updateStatus('기도 팝업 순회 시작');
+        }
+
+        // 순회 중지
+        function stopPrayerRotation() {
+            if (window.prayerPopupManager) {
+                window.prayerPopupManager.stopRotation();
+                updateStatus('기도 팝업 순회 중지');
+            }
+        }
+
+        // 일시정지
+        function pausePrayerRotation() {
+            if (window.prayerPopupManager) {
+                window.prayerPopupManager.pause();
+                updateStatus('기도 팝업 일시정지');
+            }
+        }
+
+        // 재개
+        function resumePrayerRotation() {
+            if (window.prayerPopupManager) {
+                window.prayerPopupManager.resume();
+                updateStatus('기도 팝업 재개');
+            }
+        }
+
+        // 단일 팝업 표시
+        function showSinglePopup() {
+            if (!window.prayerPopupManager) {
+                window.prayerPopupManager = new PrayerPopupManager();
+            }
+            
+            const missionary = testMissionaries[0];
+            const popup = window.prayerPopupManager.createPrayerPopup({
+                flagUrl: missionary.flagUrl,
+                name: missionary.name,
+                country: missionary.country,
+                city: missionary.city,
+                missionary
+            });
+            
+            // 데모 영역에 추가
+            const demoArea = document.getElementById('demoArea');
+            demoArea.appendChild(popup);
+            
+            // 위치 설정
+            popup.style.left = '50px';
+            popup.style.top = '50px';
+            
+            updateStatus('단일 팝업 표시');
+        }
+
+        // 마커 클릭 시 팝업 표시
+        function showPopupAtMarker(marker) {
+            if (!window.prayerPopupManager) {
+                window.prayerPopupManager = new PrayerPopupManager();
+            }
+            
+            // 랜덤 선교사 선택
+            const missionary = testMissionaries[Math.floor(Math.random() * testMissionaries.length)];
+            const popup = window.prayerPopupManager.createPrayerPopup({
+                flagUrl: missionary.flagUrl,
+                name: missionary.name,
+                country: missionary.country,
+                city: missionary.city,
+                missionary
+            });
+            
+            // 데모 영역에 추가
+            const demoArea = document.getElementById('demoArea');
+            demoArea.appendChild(popup);
+            
+            // 마커 위치에 배치
+            const rect = marker.getBoundingClientRect();
+            const demoRect = demoArea.getBoundingClientRect();
+            
+            popup.style.left = (rect.left - demoRect.left + rect.width/2 - 170) + 'px';
+            popup.style.top = (rect.top - demoRect.top - 160) + 'px';
+            
+            updateStatus(`팝업 표시: ${missionary.name}`);
+        }
+
+        // 모든 팝업 제거
+        function clearAllPopups() {
+            const popups = document.querySelectorAll('.prayer-popup-v2');
+            popups.forEach(popup => popup.remove());
+            updateStatus('모든 팝업 제거됨');
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('테스트 페이지 로드 완료');
+            console.log('기도 팝업 모듈 v2.0 테스트 페이지가 준비되었습니다.');
+        });
+    </script>
+</body>
+</html> 

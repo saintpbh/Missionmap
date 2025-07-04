@@ -366,9 +366,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Firebase 서비스를 통해 뉴스레터 저장 완료:', data.id);
       } else {
         // 기존 방식으로 저장
-        const db = firebase.firestore();
-        await db.collection('newsletters').doc(data.id).set(data);
-        console.log('✅ Firebase에 뉴스레터 저장 완료:', data.id);
+      const db = firebase.firestore();
+      await db.collection('newsletters').doc(data.id).set(data);
+      console.log('✅ Firebase에 뉴스레터 저장 완료:', data.id);
       }
     } catch (error) {
       console.error('❌ Firebase 저장 실패:', error);
